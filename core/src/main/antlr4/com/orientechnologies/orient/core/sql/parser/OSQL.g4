@@ -13,6 +13,8 @@ options {
 INSERT : I N S E R T ;
 INTO : I N T O ;
 VALUES : V A L U E S ;
+CLUSTER : C L U S T E R ;
+INDEX : I N D E X ;
 SET : S E T ;
 
 
@@ -53,7 +55,7 @@ fragment W: ('w'|'W');
 fragment X: ('x'|'X');
 fragment Y: ('y'|'Y');
 fragment Z: ('z'|'Z');
-fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '=' | '.');
+fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '{' | '}' | '[' | ']'| '=' | '.'| ':' | '#');
 
 LPAREN : '(';
 RPAREN : ')';
@@ -67,7 +69,7 @@ RACCOLADE : '}';
 
 UNSET : '?';
 NULL : N U L L ;
-IDENTIFIER : '#' DIGIT DIGIT* ':' DIGIT DIGIT*;
+IDENTIFIER : '#';
 
 TEXT : ('\'' ( ESC_SEQ | ~('\\'|'\'') )* '\'') 
      | ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' );
@@ -117,29 +119,26 @@ UNICODE_ESC
     
 word : WORD ;
 
-identifier : IDENTIFIER;
+identifier : IDENTIFIER INT ':' INT;
 
 unset : UNSET;
 
-literal_number
+number
 	: (UNARY^)? (INT|FLOAT)
 	;
 
-literal_map
-  : LACCOLADE (TEXT DOUBLEDOT expression (COMMA TEXT DOUBLEDOT expression)*)? RACCOLADE
+map
+  : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE
   ;
 
-literal_collection
+collection
   : LBRACKET (expression (COMMA expression)*)? RBRACKET
   ;
 
 literal	
   : NULL
   | TEXT
-	| literal_number
-  | literal_map
-  | literal_collection
-  | identifier
+	| number
 	;
 
 arguments
@@ -156,6 +155,9 @@ methodCall
 
 expression
   : literal
+  | map
+  | collection
+  | identifier
   | unset
   | word
   | LPAREN expression RPAREN
@@ -167,10 +169,13 @@ commandUnknowned
   : expression (expression)*
   ;
 commandInsertIntoByValues
-  : INSERT INTO word commandInsertIntoFields VALUES commandInsertIntoEntry (COMMA commandInsertIntoEntry)*
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word commandInsertIntoCluster? commandInsertIntoFields VALUES commandInsertIntoEntry (COMMA commandInsertIntoEntry)*
   ;
 commandInsertIntoBySet
-  : INSERT INTO word SET commandInsertIntoSet (COMMA commandInsertIntoSet)*
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word commandInsertIntoCluster? SET commandInsertIntoSet (COMMA commandInsertIntoSet)*
+  ;
+commandInsertIntoCluster
+  : CLUSTER word
   ;
 commandInsertIntoEntry
   : LPAREN expression (COMMA expression)* RPAREN

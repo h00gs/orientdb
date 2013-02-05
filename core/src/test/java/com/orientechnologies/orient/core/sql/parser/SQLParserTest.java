@@ -21,11 +21,16 @@ import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.model.OCollection;
+import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
@@ -114,6 +119,41 @@ public class SQLParserTest {
   }
   
   @Test
+  public void testCollection(){
+    final String sql = "[123,'abc',\"def\"]";
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    final OCollection lit = (OCollection) objs.get(0);
+    final List lst = lit.getChildren();
+    assertEquals(lst.get(0),new OLiteral(123));
+    assertEquals(lst.get(1),new OLiteral("abc"));
+    assertEquals(lst.get(2),new OLiteral("def"));
+  }
+  
+  @Test
+  public void testMap(){
+    final String sql = "{'att1':123,'att2':{'satt1':456}}";
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    final OMap lit = (OMap) objs.get(0);
+    final Map lst = lit.getMap();
+    assertEquals(lst.size(), 2);
+    final Iterator<Entry> ite = lst.entrySet().iterator();
+    final Entry entry1 = ite.next();
+    final Entry entry2 = ite.next();
+    assertEquals(entry1.getKey(),new OLiteral("att1"));
+    assertEquals(entry1.getValue(),new OLiteral(123));
+    assertEquals(entry2.getKey(),new OLiteral("att2"));
+    final OMap v2 = (OMap) entry2.getValue();
+    assertEquals(v2.getMap().size(), 1);
+    final Entry sentry1 = v2.getMap().entrySet().iterator().next();
+    assertEquals(sentry1.getKey(),new OLiteral("satt1"));
+    assertEquals(sentry1.getValue(),new OLiteral(456));
+  }
+  
+  @Test
   public void testFunction(){
     final String sql = "call( 4 , \"sometext\" )";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
@@ -156,7 +196,6 @@ public class SQLParserTest {
     assertEquals(objs.get(0),m);
   }
   
-  
   @Test
   public void testInsertIntoByValues(){
     final String sql = "INSERT INTO table(att1,att2,att3) VALUES ('a','b',3), ('d','e',6)";
@@ -172,7 +211,7 @@ public class SQLParserTest {
             );
     
   }
-  
+    
   @Test
   public void testInsertIntoBySet(){
     final String sql = "INSERT INTO table SET att1='a',att2='b',att3=3";
@@ -188,5 +227,10 @@ public class SQLParserTest {
     
   }
   
+  @Test
+  public void testInsertIntoBySubQuery(){
+    final String sql = "INSERT INTO test SET names = (select name from OUser)";
+    
+  }
   
 }

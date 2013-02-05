@@ -19,7 +19,6 @@ package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.sql.command.OCommand;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import java.math.BigDecimal;
 import org.antlr.v4.runtime.ANTLRInputStream;

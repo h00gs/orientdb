@@ -16,16 +16,20 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
+import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OContextVariable;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
 import com.orientechnologies.orient.core.sql.model.OField;
 import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.model.OOperator;
 import com.orientechnologies.orient.core.sql.model.OUnset;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -37,6 +41,25 @@ public class CopyVisitor implements OExpressionVisitor {
   public Object visit(OLiteral candidate, Object data) {
     //literals are immutable
     return candidate;
+  }
+  
+  @Override
+  public Object visit(OCollection candidate, Object data) {
+    final List<OExpression> args = candidate.getChildren();
+    for(int i=0;i<args.size();i++){
+      args.set(i, (OExpression)args.get(i).accept(this, data));
+    }
+    OCollection copy = new OCollection(args);
+    return copy;
+  }
+
+  @Override
+  public Object visit(OMap candidate, Object data) {
+    final LinkedHashMap map = new LinkedHashMap();
+    for(Map.Entry<OLiteral,OExpression> entry : candidate.getMap().entrySet()){
+      map.put(entry.getKey().accept(this, data), entry.getValue().accept(this, data));
+    }
+    return new OMap(map);
   }
 
   @Override

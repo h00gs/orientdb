@@ -27,26 +27,19 @@ import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
-import com.orientechnologies.orient.core.sql.OCommandExecutorSQLAbstract;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSetAware;
 import com.orientechnologies.orient.core.sql.OCommandParameters;
-//import com.orientechnologies.orient.core.sql.OSQLHelper;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
-import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  *
@@ -68,10 +61,11 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
 
   public OCommandInsert(){}
   
-  public OCommandInsert(String target, List<String> fields, List<Object[]> records) {
+  public OCommandInsert(String target, String cluster, List<String> fields, List<Object[]> records) {
     this.target = target;
     this.fields = fields.toArray(new String[fields.size()]);
     this.newRecords = records;
+    this.clusterName = cluster;
   }
 
   @Override
@@ -140,22 +134,17 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   public Object execute(final Map<Object, Object> iArgs) {
     if(iArgs != null && !iArgs.isEmpty()){
       //we need to set value where we have OUnknowned
-      final UnknownResolverVisitor visitor = new UnknownResolverVisitor(parameters);
+      final UnknownResolverVisitor visitor = new UnknownResolverVisitor(iArgs);
       for(Object[] newRecord : newRecords){
         for(int i=0;i<newRecord.length;i++){
           if(newRecord[i] instanceof OUnset){
             newRecord[i] = visitor.visit(((OUnset)newRecord[i]), null);
+            System.out.println(newRecord[i]);
           }
         }
       }
-      
-      System.err.println("||||||||||||||");
-      for(Entry<Object,Object> entry : iArgs.entrySet()){
-        System.err.println(entry.getKey() + " : "+entry.getValue());
-      }
     }
-    
-               
+      
     
     final OCommandParameters commandParameters = new OCommandParameters(iArgs);
     if (indexName != null) {

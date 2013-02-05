@@ -24,6 +24,10 @@ public interface OExpressionVisitor {
 
   Object visit(OLiteral candidate, Object data);
   
+  Object visit(OCollection candidate, Object data);
+  
+  Object visit(OMap candidate, Object data);
+  
   Object visit(OField candidate, Object data);
   
   Object visit(OContextVariable candidate, Object data);

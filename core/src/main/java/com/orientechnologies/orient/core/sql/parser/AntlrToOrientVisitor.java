@@ -19,20 +19,20 @@ package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.sql.command.OCommand;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.model.OCollection;
+import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -75,12 +75,18 @@ public class AntlrToOrientVisitor {
   
   private OCommandInsert visit(CommandInsertIntoByValuesContext candidate){    
     //variables
-    final String target;
+    String target;
     final List<String> fields = new ArrayList<String>();
     final List<Object[]> entries = new ArrayList<Object[]>();
     
     //parsing
     target = visit(candidate.word());
+    if(candidate.CLUSTER() != null){
+      target = "CLUSTER:"+target;
+    }else  if(candidate.INDEX()!= null){
+      target = "INDEX:"+target;
+    }
+    
     for(WordContext wc : candidate.commandInsertIntoFields().word()){
       fields.add(visit(wc));
     }
@@ -92,8 +98,12 @@ public class AntlrToOrientVisitor {
       }
       entries.add(values);
     }
+    String cluster = null;
+    if(candidate.commandInsertIntoCluster() != null){
+      cluster = candidate.commandInsertIntoCluster().word().getText();
+    }
     
-    return new OCommandInsert(target, fields, entries);
+    return new OCommandInsert(target, cluster, fields, entries);
   }
   
   private OCommandInsert visit(CommandInsertIntoBySetContext candidate){    
@@ -113,7 +123,13 @@ public class AntlrToOrientVisitor {
     
     final List<Object[]> entries = new ArrayList<Object[]>();
     entries.add(values.toArray());
-    return new OCommandInsert(target, fields, entries);
+    
+    String cluster = null;
+    if(candidate.commandInsertIntoCluster() != null){
+      cluster = candidate.commandInsertIntoCluster().word().getText();
+    }
+    
+    return new OCommandInsert(target, cluster, fields, entries);
   }
   
   private Object visit(ParseTree candidate){
@@ -127,6 +143,12 @@ public class AntlrToOrientVisitor {
       return visit((FunctionCallContext)candidate);
     }else if(candidate instanceof MethodCallContext){
       return visit((MethodCallContext)candidate);
+    }else if(candidate instanceof IdentifierContext){
+      return visit((IdentifierContext)candidate);
+    }else if(candidate instanceof MapContext){
+      return visit((MapContext)candidate);
+    }else if(candidate instanceof CollectionContext){
+      return visit((CollectionContext)candidate);
     }else if(candidate instanceof UnsetContext){
       return visit((UnsetContext)candidate);
     }else{
@@ -168,14 +190,38 @@ public class AntlrToOrientVisitor {
     return new OUnset();
   }
   
-  private OLiteral visit(LiteralContext candidate){
+  private OLiteral visit(IdentifierContext candidate){
+    final ORecordId oid = new ORecordId(candidate.getText());
+    return new OLiteral(oid);
+  } 
+  
+  private OCollection visit(CollectionContext candidate) {
+    final List col = new ArrayList();
+    final List<ExpressionContext> values = candidate.expression();
+    for (int i = 0, n = values.size(); i < n; i++) {
+      col.add(visit(values.get(i)));
+    }
+    return new OCollection(col);
+  }
+
+  private OMap visit(MapContext candidate) {
+    final LinkedHashMap map = new LinkedHashMap();
+    final List<LiteralContext> keys = candidate.literal();
+    final List<ExpressionContext> values = candidate.expression();
+    for (int i = 0, n = keys.size(); i < n; i++) {
+      map.put(visit(keys.get(i)), visit(values.get(i)));
+    }
+    return new OMap(map);
+  }
+  
+  private OExpression visit(LiteralContext candidate){
     if(candidate.TEXT() != null){
       String txt =candidate.TEXT().getText();
       txt = txt.substring(1,txt.length()-1);
       return new OLiteral(txt);
       
-    }else if(candidate.literal_number() != null){
-      final Literal_numberContext n = candidate.literal_number();
+    }else if(candidate.number()!= null){
+      final NumberContext n = candidate.number();
       if(n.INT() != null){
         return new OLiteral(Integer.valueOf(n.getText()));
       }else{
@@ -184,29 +230,6 @@ public class AntlrToOrientVisitor {
       
     }else if(candidate.NULL()!= null){
       return new OLiteral(null);
-      
-    }else if(candidate.identifier()!= null){
-      final ORecordId oid = new ORecordId(candidate.identifier().getText());
-      return new OLiteral(oid);
-      
-    }else if(candidate.literal_map() != null){
-      final Literal_mapContext m = candidate.literal_map();
-      final Map map = new LinkedHashMap();
-      final List<TerminalNode> keys = m.TEXT();
-      final List<ExpressionContext> values = m.expression();
-      for(int i=0,n=keys.size();i<n;i++){
-        map.put(keys.get(i).getText(), OSQL.evaluate(visit(values.get(i))));
-      }
-      return new OLiteral(map);
-      
-    }else if(candidate.literal_collection()!= null){
-      final Literal_collectionContext m = candidate.literal_collection();
-      final List col = new ArrayList();
-      final List<ExpressionContext> values = m.expression();
-      for(int i=0,n=values.size();i<n;i++){
-        col.add(OSQL.evaluate(visit(values.get(i))));
-      }
-      return new OLiteral(col);
       
     }else{
       throw new OException("Should not happen");
