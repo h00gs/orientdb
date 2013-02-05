@@ -16,34 +16,22 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OMethod extends OFunction{
+public class OOperator extends OFunction{
 
-  public OMethod(String name, OExpression source, List<OExpression> arguments) {
-    this(name, null, source, arguments);
+  public OOperator(String name, List<OExpression> arguments) {
+    this(name, null, arguments);
   }
 
-  public OMethod(String name, String alias, OExpression source, List<OExpression> arguments) {
-    super(name, alias, concat(source,arguments));
+  public OOperator(String name, String alias, List<OExpression> arguments) {
+    super(name, alias, arguments);
   }
-  
-  public OExpression getSource(){
-    return getArguments().get(0);
-  }
-  
-  public List<OExpression> getMethodArguments(){
-    final List<OExpression> args = new ArrayList<OExpression>(getArguments());
-    args.remove(0);
-    return Collections.unmodifiableList(args);
-  }
-  
+
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);
@@ -51,14 +39,7 @@ public class OMethod extends OFunction{
   
   @Override
   protected String thisToString() {
-    return "(Method) "+getName();
-  }
-  
-  private static List<OExpression> concat(OExpression source, List<OExpression> arguments){
-    final List<OExpression> exps = new ArrayList<OExpression>(arguments.size()+1);
-    exps.add(source);
-    exps.addAll(arguments);
-    return exps;
+    return "(Operator) "+getName();
   }
   
 }

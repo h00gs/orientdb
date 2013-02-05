@@ -19,8 +19,12 @@ import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMethod;
+import com.orientechnologies.orient.core.sql.command.OCommandCustom;
+import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -35,93 +39,154 @@ public class SQLParserTest {
   @Test
   public void testWord(){
     final String sql = "hello world";
-    final List<Object> objs = OSQL.parse(sql);
-    assertEquals(2, objs.size());
-    assertEquals("hello", objs.get(0));
-    assertEquals("world", objs.get(1));
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),2);
+    assertEquals(objs.get(0), "hello");
+    assertEquals(objs.get(1), "world");
   }
   
   @Test
   public void testLiteralText1(){
     final String sql = "hello \"world\"";
-    final List<Object> objs = OSQL.parse(sql);
-    assertEquals(2, objs.size());
-    assertEquals("hello", objs.get(0));
-    assertEquals(new OLiteral("world"), objs.get(1));
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),2);
+    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(1),new OLiteral("world"));
   }
   
   @Test
   public void testLiteralText2(){
     final String sql = "hello 'world'";
-    final List<Object> objs = OSQL.parse(sql);
-    assertEquals(2, objs.size());
-    assertEquals("hello", objs.get(0));
-    assertEquals(new OLiteral("world"), objs.get(1));
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),2);
+    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(1),new OLiteral("world"));
   }
   
   @Test
   public void testLiteralNumber(){
     String sql = "2013";
-    List<Object> objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
-    assertEquals(new OLiteral(2013d), objs.get(0));
+    OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    assertEquals(objs.get(0), new OLiteral(2013));
     
     sql = "-2013";
-    objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
-    assertEquals(new OLiteral(-2013d), objs.get(0));
+    command = (OCommandCustom) OSQL.parse(sql);
+     objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    assertEquals(objs.get(0), new OLiteral(-2013));
     
     sql = "-2013e3";
-    objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
-    assertEquals(new OLiteral(-2013e3d), objs.get(0));
+    command = (OCommandCustom) OSQL.parse(sql);
+    objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    assertEquals(objs.get(0), new OLiteral(-2013e3d));
     
     sql = "-2013.456e-3";
-    objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
-    assertEquals(new OLiteral(-2013.456e-3d), objs.get(0));
+    command = (OCommandCustom) OSQL.parse(sql);
+    objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    assertEquals(objs.get(0), new OLiteral(-2013.456e-3d));
+  }
+  
+  @Test
+  public void testLiteralNull(){
+    final String sql = "hello null";
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),2);
+    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(1),new OLiteral(null));
+  }
+  
+  @Test
+  public void testUnset(){
+    final String sql = "hello ?";
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),2);
+    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(1),new OUnset());
   }
   
   @Test
   public void testFunction(){
     final String sql = "call( 4 , \"sometext\" )";
-    final List<Object> objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
-    assertEquals(new OFunction("call", Arrays.asList((OExpression)new OLiteral(4d), new OLiteral("sometext"))),
-               objs.get(0));
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    assertEquals(objs.get(0),
+            new OFunction("call", Arrays.asList((OExpression)new OLiteral(4), new OLiteral("sometext")))
+               );
   }
   
   @Test
   public void testMethodCall(){
     final String sql = "'text'.charAt(3)";
-    final List<Object> objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
-    assertEquals(new OMethod("charAt", 
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),1);
+    assertEquals(objs.get(0),
+               new OMethod("charAt", 
                   (OExpression)new OLiteral("text"), 
                   Arrays.asList(
-                    (OExpression)new OLiteral(3d))),
-               objs.get(0));
+                    (OExpression)new OLiteral(3)))
+               );
   }
   
   @Test
   public void testMethodStackCall(){
     final String sql = "'text'.charAt(3).toString()";
-    final List<Object> objs = OSQL.parse(sql);
-    assertEquals(1, objs.size());
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),1);
     
     OMethod sm = new OMethod("charAt", 
                   (OExpression)new OLiteral("text"), 
                   Arrays.asList(
-                    (OExpression)new OLiteral(3d)));
+                    (OExpression)new OLiteral(3)));
     OMethod m = new OMethod("toString", 
                   (OExpression)sm, 
                   new ArrayList<OExpression>());
     
-    assertEquals(m, objs.get(0));
+    assertEquals(objs.get(0),m);
   }
   
   
+  @Test
+  public void testInsertIntoByValues(){
+    final String sql = "INSERT INTO table(att1,att2,att3) VALUES ('a','b',3), ('d','e',6)";
+    final OCommandInsert command = (OCommandInsert) OSQL.parse(sql);
+    assertEquals(command.getTarget(),
+            "table");
+    assertEquals(command.getFields(),
+            new String[]{"att1","att2","att3"} );
+    assertEquals(command.getRecords(),
+            Arrays.asList(
+                new Object[]{new OLiteral("a"),new OLiteral("b"),new OLiteral(3)},
+                new Object[]{new OLiteral("d"),new OLiteral("e"),new OLiteral(6)}) 
+            );
+    
+  }
   
+  @Test
+  public void testInsertIntoBySet(){
+    final String sql = "INSERT INTO table SET att1='a',att2='b',att3=3";
+    final OCommandInsert command = (OCommandInsert) OSQL.parse(sql);
+    assertEquals(command.getTarget(),
+            "table");
+    assertEquals(command.getFields(),
+            new String[]{"att1","att2","att3"} );
+    assertEquals(command.getRecords(),
+            Collections.singletonList(
+                new Object[]{new OLiteral("a"),new OLiteral("b"),new OLiteral(3)}) 
+            );
+    
+  }
   
   
 }

@@ -14,28 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql.model;
+package com.orientechnologies.orient.core.sql.command;
+
+import com.orientechnologies.orient.core.command.OCommandExecutor;
+import java.util.Map;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public interface OExpressionVisitor {
-
-  Object visit(OLiteral candidate, Object data);
+public interface OCommand extends OCommandExecutor{
   
-  Object visit(OField candidate, Object data);
   
-  Object visit(OContextVariable candidate, Object data);
-  
-  Object visit(OUnset candidate, Object data);
-  
-  Object visit(OFunction candidate, Object data);
-  
-  Object visit(OMethod candidate, Object data);
-          
-  Object visit(OOperator candidate, Object data);
-  
-  Object visit(OExpression candidate, Object data);
+  /**
+   * Execute the requested command.
+   */
+  public Object execute(final Map<Object, Object> iArgs);
   
 }

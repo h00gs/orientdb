@@ -17,6 +17,7 @@
 
 	<path id="project.classpath">
 		<filelist dir=".." files="${project.jar-deps}" />
+		<fileset dir="../extlib" includes="**/*.jar" />
 		<fileset dir="${project.lib}" includes="**/*.jar" />
 		<fileset dir="${project.lib2}" includes="**/*.jar" />
 		<fileset dir=".." includes="**/target/*.jar" />
@@ -34,7 +35,7 @@
 		<delete dir="${project.dist}" />
 	</target>
 
-	<target name="compile" depends="init">
+	<target name="compile" depends="init">            
 		<mkdir dir="${project.lib}" />
 		<javac destdir="${project.build}" debug="${project.is-debug}" debuglevel="${project.debug-level}" target="${project.target-comp}" source="${project.source-comp}" verbose="false" includeAntRuntime="false">
 			<src path="${project.src}" />

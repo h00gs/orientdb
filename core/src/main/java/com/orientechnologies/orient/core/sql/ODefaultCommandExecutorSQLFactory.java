@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
+import com.orientechnologies.orient.core.sql.command.OCommandInsert;
 
 /**
  * Default command operator executor factory.
@@ -39,7 +40,8 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         OCommandExecutorSQLAlterDatabase.class);
     commands.put(OCommandExecutorSQLSelect.KEYWORD_SELECT, OCommandExecutorSQLSelect.class);
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
-    commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
+    //commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
+    commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
     commands.put(OCommandExecutorSQLUpdate.KEYWORD_UPDATE, OCommandExecutorSQLUpdate.class);
     commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
     commands.put(OCommandExecutorSQLCreateEdge.NAME, OCommandExecutorSQLCreateEdge.class);

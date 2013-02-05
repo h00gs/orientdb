@@ -9,13 +9,21 @@ options {
 //-----------------------------------------------------------------//
 
 
-// GLOBAL STUFF ---------------------------------------
+// KEYWORDS -------------------------------------------
+INSERT : I N S E R T ;
+INTO : I N T O ;
+VALUES : V A L U E S ;
+SET : S E T ;
 
+
+// GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
+DOUBLEDOT 	: ':';
 DOT 	: '.';
 WS  :   ( ' ' | '\t' | '\r'| '\n' ) -> skip ;
 UNARY : '+' | '-' ;
 MULT : '*' | '/' ;
+EQUALS : '=' ;
 fragment DIGIT : '0'..'9' ;
     
 // case insensitive
@@ -51,14 +59,20 @@ LPAREN : '(';
 RPAREN : ')';
 LBRACKET : '[';
 RBRACKET : ']';
+LACCOLADE : '{';
+RACCOLADE : '}';
     
 
 //LITERALS  ----------------------------------------------
 
-TEXT1 :  '\'' ( ESC_SEQ | ~('\\'|'\'') )* '\'' ;
-TEXT2 :  '"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"'  ;
-INT : DIGIT+ ;
+UNSET : '?';
+NULL : N U L L ;
+IDENTIFIER : '#' DIGIT DIGIT* ':' DIGIT DIGIT*;
 
+TEXT : ('\'' ( ESC_SEQ | ~('\\'|'\'') )* '\'') 
+     | ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' );
+
+INT : DIGIT+ ;
 FLOAT
     :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT?
     |   '.' ('0'..'9')+ EXPONENT?
@@ -66,6 +80,8 @@ FLOAT
     ;
 
 WORD : LETTER (DIGIT|LETTER)* ;
+
+
 
 
 // FRAGMENT -------------------------------------------
@@ -101,14 +117,29 @@ UNICODE_ESC
     
 word : WORD ;
 
+identifier : IDENTIFIER;
+
+unset : UNSET;
+
 literal_number
 	: (UNARY^)? (INT|FLOAT)
 	;
 
+literal_map
+  : LACCOLADE (TEXT DOUBLEDOT expression (COMMA TEXT DOUBLEDOT expression)*)? RACCOLADE
+  ;
+
+literal_collection
+  : LBRACKET (expression (COMMA expression)*)? RBRACKET
+  ;
+
 literal	
-	: TEXT1
-	| TEXT2
+  : NULL
+  | TEXT
 	| literal_number
+  | literal_map
+  | literal_collection
+  | identifier
 	;
 
 arguments
@@ -123,18 +154,36 @@ methodCall
 	: DOT word arguments*
 	;
 
-indexCall
-	: LBRACKET (INT|TEXT1|TEXT2) RBRACKET
-	;
-
 expression
   : literal
+  | unset
   | word
   | LPAREN expression RPAREN
   | functionCall
   | expression methodCall
   ;
 
-sentence
-	: expression (expression)*
+commandUnknowned 
+  : expression (expression)*
+  ;
+commandInsertIntoByValues
+  : INSERT INTO word commandInsertIntoFields VALUES commandInsertIntoEntry (COMMA commandInsertIntoEntry)*
+  ;
+commandInsertIntoBySet
+  : INSERT INTO word SET commandInsertIntoSet (COMMA commandInsertIntoSet)*
+  ;
+commandInsertIntoEntry
+  : LPAREN expression (COMMA expression)* RPAREN
+  ;
+commandInsertIntoSet
+  : word EQUALS expression
+  ;
+commandInsertIntoFields
+  : LPAREN word(COMMA word)* RPAREN
+  ;
+
+command
+	: commandUnknowned
+  | commandInsertIntoByValues
+  | commandInsertIntoBySet
   ;
