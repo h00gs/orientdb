@@ -15,6 +15,7 @@
  */
 package com.orientechnologies.orient.core.sql;
 
+import com.orientechnologies.orient.core.command.OCommandExecutor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Set;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 
 /**
  * Default command operator executor factory.
@@ -31,25 +33,28 @@ import com.orientechnologies.orient.core.sql.command.OCommandInsert;
  */
 public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFactory {
 
-  private static final Map<String, Class<? extends OCommandExecutorSQLAbstract>> COMMANDS;
+  private static final Map<String, Class<? extends OCommandExecutor>> COMMANDS;
 
   static {
 
-    final Map<String, Class<? extends OCommandExecutorSQLAbstract>> commands = new HashMap<String, Class<? extends OCommandExecutorSQLAbstract>>();
+    final Map<String, Class<? extends OCommandExecutor>> commands = new HashMap<String, Class<? extends OCommandExecutor>>();
     
     // NEW ANTLR COMMANDS
     commands.put(OCommandAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,OCommandAlterClass.class);
+    
+    // NEW ANTLR COMMANDS : still uncomplete
     //commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
+    commands.put(OCommandSelect.KEYWORD_SELECT, OCommandSelect.class);
     
     
     // OLD REPLACED COMMANDS 
     //commands.put(OCommandExecutorSQLAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,OCommandExecutorSQLAlterClass.class);
     commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
+    //commands.put(OCommandExecutorSQLSelect.KEYWORD_SELECT, OCommandExecutorSQLSelect.class);
     
     // OLD MANUAL PARSING COMMANDS
     commands.put(OCommandExecutorSQLAlterDatabase.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterDatabase.KEYWORD_DATABASE,
         OCommandExecutorSQLAlterDatabase.class);
-    commands.put(OCommandExecutorSQLSelect.KEYWORD_SELECT, OCommandExecutorSQLSelect.class);
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
     commands.put(OCommandExecutorSQLUpdate.KEYWORD_UPDATE, OCommandExecutorSQLUpdate.class);
     commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
@@ -107,8 +112,8 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
   /**
    * {@inheritDoc}
    */
-  public OCommandExecutorSQLAbstract createCommand(final String name) throws OCommandExecutionException {
-    final Class<? extends OCommandExecutorSQLAbstract> clazz = COMMANDS.get(name);
+  public OCommandExecutor createCommand(final String name) throws OCommandExecutionException {
+    final Class<? extends OCommandExecutor> clazz = COMMANDS.get(name);
 
     if (clazz == null) {
       throw new OCommandExecutionException("Unknowned command name :" + name);

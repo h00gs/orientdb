@@ -252,17 +252,17 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     final List<Object[]> entries = new ArrayList<Object[]>();
     
     //parsing
-    target = SQLGrammarUtils.visit(candidate.word());
+    target = candidate.word().getText();
     if(candidate.CLUSTER() != null){
       target = "CLUSTER:"+target;
     }else  if(candidate.INDEX()!= null){
       target = "INDEX:"+target;
     }
     
-    for(OSQLParser.WordContext wc : candidate.commandInsertIntoFields().word()){
-      fields.add(SQLGrammarUtils.visit(wc));
+    for(OSQLParser.WordContext wc : candidate.insertFields().word()){
+      fields.add(wc.getText());
     }
-    for(OSQLParser.CommandInsertIntoEntryContext entry : candidate.commandInsertIntoEntry()){
+    for(OSQLParser.InsertEntryContext entry : candidate.insertEntry()){
       final List<OSQLParser.ExpressionContext> exps = entry.expression();
       final Object[] values = new Object[exps.size()];
       for(int i=0;i<values.length;i++){
@@ -271,8 +271,8 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       entries.add(values);
     }
     String cluster = null;
-    if(candidate.commandInsertIntoCluster() != null){
-      cluster = candidate.commandInsertIntoCluster().word().getText();
+    if(candidate.insertCluster() != null){
+      cluster = candidate.insertCluster().word().getText();
     }
     
     this.target = target;
@@ -288,9 +288,9 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     final List<Object> values = new ArrayList<Object>();
     
     //parsing
-    target = SQLGrammarUtils.visit(candidate.word());
-    for(OSQLParser.CommandInsertIntoSetContext entry : candidate.commandInsertIntoSet()){
-      final String att = SQLGrammarUtils.visit(entry.word());
+    target = candidate.word().getText();
+    for(OSQLParser.InsertSetContext entry : candidate.insertSet()){
+      final String att = entry.word().getText();
       fields.add(att);
       final OSQLParser.ExpressionContext exp = entry.expression();
       values.add(SQLGrammarUtils.visit(exp));
@@ -300,8 +300,8 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     entries.add(values.toArray());
     
     String cluster = null;
-    if(candidate.commandInsertIntoCluster() != null){
-      cluster = candidate.commandInsertIntoCluster().word().getText();
+    if(candidate.insertCluster()!= null){
+      cluster = candidate.insertCluster().word().getText();
     }
     
     this.target = target;

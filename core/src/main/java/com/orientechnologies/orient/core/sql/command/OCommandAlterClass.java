@@ -31,7 +31,6 @@ import com.orientechnologies.orient.core.metadata.schema.OClass.ATTRIBUTES;
 import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
-import com.orientechnologies.orient.core.sql.OCommandExecutorSQLAbstract;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
@@ -44,7 +43,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * @author Johann Sorel (Geomatys)
  * 
  */
-public class OCommandAlterClass extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest{
+public class OCommandAlterClass extends OCommandAbstract implements OCommandDistributedReplicateRequest{
   public static final String KEYWORD_ALTER = "ALTER";
   public static final String KEYWORD_CLASS = "CLASS";
 
@@ -67,7 +66,6 @@ public class OCommandAlterClass extends OCommandExecutorSQLAbstract implements O
 
     //ANTLR parsing
     final String sql = ((OCommandRequestText) iRequest).getText();
-    System.err.println("|||||||||||||||||||||| "+sql);
     final ParseTree tree = OSQL.compileExpression(sql);
     if(!(tree instanceof OSQLParser.CommandContext)){
       throw new OException("Parse error, query is not a valid INSERT INTO.");
@@ -87,7 +85,7 @@ public class OCommandAlterClass extends OCommandExecutorSQLAbstract implements O
     if(candidate.NULL() != null){
       value = null;
     }else{
-      value = candidate.commandAlterClassCWord().getText();
+      value = candidate.cword().getText();
     }
     
     return this;

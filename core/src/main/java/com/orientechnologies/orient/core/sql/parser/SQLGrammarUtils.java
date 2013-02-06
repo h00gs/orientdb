@@ -24,8 +24,15 @@ import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
+import com.orientechnologies.orient.core.sql.model.OAnd;
 import com.orientechnologies.orient.core.sql.model.OCollection;
+import com.orientechnologies.orient.core.sql.model.OEquals;
+import com.orientechnologies.orient.core.sql.model.OName;
+import com.orientechnologies.orient.core.sql.model.OIsNotNull;
+import com.orientechnologies.orient.core.sql.model.OIsNull;
 import com.orientechnologies.orient.core.sql.model.OMap;
+import com.orientechnologies.orient.core.sql.model.ONot;
+import com.orientechnologies.orient.core.sql.model.OOr;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,17 +96,19 @@ public final class SQLGrammarUtils {
       return visit((CollectionContext)candidate);
     }else if(candidate instanceof UnsetContext){
       return visit((UnsetContext)candidate);
+    }else if(candidate instanceof FilterContext){
+      return visit((FilterContext)candidate);
     }else{
       throw new OException("Unexpected parse tree element :"+candidate.getClass()+" "+candidate);
     }
   }
   
-  public static Object visit(ExpressionContext candidate){
+  public static OExpression visit(ExpressionContext candidate){
     final int nbChild = candidate.getChildCount();
-    final List<Object> elements = new ArrayList<Object>(nbChild);
+    final List<OExpression> elements = new ArrayList<OExpression>(nbChild);
     for(int i=0;i<nbChild;i++){
       final ParseTree child = candidate.getChild(i);
-      elements.add(visit(child));
+      elements.add((OExpression)visit(child));
     }
     
     if(nbChild == 1){
@@ -120,8 +129,8 @@ public final class SQLGrammarUtils {
     
   }
   
-  public static String visit(WordContext candidate){
-    return candidate.WORD().getText();
+  public static OName visit(WordContext candidate){
+    return new OName(candidate.WORD().getText());
   }
   
   public static OUnset visit(UnsetContext candidate){
@@ -152,7 +161,7 @@ public final class SQLGrammarUtils {
     return new OMap(map);
   }
   
-  public static OExpression visit(LiteralContext candidate){
+  public static OLiteral visit(LiteralContext candidate){
     if(candidate.TEXT() != null){
       String txt =candidate.TEXT().getText();
       txt = txt.substring(1,txt.length()-1);
@@ -175,17 +184,79 @@ public final class SQLGrammarUtils {
   }
   
   public static OFunction visit(FunctionCallContext candidate){
-    final String name = visit( ((WordContext)candidate.getChild(0)) );
+    final String name = ((WordContext)candidate.getChild(0)).getText();
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
     return new OFunction(name, args);
   }
   
   public static OMethod visit(MethodCallContext candidate){
-    final String name = visit( ((WordContext)candidate.getChild(1)) );
+    final String name = ((WordContext)candidate.getChild(1)).getText();
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(2)) );
     return new OMethod(name, null, args);
   }
     
+  public static OExpression visit(OSQLParser.ProjectionContext candidate) {
+    
+    OExpression exp;
+    if(candidate.word() != null){
+      exp = new OName(candidate.word().getText());
+    }else{
+      throw new OException("Unknowned command " + candidate.getClass()+" "+candidate);
+    }
+    
+    return exp;
+  }
+  
+  public static OExpression visit(OSQLParser.FilterContext candidate){
+    final int nbChild = candidate.getChildCount();
+    if(nbChild == 1){
+      //can be a word, literal, functionCall
+      return (OExpression) visit(candidate.getChild(0));
+    }else if(nbChild == 2){
+      //can be :
+      //filter filterAnd
+      //filter filterOr
+      //NOT filter
+      if(candidate.filterAnd() != null){
+        return new OAnd(
+                (OExpression)visit(candidate.getChild(0)), 
+                (OExpression)visit(candidate.filterAnd().filter()));
+      }else if(candidate.filterOr() != null){
+        return new OOr(
+                (OExpression)visit(candidate.getChild(0)), 
+                (OExpression)visit(candidate.filterOr().filter()));
+      }else if(candidate.NOT() != null){
+        return new ONot(
+                (OExpression)visit(candidate.getChild(1)));
+      }else{
+        throw new OException("Unexpected arguments");
+      }
+    }else if(nbChild == 3){
+      //can be :
+      // '(' filter ')'
+      //filter EQUALS filter
+      //filter IS NULL
+      if(candidate.EQUALS() != null){
+        return new OEquals(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.IS()!= null){
+        return new OIsNull(
+              (OExpression) visit(candidate.getChild(0)));
+      }else{
+        return (OExpression) visit(candidate.getChild(1));
+      }
+      
+    }else if(nbChild == 4){
+      //can be :
+      //filter IS NOT NULL
+      return new OIsNotNull(
+              (OExpression) visit(candidate.getChild(0)));
+    }else{
+      throw new OException("Unexpected number of arguments");
+    }
+  }
+  
   public static List<OExpression> visit(ArgumentsContext candidate){
     final int nbChild = candidate.getChildCount();
     final List<OExpression> elements = new ArrayList<OExpression>(nbChild);

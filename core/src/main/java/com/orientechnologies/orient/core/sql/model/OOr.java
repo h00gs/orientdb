@@ -18,37 +18,53 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import java.util.Collections;
-import java.util.List;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OFunction extends OExpressionWithChildren {
-  
-  private final String name;
-  
-  public OFunction(String name, List<OExpression> arguments){
-    this(name,null,arguments);
+public class OOr extends OExpressionWithChildren{
+
+  public OOr(OExpression left, OExpression right) {
+    this(null,left,right);
+  }
+
+  public OOr(String alias, OExpression left, OExpression right) {
+    super(alias,left,right);
   }
   
-  public OFunction(String name, String alias, List<OExpression> arguments){
-    super(alias,arguments);
-    this.name = name;
+  public OExpression getLeft(){
+    return children.get(0);
   }
   
-  public String getName(){
-    return name;
+  public OExpression getRight(){
+    return children.get(1);
   }
   
-  public List<OExpression> getArguments(){
-    return children;
+  @Override
+  protected String thisToString() {
+    return "(Or)";
   }
 
   @Override
   public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    final Object objLeft = children.get(0).evaluate(context, candidate);
+    if(!(objLeft instanceof Boolean)){
+      //can not combine non boolean values
+      return false;
+    }else if(((Boolean)objLeft)){
+      //no need to evaluate the right side
+      return true;
+    }
+    final Object objRight = children.get(1).evaluate(context, candidate);
+    if(!(objRight instanceof Boolean)){
+      //can not combine non boolean values
+      return false;
+    }else if(((Boolean)objRight)){
+      return true;
+    }
+    
+    return false;
   }
 
   @Override
@@ -60,18 +76,6 @@ public class OFunction extends OExpressionWithChildren {
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);
   }
-  
-  @Override
-  protected String thisToString() {
-    return "(Function) "+name;
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 89 * hash + (this.name != null ? this.name.hashCode() : 0);
-    return hash;
-  }
 
   @Override
   public boolean equals(Object obj) {
@@ -81,12 +85,7 @@ public class OFunction extends OExpressionWithChildren {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final OFunction other = (OFunction) obj;
-    if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
-      return false;
-    }
     return super.equals(obj);
   }
-  
   
 }

@@ -25,6 +25,9 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
  */
 public interface OExpression {
   
+  public static final OExpression INCLUDE = new Constant(true);
+  public static final OExpression EXCLUDE = new Constant(false);
+  
   Object evaluate(OCommandContext context, Object candidate);
   
   String getAlias();
@@ -38,5 +41,53 @@ public interface OExpression {
   OIndexResult searchIndex(OClass clazz ,OSortBy[] sorts);
   
   Object accept(OExpressionVisitor visitor, Object data);
+  
+  public static final class Constant extends OExpressionAbstract{
+
+    private final boolean value;
+
+    public Constant(boolean value) {
+      this.value = value;
+    }
+    
+    @Override
+    protected String thisToString() {
+      if(value){
+        return "INCLUDE";
+      }else{
+        return "EXCLUDE";
+      }
+    }
+
+    @Override
+    public Object evaluate(OCommandContext context, Object candidate) {
+      return Boolean.TRUE;
+    }
+
+    @Override
+    public boolean isContextFree() {
+      return true;
+    }
+
+    @Override
+    public boolean isDocumentFree() {
+      return true;
+    }
+
+    @Override
+    public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+      return null;
+    }
+
+    @Override
+    public Object accept(OExpressionVisitor visitor, Object data) {
+      if(value){
+        return visitor.visitInclude(this, data);
+      }else{
+        return visitor.visitExclude(this, data);
+      }
+    }
+    
+  }
   
 }

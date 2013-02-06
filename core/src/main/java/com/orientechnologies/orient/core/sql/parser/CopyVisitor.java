@@ -16,16 +16,22 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
+import com.orientechnologies.orient.core.sql.model.OAnd;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OContextVariable;
+import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
-import com.orientechnologies.orient.core.sql.model.OField;
+import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OFunction;
+import com.orientechnologies.orient.core.sql.model.OIsNotNull;
+import com.orientechnologies.orient.core.sql.model.OIsNull;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.OMethod;
+import com.orientechnologies.orient.core.sql.model.ONot;
 import com.orientechnologies.orient.core.sql.model.OOperator;
+import com.orientechnologies.orient.core.sql.model.OOr;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,7 +69,7 @@ public class CopyVisitor implements OExpressionVisitor {
   }
 
   @Override
-  public Object visit(OField candidate, Object data) {
+  public Object visit(OName candidate, Object data) {
     //fields are immutable
     return candidate;
   }
@@ -116,6 +122,55 @@ public class CopyVisitor implements OExpressionVisitor {
     throw new UnsupportedOperationException("Unknowned expression :"+candidate.getClass());
   }
 
-  
-  
+  @Override
+  public Object visit(OAnd candidate, Object data) {
+    return new OAnd(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOr candidate, Object data) {
+    return new OOr(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(ONot candidate, Object data) {
+    return new ONot(candidate.getAlias(), 
+            (OExpression)candidate.getExpression().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OEquals candidate, Object data) {
+    return new OEquals(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OIsNull candidate, Object data) {
+    return new OIsNull(candidate.getAlias(), 
+            (OExpression)candidate.getExpression().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OIsNotNull candidate, Object data) {
+    return new OIsNotNull(candidate.getAlias(), 
+            (OExpression)candidate.getExpression().accept(this,data));
+  }
+
+  @Override
+  public Object visitInclude(OExpression candidate, Object data) {
+    //inmutable
+    return candidate;
+  }
+
+  @Override
+  public Object visitExclude(OExpression candidate, Object data) {
+    //inmutable
+    return candidate;
+  }
+
 }

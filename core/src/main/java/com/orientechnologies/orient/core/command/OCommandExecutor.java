@@ -71,4 +71,10 @@ public interface OCommandExecutor {
    * Returns true if the command doesn't change the database, otherwise false.
    */
   public boolean isIdempotent();
+  
+  /**
+   * @return String description of the command syntax.
+   */
+  public String getSyntax();
+  
 }

@@ -26,21 +26,21 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
  * 
  * @author Johann Sorel (Geomatys)
  */
-public final class OField extends OExpressionAbstract {
+public final class OName extends OExpressionAbstract {
 
-  private final String fieldName;
+  private final String name;
 
-  public OField(String name) {
+  public OName(String name) {
     this(name,null);
   }
   
-  public OField(String name, String alias) {
+  public OName(String name, String alias) {
     super(alias);
-    this.fieldName = name;
+    this.name = name;
   }
 
-  public Object getFieldName() {
-    return fieldName;
+  public Object getName() {
+    return name;
   }
   
   @Override
@@ -50,7 +50,7 @@ public final class OField extends OExpressionAbstract {
     }
     if(candidate instanceof ODocument){
       final ODocument doc = (ODocument) candidate;
-      return doc.field(fieldName);
+      return doc.field(name);
     }
     return null;
   }
@@ -77,7 +77,31 @@ public final class OField extends OExpressionAbstract {
 
   @Override
   protected String thisToString() {
-    return "(Field) "+fieldName;
+    return "(Name) "+name;
   }
+
+  @Override
+  public int hashCode() {
+    int hash = 7;
+    hash = 29 * hash + (this.name != null ? this.name.hashCode() : 0);
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final OName other = (OName) obj;
+    if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
+      return false;
+    }
+    return true;
+  }
+  
+  
   
 }

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package com.orientechnologies.orient.core.sql.parser;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
@@ -23,6 +24,7 @@ import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OMap;
+import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,8 +50,8 @@ public class SQLParserTest {
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
-    assertEquals(objs.get(0), "hello");
-    assertEquals(objs.get(1), "world");
+    assertEquals(objs.get(0), new OName("hello"));
+    assertEquals(objs.get(1), new OName("world"));
   }
   
   @Test
@@ -58,7 +60,7 @@ public class SQLParserTest {
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
-    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(0),new OName("hello"));
     assertEquals(objs.get(1),new OLiteral("world"));
   }
   
@@ -68,7 +70,7 @@ public class SQLParserTest {
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
-    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(0),new OName("hello"));
     assertEquals(objs.get(1),new OLiteral("world"));
   }
   
@@ -78,7 +80,7 @@ public class SQLParserTest {
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
-    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(0),new OName("hello"));
     assertEquals(objs.get(1),new OLiteral("world'') test"));
   }
   
@@ -115,7 +117,7 @@ public class SQLParserTest {
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
-    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(0),new OName("hello"));
     assertEquals(objs.get(1),new OLiteral(null));
   }
   
@@ -125,7 +127,7 @@ public class SQLParserTest {
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
-    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(0),new OName("hello"));
     assertEquals(objs.get(1),new OUnset());
   }
   
@@ -191,14 +193,10 @@ public class SQLParserTest {
   
   @Test
   public void testMethodStackCall(){
-    final String sql = "'text'.charAt(3).toString()";
-    final ParseTree tree = OSQL.compileExpression(sql);
-    System.out.println(OSQL.toString(tree));
-    
+    final String sql = "'text'.charAt(3).toString()";    
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
-    System.out.println(objs.get(0));
     
     OMethod sm = new OMethod("charAt", 
                   (OExpression)new OLiteral("text"), 
@@ -211,10 +209,10 @@ public class SQLParserTest {
     assertEquals(objs.get(0),m);
   }
   
-  @Test
   public void testInsertIntoByValues(){
     final String sql = "INSERT INTO table(att1,att2,att3) VALUES ('a','b',3), ('d','e',6)";
-    final OCommandInsert command = (OCommandInsert) OSQL.parse(sql);
+    OCommandInsert command = new OCommandInsert();
+    command.parse(new OCommandSQL(sql));
     assertEquals(command.getTarget(),
             "table");
     assertEquals(command.getFields(),
@@ -226,11 +224,11 @@ public class SQLParserTest {
             );
     
   }
-    
-  @Test
+  
   public void testInsertIntoBySet(){
     final String sql = "INSERT INTO table SET att1='a',att2='b',att3=3";
-    final OCommandInsert command = (OCommandInsert) OSQL.parse(sql);
+    OCommandInsert command = new OCommandInsert();
+    command.parse(new OCommandSQL(sql));
     assertEquals(command.getTarget(),
             "table");
     assertEquals(command.getFields(),
@@ -242,7 +240,6 @@ public class SQLParserTest {
     
   }
   
-  @Test
   public void testInsertIntoBySubQuery(){
     final String sql = "INSERT INTO test SET names = (select name from OUser)";
     

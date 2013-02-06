@@ -169,6 +169,10 @@
     <copy todir="${db.release}/lib" flatten="true">
       <fileset dir="distributed/lib" includes="*.jar"/>
     </copy>
+    
+    <copy todir="${db.release}/lib" flatten="true">
+      <fileset dir="extlib" includes="*.jar"/>
+    </copy>
 
     <copy todir="${db.release}/benchmarks" flatten="true">
       <fileset dir="." includes="server/benchmarks/*"/>

@@ -28,7 +28,7 @@ public interface OExpressionVisitor {
   
   Object visit(OMap candidate, Object data);
   
-  Object visit(OField candidate, Object data);
+  Object visit(OName candidate, Object data);
   
   Object visit(OContextVariable candidate, Object data);
   
@@ -40,6 +40,22 @@ public interface OExpressionVisitor {
           
   Object visit(OOperator candidate, Object data);
   
+  Object visit(OAnd candidate, Object data);
+  
+  Object visit(OOr candidate, Object data);
+  
+  Object visit(ONot candidate, Object data);
+  
+  Object visit(OEquals candidate, Object data);
+  
+  Object visit(OIsNull candidate, Object data);
+  
+  Object visit(OIsNotNull candidate, Object data);
+  
   Object visit(OExpression candidate, Object data);
+  
+  Object visitInclude(OExpression candidate, Object data);
+  
+  Object visitExclude(OExpression candidate, Object data);
   
 }

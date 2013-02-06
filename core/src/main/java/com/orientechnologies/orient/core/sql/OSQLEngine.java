@@ -30,6 +30,7 @@ import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OCollections;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilter;
 import com.orientechnologies.orient.core.sql.filter.OSQLTarget;
@@ -248,7 +249,7 @@ public class OSQLEngine {
 		FUNCTION_FACTORIES = null;
 	}
 
-	public OCommandExecutorSQLAbstract getCommand(final String candidate) {
+	public OCommandExecutor getCommand(final String candidate) {
 		final Set<String> names = getCommandNames();
 		String commandName = candidate;
 		boolean found = names.contains(commandName);

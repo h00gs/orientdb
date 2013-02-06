@@ -10,14 +10,42 @@ options {
 
 
 // KEYWORDS -------------------------------------------
+SELECT : S E L E C T ;
 INSERT : I N S E R T ;
+UPDATE : U P D A T E ;
+DELETE : D E L E T E ;
+FROM : F R O M ;
+WHERE : W H E R E ;
 INTO : I N T O ;
 VALUES : V A L U E S ;
+SET : S E T ;
+ADD : A D D ;
+REMOVE : R E M O V E ;
+AND : A N D ;
+OR : O R ;
+ORDER : O R D E R ;
+BY : B Y ;
+LIMIT : L I M I T ;
+RANGE : R A N G E ;
+ASC : A S C ;
+AS : A S;
+DESC : D E S C ;
+OTHIS : '@' T H I S ;
+ORID_ATTR: '@' R I D ;
+OCLASS_ATTR: '@' C L A S S ;
+OVERSION_ATTR: '@' V E R S I O N ;
+OSIZE_ATTR: '@' S I Z E ;
+OTYPE_ATTR: '@' T Y P E ;
 CLUSTER : C L U S T E R ;
 INDEX : I N D E X ;
-SET : S E T ;
+DICTIONARY : D I C T I O N A R Y ;
 ALTER : A L T E R ;
 CLASS : C L A S S ;
+SKIP : S K I P;
+IN : I N ;
+IS : I S ;
+NOT : N O T ;
+GROUP : G R O U P ;
 
 
 // GLOBAL STUFF ---------------------------------------
@@ -120,41 +148,21 @@ UNICODE_ESC
 // PARSER
 //-----------------------------------------------------------------//
     
-word : WORD ;
-
-identifier : IDENTIFIER INT ':' INT;
-
-unset : UNSET;
-
-number
-	: (UNARY^)? (INT|FLOAT)
-	;
-
-map
-  : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE
-  ;
-
-collection
-  : LBRACKET (expression (COMMA expression)*)? RBRACKET
-  ;
-
+word        : WORD ;
+identifier  : IDENTIFIER INT ':' INT;
+unset       : UNSET;
+number    	: (UNARY^)? (INT|FLOAT)	;
+map         : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
+collection  : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 literal	
   : NULL
   | TEXT
 	| number
 	;
 
-arguments
-  : LPAREN (expression (COMMA expression)*)? RPAREN
-  ;
-
-functionCall
-	: word arguments
-	;
-
-methodCall
-	: DOT word arguments*
-	;
+arguments   : LPAREN (expression (COMMA expression)*)? RPAREN ;
+functionCall: word arguments ;
+methodCall  : DOT word arguments* ;
 
 expression
   : literal
@@ -168,41 +176,66 @@ expression
   | expression methodCall
   ;
 
+filterAnd : AND filter ;
+filterOr : OR filter ;
+filter
+  : expression
+  | LPAREN filter RPAREN
+  | filter filterAnd
+  | filter filterOr
+  | NOT filter
+  | filter EQUALS filter
+  | filter IS NULL
+  | filter IS NOT NULL
+  ;
+
 // COMMANDS
 
-commandUnknowned 
-  : expression (expression)*
-  ;
+commandUnknowned : expression (expression)* ;
 
 commandInsertIntoByValues
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word commandInsertIntoCluster? commandInsertIntoFields VALUES commandInsertIntoEntry (COMMA commandInsertIntoEntry)*
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? insertFields VALUES insertEntry (COMMA insertEntry)*
   ;
 commandInsertIntoBySet
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word commandInsertIntoCluster? SET commandInsertIntoSet (COMMA commandInsertIntoSet)*
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? SET insertSet (COMMA insertSet)*
   ;
-commandInsertIntoCluster
-  : CLUSTER word
-  ;
-commandInsertIntoEntry
-  : LPAREN expression (COMMA expression)* RPAREN
-  ;
-commandInsertIntoSet
-  : word EQUALS expression
-  ;
-commandInsertIntoFields
-  : LPAREN word(COMMA word)* RPAREN
-  ;
+insertCluster : CLUSTER word ;
+insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
+insertSet     : word EQUALS expression ;
+insertFields  : LPAREN word(COMMA word)* RPAREN ;
 
-commandAlterClass
-  : ALTER CLASS word word (commandAlterClassCWord|NULL)
+commandAlterClass : ALTER CLASS word word (cword|NULL) ;
+cword             : (word|literal|COMMA) (word|literal|COMMA)* ;
+
+commandSelect
+  : SELECT (projection)* from (WHERE filter)? groupBy? orderBy? skip? limit?
   ;
-commandAlterClassCWord
-  : (word|literal|COMMA) (word|literal|COMMA)*
+projection
+  : ( word
+    | ORID_ATTR
+    | OCLASS_ATTR
+    | OVERSION_ATTR
+    | OSIZE_ATTR
+    | OTYPE_ATTR ) 
+    (alias)?
   ;
+alias          : AS word ;
+from           
+  : FROM 
+    ( ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? word
+    | identifier
+    | collection ) 
+  ;
+groupBy        : GROUP BY word ;
+orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;
+orderByElement : word (ASC|DESC)? ;
+skip           : SKIP INT ;
+limit          : LIMIT INT ;
 
 command
 	: commandUnknowned
   | commandAlterClass
   | commandInsertIntoByValues
   | commandInsertIntoBySet
+  | commandSelect
   ;

@@ -18,37 +18,35 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import java.util.Collections;
-import java.util.List;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OFunction extends OExpressionWithChildren {
-  
-  private final String name;
-  
-  public OFunction(String name, List<OExpression> arguments){
-    this(name,null,arguments);
+public class OIsNotNull extends OExpressionWithChildren{
+
+
+  public OIsNotNull(OExpression exp) {
+    this(null,exp);
+  }
+
+  public OIsNotNull(String alias, OExpression exp) {
+    super(alias,exp);
   }
   
-  public OFunction(String name, String alias, List<OExpression> arguments){
-    super(alias,arguments);
-    this.name = name;
+  public OExpression getExpression(){
+    return children.get(0);
   }
   
-  public String getName(){
-    return name;
-  }
-  
-  public List<OExpression> getArguments(){
-    return children;
+  @Override
+  protected String thisToString() {
+    return "(IsNotNull)";
   }
 
   @Override
   public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    final Object obj = children.get(0).evaluate(context, candidate);
+    return obj != null;
   }
 
   @Override
@@ -60,18 +58,6 @@ public class OFunction extends OExpressionWithChildren {
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);
   }
-  
-  @Override
-  protected String thisToString() {
-    return "(Function) "+name;
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 89 * hash + (this.name != null ? this.name.hashCode() : 0);
-    return hash;
-  }
 
   @Override
   public boolean equals(Object obj) {
@@ -81,12 +67,7 @@ public class OFunction extends OExpressionWithChildren {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final OFunction other = (OFunction) obj;
-    if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
-      return false;
-    }
     return super.equals(obj);
   }
-  
   
 }

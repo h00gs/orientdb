@@ -57,9 +57,9 @@ public abstract class OExpressionAbstract implements OExpression{
       final StringBuilder sb = new StringBuilder();
       sb.append(exp.thisToString());
       
-      if(candidate instanceof OFunction){
-        final OFunction fct = (OFunction) candidate;
-        final List<OExpression> children = fct.getArguments();
+      if(candidate instanceof OExpressionWithChildren){
+        final OExpressionWithChildren fct = (OExpressionWithChildren) candidate;
+        final List<OExpression> children = fct.getChildren();
         //print childrens
         final int nbChild = children.size();
         if(nbChild>0){
