@@ -16,6 +16,8 @@ VALUES : V A L U E S ;
 CLUSTER : C L U S T E R ;
 INDEX : I N D E X ;
 SET : S E T ;
+ALTER : A L T E R ;
+CLASS : C L A S S ;
 
 
 // GLOBAL STUFF ---------------------------------------
@@ -71,14 +73,15 @@ UNSET : '?';
 NULL : N U L L ;
 IDENTIFIER : '#';
 
-TEXT : ('\'' ( ESC_SEQ | ~('\\'|'\'') )* '\'') 
+TEXT : ('\'' ( ESC_SEQ | '\'\'' | ~('\\'|'\'') )* '\'') 
      | ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' );
 
 INT : DIGIT+ ;
 FLOAT
-    :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT?
-    |   '.' ('0'..'9')+ EXPONENT?
-    |   ('0'..'9')+ EXPONENT
+    :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT? ('d'|'f')?
+    |   '.' ('0'..'9')+ EXPONENT? ('d'|'f')?
+    |   ('0'..'9')+ EXPONENT ('d'|'f')?
+    | INT ('d'|'f')
     ;
 
 WORD : LETTER (DIGIT|LETTER)* ;
@@ -165,9 +168,12 @@ expression
   | expression methodCall
   ;
 
+// COMMANDS
+
 commandUnknowned 
   : expression (expression)*
   ;
+
 commandInsertIntoByValues
   : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word commandInsertIntoCluster? commandInsertIntoFields VALUES commandInsertIntoEntry (COMMA commandInsertIntoEntry)*
   ;
@@ -187,8 +193,16 @@ commandInsertIntoFields
   : LPAREN word(COMMA word)* RPAREN
   ;
 
+commandAlterClass
+  : ALTER CLASS word word (commandAlterClassCWord|NULL)
+  ;
+commandAlterClassCWord
+  : (word|literal|COMMA) (word|literal|COMMA)*
+  ;
+
 command
 	: commandUnknowned
+  | commandAlterClass
   | commandInsertIntoByValues
   | commandInsertIntoBySet
   ;

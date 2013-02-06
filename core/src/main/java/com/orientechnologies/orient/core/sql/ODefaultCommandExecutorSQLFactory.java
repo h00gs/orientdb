@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
 
 /**
@@ -34,14 +35,22 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
 
   static {
 
-    // COMMANDS
     final Map<String, Class<? extends OCommandExecutorSQLAbstract>> commands = new HashMap<String, Class<? extends OCommandExecutorSQLAbstract>>();
+    
+    // NEW ANTLR COMMANDS
+    commands.put(OCommandAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,OCommandAlterClass.class);
+    //commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
+    
+    
+    // OLD REPLACED COMMANDS 
+    //commands.put(OCommandExecutorSQLAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,OCommandExecutorSQLAlterClass.class);
+    commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
+    
+    // OLD MANUAL PARSING COMMANDS
     commands.put(OCommandExecutorSQLAlterDatabase.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterDatabase.KEYWORD_DATABASE,
         OCommandExecutorSQLAlterDatabase.class);
     commands.put(OCommandExecutorSQLSelect.KEYWORD_SELECT, OCommandExecutorSQLSelect.class);
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
-    //commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
-    commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
     commands.put(OCommandExecutorSQLUpdate.KEYWORD_UPDATE, OCommandExecutorSQLUpdate.class);
     commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
     commands.put(OCommandExecutorSQLCreateEdge.NAME, OCommandExecutorSQLCreateEdge.class);
@@ -63,8 +72,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         OCommandExecutorSQLCreateClass.class);
     commands.put(OCommandExecutorSQLCreateCluster.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateCluster.KEYWORD_CLUSTER,
         OCommandExecutorSQLCreateCluster.class);
-    commands.put(OCommandExecutorSQLAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,
-        OCommandExecutorSQLAlterClass.class);
     commands.put(OCommandExecutorSQLCreateProperty.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateProperty.KEYWORD_PROPERTY,
         OCommandExecutorSQLCreateProperty.class);
     commands.put(OCommandExecutorSQLAlterProperty.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterProperty.KEYWORD_PROPERTY,

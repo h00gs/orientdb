@@ -24,7 +24,6 @@ import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
-import com.orientechnologies.orient.core.sql.command.OCommandInsert;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.OUnset;
@@ -34,25 +33,23 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
 import java.util.LinkedHashMap;
-import java.util.Map;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public class AntlrToOrientVisitor {
-    
-  public OCommandExecutor visit(CommandContext candidate) {
+public final class SQLGrammarUtils {
+
+  private SQLGrammarUtils() {
+  }
+  
+  
+  public static OCommandExecutor visit(OSQLParser.CommandContext candidate) {
     
     final OCommandExecutor command;
     final Object commandTree = candidate.getChild(0);
-    if(commandTree instanceof CommandUnknownedContext){
-      command = visit((CommandUnknownedContext)commandTree);
-    }else if(commandTree instanceof CommandInsertIntoByValuesContext){
-      command = visit((CommandInsertIntoByValuesContext)commandTree);
-    }else if(commandTree instanceof CommandInsertIntoBySetContext){
-      command = visit((CommandInsertIntoBySetContext)commandTree);
+    if(commandTree instanceof OSQLParser.CommandUnknownedContext){
+      command = visit((OSQLParser.CommandUnknownedContext)commandTree);
     }else{
       throw new OException("Unknowned command " + candidate.getClass()+" "+candidate);
     }
@@ -60,79 +57,20 @@ public class AntlrToOrientVisitor {
     return command;
   }
     
-  private OCommandCustom visit(CommandUnknownedContext candidate){
+  private static OCommandCustom visit(OSQLParser.CommandUnknownedContext candidate){
     //variables
     final List<Object> elements = new ArrayList<Object>();
     
     final int nb = candidate.getChildCount();
     for(int i=0;i<nb;i++){
       final ParseTree child = candidate.getChild(i);
-      elements.add(visit(child));
+      elements.add(SQLGrammarUtils.visit(child));
     }
     
     return new OCommandCustom(elements);
   }
   
-  private OCommandInsert visit(CommandInsertIntoByValuesContext candidate){    
-    //variables
-    String target;
-    final List<String> fields = new ArrayList<String>();
-    final List<Object[]> entries = new ArrayList<Object[]>();
-    
-    //parsing
-    target = visit(candidate.word());
-    if(candidate.CLUSTER() != null){
-      target = "CLUSTER:"+target;
-    }else  if(candidate.INDEX()!= null){
-      target = "INDEX:"+target;
-    }
-    
-    for(WordContext wc : candidate.commandInsertIntoFields().word()){
-      fields.add(visit(wc));
-    }
-    for(CommandInsertIntoEntryContext entry : candidate.commandInsertIntoEntry()){
-      final List<ExpressionContext> exps = entry.expression();
-      final Object[] values = new Object[exps.size()];
-      for(int i=0;i<values.length;i++){
-        values[i] = visit(exps.get(i));
-      }
-      entries.add(values);
-    }
-    String cluster = null;
-    if(candidate.commandInsertIntoCluster() != null){
-      cluster = candidate.commandInsertIntoCluster().word().getText();
-    }
-    
-    return new OCommandInsert(target, cluster, fields, entries);
-  }
-  
-  private OCommandInsert visit(CommandInsertIntoBySetContext candidate){    
-    //variables
-    final String target;
-    final List<String> fields = new ArrayList<String>();
-    final List<Object> values = new ArrayList<Object>();
-    
-    //parsing
-    target = visit(candidate.word());
-    for(CommandInsertIntoSetContext entry : candidate.commandInsertIntoSet()){
-      final String att = visit(entry.word());
-      fields.add(att);
-      final ExpressionContext exp = entry.expression();
-      values.add(visit(exp));
-    }
-    
-    final List<Object[]> entries = new ArrayList<Object[]>();
-    entries.add(values.toArray());
-    
-    String cluster = null;
-    if(candidate.commandInsertIntoCluster() != null){
-      cluster = candidate.commandInsertIntoCluster().word().getText();
-    }
-    
-    return new OCommandInsert(target, cluster, fields, entries);
-  }
-  
-  private Object visit(ParseTree candidate){
+  public static Object visit(ParseTree candidate){
     if(candidate instanceof ExpressionContext){
       return visit((ExpressionContext)candidate);
     }else if(candidate instanceof WordContext){
@@ -156,7 +94,7 @@ public class AntlrToOrientVisitor {
     }
   }
   
-  private Object visit(ExpressionContext candidate){
+  public static Object visit(ExpressionContext candidate){
     final int nbChild = candidate.getChildCount();
     final List<Object> elements = new ArrayList<Object>(nbChild);
     for(int i=0;i<nbChild;i++){
@@ -182,20 +120,20 @@ public class AntlrToOrientVisitor {
     
   }
   
-  private String visit(WordContext candidate){
+  public static String visit(WordContext candidate){
     return candidate.WORD().getText();
   }
   
-  private OUnset visit(UnsetContext candidate){
+  public static OUnset visit(UnsetContext candidate){
     return new OUnset();
   }
   
-  private OLiteral visit(IdentifierContext candidate){
+  public static OLiteral visit(IdentifierContext candidate){
     final ORecordId oid = new ORecordId(candidate.getText());
     return new OLiteral(oid);
   } 
   
-  private OCollection visit(CollectionContext candidate) {
+  public static OCollection visit(CollectionContext candidate) {
     final List col = new ArrayList();
     final List<ExpressionContext> values = candidate.expression();
     for (int i = 0, n = values.size(); i < n; i++) {
@@ -204,7 +142,7 @@ public class AntlrToOrientVisitor {
     return new OCollection(col);
   }
 
-  private OMap visit(MapContext candidate) {
+  public static OMap visit(MapContext candidate) {
     final LinkedHashMap map = new LinkedHashMap();
     final List<LiteralContext> keys = candidate.literal();
     final List<ExpressionContext> values = candidate.expression();
@@ -214,7 +152,7 @@ public class AntlrToOrientVisitor {
     return new OMap(map);
   }
   
-  private OExpression visit(LiteralContext candidate){
+  public static OExpression visit(LiteralContext candidate){
     if(candidate.TEXT() != null){
       String txt =candidate.TEXT().getText();
       txt = txt.substring(1,txt.length()-1);
@@ -236,19 +174,19 @@ public class AntlrToOrientVisitor {
     }
   }
   
-  private OFunction visit(FunctionCallContext candidate){
+  public static OFunction visit(FunctionCallContext candidate){
     final String name = visit( ((WordContext)candidate.getChild(0)) );
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
     return new OFunction(name, args);
   }
   
-  private OMethod visit(MethodCallContext candidate){
+  public static OMethod visit(MethodCallContext candidate){
     final String name = visit( ((WordContext)candidate.getChild(1)) );
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(2)) );
     return new OMethod(name, null, args);
   }
     
-  private List<OExpression> visit(ArgumentsContext candidate){
+  public static List<OExpression> visit(ArgumentsContext candidate){
     final int nbChild = candidate.getChildCount();
     final List<OExpression> elements = new ArrayList<OExpression>(nbChild);
     for(int i=1;i<nbChild-1;i+=2){

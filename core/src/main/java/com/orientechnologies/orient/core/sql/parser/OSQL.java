@@ -52,10 +52,9 @@ public class OSQL {
       final OSQLParser.CommandContext sentence = parser.command();
       return sentence;
   }
-
+  
   public static OCommandExecutor toOrient(ParseTree tree){
-    final AntlrToOrientVisitor visitor = new AntlrToOrientVisitor();
-    return visitor.visit((OSQLParser.CommandContext)tree);
+    return SQLGrammarUtils.visit((OSQLParser.CommandContext)tree);
   }
   
   public static String toString(ParseTree node){

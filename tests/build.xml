@@ -54,6 +54,9 @@
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
                 </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
+                </fileset>
             </classpath>
             <xmlfileset dir="${project.build}/com/orientechnologies/orient/test/database/auto"
                         includes="memory-test-db-from-scratch.xml"/>
@@ -67,6 +70,9 @@
                 <pathelement location="${project.build}"/>
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
+                </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
                 </fileset>
             </classpath>
             <xmlfileset dir="${project.build}/com/orientechnologies/orient/test/database/auto"
@@ -83,6 +89,9 @@
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
                 </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
+                </fileset>
             </classpath>
             <xmlfileset dir="${project.build}/com/orientechnologies/orient/test/database/auto"
                         includes="local-test-db-from-scratch.xml"/>
@@ -98,6 +107,9 @@
                 <pathelement location="${project.build}"/>
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
+                </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
                 </fileset>
             </classpath>
             <xmlfileset dir="${project.build}/com/orientechnologies/orient/test/database/auto"
@@ -133,6 +145,9 @@
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
                 </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
+                </fileset>
             </classpath>
             <xmlfileset dir="${project.build}/com/orientechnologies/orient/test/database/auto"
                         includes="remote-test-db-from-scratch.xml"/>
@@ -160,6 +175,9 @@
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
                 </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
+                </fileset>
             </classpath>
             <sysproperty key="url" value="local:../${orient.path}/databases/demo"/>
             <jvmarg value="-server"/>
@@ -172,6 +190,9 @@
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
                 </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
+                </fileset>
             </classpath>
             <sysproperty key="url" value="local:../${orient.path}/databases/demo"/>
             <jvmarg value="-server"/>
@@ -183,6 +204,9 @@
                 <pathelement location="${project.build}"/>
                 <fileset dir="${global.lib}">
                     <include name="*.jar"/>
+                </fileset>
+                <fileset dir="../extlib">
+                    <include name="**/*.jar"/>
                 </fileset>
             </classpath>
             <sysproperty key="url" value="local:../${orient.path}/databases/demo"/>

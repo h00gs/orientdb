@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.antlr.v4.runtime.tree.ParseTree;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
@@ -69,6 +70,16 @@ public class SQLParserTest {
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0),"hello");
     assertEquals(objs.get(1),new OLiteral("world"));
+  }
+  
+  @Test
+  public void testLiteralText3(){
+    final String sql = "hello 'world'') test'";
+    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final List<Object> objs = command.getArguments();
+    assertEquals(objs.size(),2);
+    assertEquals(objs.get(0),"hello");
+    assertEquals(objs.get(1),new OLiteral("world'') test"));
   }
   
   @Test
@@ -181,9 +192,13 @@ public class SQLParserTest {
   @Test
   public void testMethodStackCall(){
     final String sql = "'text'.charAt(3).toString()";
+    final ParseTree tree = OSQL.compileExpression(sql);
+    System.out.println(OSQL.toString(tree));
+    
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
+    System.out.println(objs.get(0));
     
     OMethod sm = new OMethod("charAt", 
                   (OExpression)new OLiteral("text"), 
