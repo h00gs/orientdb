@@ -30,7 +30,12 @@ public class OMap extends OExpressionAbstract {
   private final LinkedHashMap<OLiteral,OExpression> map;
 
   public OMap(LinkedHashMap<OLiteral,OExpression> map) {
-    this.map = map;
+    this(null,map);
+  }
+  
+  public OMap(String alias, LinkedHashMap<OLiteral,OExpression> map) {
+    super(alias);
+    this.map = new LinkedHashMap<OLiteral, OExpression>(map);
   }
 
   public LinkedHashMap<OLiteral, OExpression> getMap() {
@@ -90,5 +95,9 @@ public class OMap extends OExpressionAbstract {
     return visitor.visit(this, data);
   }
 
+  @Override
+  public OMap copy() {
+    return new OMap(alias,getMap());
+  }
   
 }

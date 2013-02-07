@@ -17,7 +17,8 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import java.util.List;
 
 /**
  *
@@ -26,18 +27,28 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
  */
 public class OSQLMethodPrefix extends OAbstractSQLMethod {
 
-    public static final String NAME = "prefix";
+  public static final String NAME = "prefix";
 
-    public OSQLMethodPrefix() {
-        super(NAME, 1);
-    }
+  public OSQLMethodPrefix() {
+    super(NAME, 1);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        final Object v = getParameterValue(iRecord, iMethodParams[0].toString());
-        if (v != null) {
-            ioResult = ioResult != null ? v + ioResult.toString() : null;
-        }
-        return ioResult;
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final List<OExpression> arguments = getMethodArguments();
+    Object value = getSource().evaluate(context, candidate);
+
+    final Object v = arguments.get(0).evaluate(context, candidate).toString();
+    if (v != null) {
+      value = value != null ? v + value.toString() : null;
     }
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodPrefix copy() {
+    final OSQLMethodPrefix method = new OSQLMethodPrefix();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

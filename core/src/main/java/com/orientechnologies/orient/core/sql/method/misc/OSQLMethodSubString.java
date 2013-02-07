@@ -17,9 +17,8 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.ORecordInternal;
-import com.orientechnologies.orient.core.sql.OSQLHelper;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import java.util.List;
 
 /**
  * 
@@ -35,20 +34,29 @@ public class OSQLMethodSubString extends OAbstractSQLMethod {
   }
 
   @Override
-  public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-    final Object param0 = OSQLHelper.getValue(iMethodParams[0].toString(), (ORecordInternal<?>) iCurrentRecord.getRecord(),
-        iContext);
-
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final List<OExpression> arguments = getMethodArguments();
+    Object value = getSource().evaluate(context, candidate);
+    
+    final Object param0 = arguments.get(0).evaluate(context, candidate);
+    
     if (param0 != null)
-      if (iMethodParams.length > 1) {
-        final Object param1 = OSQLHelper.getValue(iMethodParams[1].toString(), (ORecordInternal<?>) iCurrentRecord.getRecord(),
-            iContext);
+      if (arguments.size() > 1) {
+        final Object param1 = arguments.get(1).evaluate(context, candidate);
 
-        ioResult = ioResult != null ? ioResult.toString().substring(Integer.parseInt(param0.toString()),
+        value = value != null ? value.toString().substring(Integer.parseInt(param0.toString()),
             Integer.parseInt(param1.toString())) : null;
       } else {
-        ioResult = ioResult != null ? ioResult.toString().substring(Integer.parseInt(param0.toString())) : null;
+        value = value != null ? value.toString().substring(Integer.parseInt(param0.toString())) : null;
       }
-    return ioResult;
+    return value;
   }
+  
+  @Override
+  public OSQLMethodSubString copy() {
+    final OSQLMethodSubString method = new OSQLMethodSubString();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
+  
 }

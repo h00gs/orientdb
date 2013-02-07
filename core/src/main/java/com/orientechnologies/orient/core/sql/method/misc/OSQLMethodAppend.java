@@ -18,6 +18,8 @@ package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
  *
@@ -26,19 +28,33 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
  */
 public class OSQLMethodAppend extends OAbstractSQLMethod {
 
-    public static final String NAME = "append";
+  public static final String NAME = "append";
 
-    public OSQLMethodAppend() {
-        super(NAME, 1);
-    }
+  public OSQLMethodAppend() {
+    super(NAME, 1);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        final Object v = getParameterValue(iRecord, iMethodParams[0].toString());
-        if (v != null) {
-            ioResult = ioResult != null ? ioResult.toString() + v : null;
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    String concat = null;
+    for (OExpression exp : children) {
+      final Object obj = exp.evaluate(context, candidate);
+      if (obj != null) {
+        if (concat == null) {
+          concat = obj.toString();
+        } else {
+          concat += obj.toString();
         }
-        return ioResult;
+      }
     }
-    
+    return concat;
+  }
+
+  @Override
+  public OSQLMethodAppend copy() {
+    final OSQLMethodAppend method = new OSQLMethodAppend();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
+  
 }

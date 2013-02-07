@@ -122,6 +122,9 @@ public class OEquals extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
-  
+  @Override
+  public OEquals copy() {
+    return new OEquals(alias, getLeft(), getRight());
+  }
   
 }

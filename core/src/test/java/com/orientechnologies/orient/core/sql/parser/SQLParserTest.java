@@ -19,9 +19,9 @@ import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
-import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.OName;
@@ -45,7 +45,7 @@ import org.testng.annotations.Test;
 public class SQLParserTest {
   
   @Test
-  public void testWord(){
+  public void testWord() throws SyntaxException{
     final String sql = "hello world";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -55,7 +55,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralText1(){
+  public void testLiteralText1() throws SyntaxException{
     final String sql = "hello \"world\"";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -65,7 +65,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralText2(){
+  public void testLiteralText2() throws SyntaxException{
     final String sql = "hello 'world'";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -75,7 +75,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralText3(){
+  public void testLiteralText3() throws SyntaxException{
     final String sql = "hello 'world'') test'";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -85,7 +85,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralNumber(){
+  public void testLiteralNumber() throws SyntaxException{
     String sql = "2013";
     OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     List<Object> objs = command.getArguments();
@@ -112,7 +112,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralNull(){
+  public void testLiteralNull() throws SyntaxException{
     final String sql = "hello null";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -122,7 +122,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testUnset(){
+  public void testUnset() throws SyntaxException{
     final String sql = "hello ?";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -132,7 +132,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testCollection(){
+  public void testCollection() throws SyntaxException{
     final String sql = "[123,'abc',\"def\"]";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -145,7 +145,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testMap(){
+  public void testMap() throws SyntaxException{
     final String sql = "{'att1':123,'att2':{'satt1':456}}";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -167,7 +167,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testFunction(){
+  public void testFunction() throws SyntaxException{
     final String sql = "call( 4 , \"sometext\" )";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -178,35 +178,42 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testMethodCall(){
-    final String sql = "'text'.charAt(3)";
+  public void testMethodCall() throws SyntaxException{
+    final String sql = "'text'.charAt(2)";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
-    assertEquals(objs.get(0),
-               new OMethod("charAt", 
-                  (OExpression)new OLiteral("text"), 
-                  Arrays.asList(
-                    (OExpression)new OLiteral(3)))
-               );
+    final OSQLMethod m = SQLGrammarUtils.createMethod("charAt");
+    m.getArguments().add(new OLiteral("text"));
+    m.getArguments().add(new OLiteral(2));
+    assertEquals(objs.get(0),m);
+    
+    //test method call
+    final Object obj = ((OExpression)objs.get(0)).evaluate(null, null);
+    assertEquals(obj, "x");
+    
   }
   
   @Test
-  public void testMethodStackCall(){
-    final String sql = "'text'.charAt(3).toString()";    
+  public void testMethodStackCall() throws SyntaxException{
+    final String sql = "'t213t'.substring(1,4).asInteger()";    
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
     
-    OMethod sm = new OMethod("charAt", 
-                  (OExpression)new OLiteral("text"), 
-                  Arrays.asList(
-                    (OExpression)new OLiteral(3)));
-    OMethod m = new OMethod("toString", 
-                  (OExpression)sm, 
-                  new ArrayList<OExpression>());
+    final OSQLMethod sm = SQLGrammarUtils.createMethod("substring");
+    sm.getArguments().add(new OLiteral("t213t"));
+    sm.getArguments().add(new OLiteral(1));
+    sm.getArguments().add(new OLiteral(4));
     
+    final OSQLMethod m = SQLGrammarUtils.createMethod("asInteger");
+    m.getArguments().add(sm);
+        
     assertEquals(objs.get(0),m);
+    
+    //test method call
+    final Object obj = ((OExpression)objs.get(0)).evaluate(null, null);
+    assertEquals(obj, 213);
   }
   
   public void testInsertIntoByValues(){

@@ -31,15 +31,15 @@ public final class OName extends OExpressionAbstract {
   private final String name;
 
   public OName(String name) {
-    this(name,null);
+    this(null,name);
   }
   
-  public OName(String name, String alias) {
+  public OName(String alias, String name) {
     super(alias);
     this.name = name;
   }
 
-  public Object getName() {
+  public String getName() {
     return name;
   }
   
@@ -102,6 +102,9 @@ public final class OName extends OExpressionAbstract {
     return true;
   }
   
-  
+  @Override
+  public OName copy() {
+    return new OName(alias,getName());
+  }
   
 }

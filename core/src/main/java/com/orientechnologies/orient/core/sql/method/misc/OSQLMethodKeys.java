@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import java.util.Map;
 
 /**
@@ -27,15 +26,23 @@ import java.util.Map;
  */
 public class OSQLMethodKeys extends OAbstractSQLMethod {
 
-    public static final String NAME = "keys";
+  public static final String NAME = "keys";
 
-    public OSQLMethodKeys() {
-        super(NAME);
-    }
+  public OSQLMethodKeys() {
+    super(NAME);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        ioResult = ioResult != null && ioResult instanceof Map<?, ?> ? ((Map<?, ?>) ioResult).keySet() : null;
-        return ioResult;
-    }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    value = value != null && value instanceof Map<?, ?> ? ((Map<?, ?>) value).keySet() : null;
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodKeys copy() {
+    final OSQLMethodKeys method = new OSQLMethodKeys();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

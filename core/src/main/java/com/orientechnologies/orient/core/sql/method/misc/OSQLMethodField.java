@@ -36,28 +36,35 @@ public class OSQLMethodField extends OAbstractSQLMethod {
         super(NAME, 0, 1);
     }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        
-        if(ioResult instanceof String){
-            try {
-                ioResult = new ODocument(new ORecordId((String) ioResult));
-            }catch (Exception e){
-                OLogManager.instance().error(this, "Error on reading rid with value '%s'", null, ioResult);
-                ioResult = null;
-            }
-        }else if(ioResult instanceof OIdentifiable){
-            ioResult = ((OIdentifiable) ioResult).getRecord();
-        }
-
-        if(ioResult != null){
-            if(ioResult instanceof OCommandContext){
-                ioResult = ((OCommandContext) ioResult).getVariable(iMethodParams[0].toString());
-            }else{
-                ioResult = ODocumentHelper.getFieldValue(ioResult, iMethodParams[0].toString());
-            }
-        }
-        
-        return ioResult;
-    }
+//    @Override
+//    public Object evaluate(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
+//        
+//        if(ioResult instanceof String){
+//            try {
+//                ioResult = new ODocument(new ORecordId((String) ioResult));
+//            }catch (Exception e){
+//                OLogManager.instance().error(this, "Error on reading rid with value '%s'", null, ioResult);
+//                ioResult = null;
+//            }
+//        }else if(ioResult instanceof OIdentifiable){
+//            ioResult = ((OIdentifiable) ioResult).getRecord();
+//        }
+//
+//        if(ioResult != null){
+//            if(ioResult instanceof OCommandContext){
+//                ioResult = ((OCommandContext) ioResult).getVariable(iMethodParams[0].toString());
+//            }else{
+//                ioResult = ODocumentHelper.getFieldValue(ioResult, iMethodParams[0].toString());
+//            }
+//        }
+//        
+//        return ioResult;
+//    }
+    
+  @Override
+  public OSQLMethodField copy() {
+    final OSQLMethodField method = new OSQLMethodField();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

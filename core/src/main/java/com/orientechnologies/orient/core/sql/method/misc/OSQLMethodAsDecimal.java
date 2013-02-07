@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import java.math.BigDecimal;
 
 /**
@@ -27,15 +26,23 @@ import java.math.BigDecimal;
  */
 public class OSQLMethodAsDecimal extends OAbstractSQLMethod {
 
-    public static final String NAME = "asdecimal";
+  public static final String NAME = "asdecimal";
 
-    public OSQLMethodAsDecimal() {
-        super(NAME);
-    }
+  public OSQLMethodAsDecimal() {
+    super(NAME);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        ioResult = ioResult != null ? new BigDecimal(ioResult.toString().trim()) : null;
-        return ioResult;
-    }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    value = value != null ? new BigDecimal(value.toString().trim()) : null;
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodAsDecimal copy() {
+    final OSQLMethodAsDecimal method = new OSQLMethodAsDecimal();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

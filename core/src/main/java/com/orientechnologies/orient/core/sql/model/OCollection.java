@@ -30,8 +30,13 @@ public class OCollection extends OExpressionAbstract {
 
   private final List<OExpression> children;
 
-  public OCollection(List children) {
-    this.children = children;
+  public OCollection(List<OExpression> children) {
+    this(null,children);
+  }
+
+  public OCollection(String alias, List<OExpression> children) {
+    super(alias);
+    this.children = new ArrayList<OExpression>(children);
   }
 
   public List<OExpression> getChildren() {
@@ -86,5 +91,9 @@ public class OCollection extends OExpressionAbstract {
     return visitor.visit(this, data);
   }
 
+  @Override
+  public OCollection copy() {
+    return new OCollection(alias, children);
+  }
   
 }

@@ -15,23 +15,28 @@
  */
 package com.orientechnologies.orient.core.sql.method;
 
-import java.text.ParseException;
-
-import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
+import com.orientechnologies.orient.core.sql.model.OFunction;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Methods can be used on various objects with different number of arguments. SQL syntax : <object_name>.<method_name>([parameters])
  * 
  * @author Johann Sorel (Geomatys)
  */
-public interface OSQLMethod extends Comparable<OSQLMethod> {
+public abstract class OSQLMethod extends OFunction implements Comparable<OSQLMethod> {
 
-  /**
-   * @return method name
-   */
-  String getName();
+  public OSQLMethod(String name, List<OExpression> arguments) {
+    super(name, arguments);
+  }
 
+  public OSQLMethod(String name, String alias, List<OExpression> arguments) {
+    super(name, alias, arguments);
+  }
+  
   /**
    * Returns a convinient SQL String representation of the method.
    * <p>
@@ -45,32 +50,39 @@ public interface OSQLMethod extends Comparable<OSQLMethod> {
    * 
    * @return String , never null.
    */
-  public String getSyntax();
+  public abstract String getSyntax();
 
   /**
    * @return minimum number of arguments requiered by this method
    */
-  int getMinParams();
+  public abstract int getMinParams();
 
   /**
    * @return maximum number of arguments requiered by this method
    */
-  int getMaxParams();
+  public abstract int getMaxParams();
 
-  /**
-   * Process a record.
-   * 
-   * @param iCurrentRecord
-   *          : current record
-   * @param iContext
-   *          execution context
-   * @param ioResult
-   *          : field value
-   * @param iMethodParams
-   *          : function parameters, number is ensured to be within minParams and maxParams.
-   * @return evaluation result
-   */
-  Object execute(final OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams)
-      throws ParseException;
+  public OExpression getSource(){
+    return getArguments().get(0);
+  }
+  
+  public List<OExpression> getMethodArguments(){
+    final List<OExpression> args = new ArrayList<OExpression>(getArguments());
+    args.remove(0);
+    return Collections.unmodifiableList(args);
+  }
+  
+  @Override
+  public Object accept(OExpressionVisitor visitor, Object data) {
+    return visitor.visit(this, data);
+  }
+  
+  @Override
+  protected String thisToString() {
+    return "(Method) "+getName();
+  }
 
+  @Override
+  public abstract OSQLMethod copy();
+  
 }

@@ -34,9 +34,9 @@ import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import com.orientechnologies.orient.core.sql.parser.SyntaxException;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +75,11 @@ public class OCommandSelect extends OCommandAbstract{
     System.err.println("|||||||||||||||||||| "+ sql);
     final ParseTree tree = OSQL.compileExpression(sql);
     if(tree instanceof OSQLParser.CommandContext){
-      visit((OSQLParser.CommandContext)tree);
+      try {
+        visit((OSQLParser.CommandContext)tree);
+      } catch (SyntaxException ex) {
+        throw new OException(ex.getMessage(), ex);
+      }
     }else{
       throw new OException("Parse error, query is not a valid INSERT INTO.");
     }
@@ -171,7 +175,7 @@ public class OCommandSelect extends OCommandAbstract{
   
   // GRAMMAR PARSING ///////////////////////////////////////////////////////////
   
-  private void visit(OSQLParser.CommandContext candidate) {
+  private void visit(OSQLParser.CommandContext candidate) throws SyntaxException {
     final Object commandTree = candidate.getChild(0);
     if(commandTree instanceof OSQLParser.CommandSelectContext){
       visit((OSQLParser.CommandSelectContext)commandTree);
@@ -180,7 +184,7 @@ public class OCommandSelect extends OCommandAbstract{
     }
   }
   
-  private void visit(OSQLParser.CommandSelectContext candidate){    
+  private void visit(OSQLParser.CommandSelectContext candidate) throws SyntaxException{    
     //variables
     projections = new ArrayList<OExpression>();
     setLimit(-1);

@@ -16,6 +16,8 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
+
 /**
  *
  * @author Johann Sorel (Geomatys)
@@ -36,7 +38,7 @@ public interface OExpressionVisitor {
   
   Object visit(OFunction candidate, Object data);
   
-  Object visit(OMethod candidate, Object data);
+  Object visit(OSQLMethod candidate, Object data);
           
   Object visit(OOperator candidate, Object data);
   

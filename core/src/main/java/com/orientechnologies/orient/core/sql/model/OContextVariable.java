@@ -70,4 +70,9 @@ public final class OContextVariable extends OExpressionAbstract {
     return "(Variable) "+varName;
   }
   
+  @Override
+  public OContextVariable copy() {
+    return new OContextVariable(varName,alias);
+  }
+  
 }

@@ -88,4 +88,9 @@ public class OOr extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
+  @Override
+  public OOr copy() {
+    return new OOr(alias,getLeft(),getRight());
+  }
+  
 }

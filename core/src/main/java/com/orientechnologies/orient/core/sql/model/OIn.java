@@ -83,4 +83,9 @@ public class OIn extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
+  @Override
+  public OIn copy() {
+    return new OIn(alias, getLeft(),getRight());
+  }
+  
 }

@@ -17,7 +17,8 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import java.util.List;
 
 /**
  *
@@ -26,17 +27,26 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
  */
 public class OSQLMethodLeft extends OAbstractSQLMethod {
 
-    public static final String NAME = "left";
+  public static final String NAME = "left";
 
-    public OSQLMethodLeft() {
-        super(NAME, 1);
-    }
+  public OSQLMethodLeft() {
+    super(NAME, 1);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        final int len = Integer.parseInt(iMethodParams[0].toString());
-        ioResult = ioResult != null ? ioResult.toString().substring(0,
-                len <= ioResult.toString().length() ? len : ioResult.toString().length()) : null;
-        return ioResult;
-    }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final List<OExpression> arguments = getMethodArguments();
+    Object value = getSource().evaluate(context, candidate);
+    final int len = Integer.parseInt(arguments.get(0).evaluate(context, candidate).toString());
+    value = value != null ? value.toString().substring(0,
+            len <= value.toString().length() ? len : value.toString().length()) : null;
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodLeft copy() {
+    final OSQLMethodLeft method = new OSQLMethodLeft();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

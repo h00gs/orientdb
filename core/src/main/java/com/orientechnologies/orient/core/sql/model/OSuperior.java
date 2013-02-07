@@ -73,6 +73,10 @@ public class OSuperior extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
+  @Override
+  public OSuperior copy() {
+    return new OSuperior(alias, getLeft(),getRight());
+  }
   
   
 }

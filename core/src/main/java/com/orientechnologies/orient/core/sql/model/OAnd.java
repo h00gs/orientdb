@@ -82,5 +82,10 @@ public class OAnd extends OExpressionWithChildren{
     }
     return super.equals(obj);
   }
+
+  @Override
+  public OAnd copy() {
+    return new OAnd(alias, getLeft(), getRight());
+  }
   
 }

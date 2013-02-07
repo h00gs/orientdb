@@ -16,6 +16,7 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,9 +40,9 @@ public abstract class OExpressionWithChildren extends OExpressionAbstract {
   public OExpressionWithChildren(String alias, List<OExpression> arguments){
     super(alias);
     if(arguments == null){
-      this.children = Collections.EMPTY_LIST;
+      this.children = new ArrayList<OExpression>();
     }else{
-      this.children = Collections.unmodifiableList(arguments);
+      this.children = new ArrayList<OExpression>(arguments);
     }
   }
 

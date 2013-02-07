@@ -18,6 +18,8 @@ package com.orientechnologies.orient.core.sql.method;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import java.util.List;
 
 /**
  * 
@@ -40,6 +42,6 @@ public interface OSQLMethodFactory {
    * @throws OCommandExecutionException
    *           : when method creation fail
    */
-  OSQLMethod createMethod(String name) throws OCommandExecutionException;
-
+  OSQLMethod createMethod(String name);
+  
 }

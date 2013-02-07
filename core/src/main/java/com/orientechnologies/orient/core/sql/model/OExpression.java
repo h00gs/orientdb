@@ -32,6 +32,8 @@ public interface OExpression {
   
   String getAlias();
   
+  void setAlias(String alias);
+  
   boolean isStatic();
   
   boolean isContextFree();
@@ -41,6 +43,8 @@ public interface OExpression {
   OIndexResult searchIndex(OClass clazz ,OSortBy[] sorts);
   
   Object accept(OExpressionVisitor visitor, Object data);
+  
+  OExpression copy();
   
   public static final class Constant extends OExpressionAbstract{
 
@@ -86,6 +90,12 @@ public interface OExpression {
       }else{
         return visitor.visitExclude(this, data);
       }
+    }
+
+    @Override
+    public OExpression copy() {
+      //immutable
+      return this;
     }
     
   }

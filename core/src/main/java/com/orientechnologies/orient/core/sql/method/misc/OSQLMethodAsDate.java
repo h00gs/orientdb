@@ -18,7 +18,6 @@ package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -29,23 +28,34 @@ import java.util.Date;
  */
 public class OSQLMethodAsDate extends OAbstractSQLMethod {
 
-    public static final String NAME = "asdate";
+  public static final String NAME = "asdate";
 
-    public OSQLMethodAsDate() {
-        super(NAME);
-    }
+  public OSQLMethodAsDate() {
+    super(NAME);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) throws ParseException{
-
-        if (ioResult != null) {
-            if (ioResult instanceof Number) {
-                ioResult = new Date(((Number) ioResult).longValue());
-            } else if (!(ioResult instanceof Date)) {
-                ioResult = ODatabaseRecordThreadLocal.INSTANCE.get().getStorage().getConfiguration().getDateFormatInstance()
-                        .parse(ioResult.toString());
-            }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    if (value != null) {
+      if (value instanceof Number) {
+        value = new Date(((Number) value).longValue());
+      } else if (!(value instanceof Date)) {
+        try {
+          value = ODatabaseRecordThreadLocal.INSTANCE.get().getStorage().getConfiguration().getDateFormatInstance()
+                  .parse(value.toString());
+        } catch (ParseException ex) {
+          return null;
         }
-        return ioResult;
+      }
     }
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodAsDate copy() {
+    final OSQLMethodAsDate method = new OSQLMethodAsDate();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

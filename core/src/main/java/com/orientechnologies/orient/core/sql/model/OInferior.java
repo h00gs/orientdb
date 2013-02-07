@@ -94,4 +94,9 @@ public class OInferior extends OExpressionWithChildren{
     return ((Comparable) objleft).compareTo(objright);
   }
 
+  @Override
+  public OInferior copy() {
+    return new OInferior(alias, getLeft(),getRight());
+  }
+  
 }

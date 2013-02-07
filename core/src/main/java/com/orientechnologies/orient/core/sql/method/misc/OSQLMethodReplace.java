@@ -17,7 +17,8 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import java.util.List;
 
 /**
  *
@@ -32,11 +33,21 @@ public class OSQLMethodReplace extends OAbstractSQLMethod {
         super(NAME, 2);
     }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        ioResult = ioResult != null ? ioResult.toString().replace(
-                iMethodParams[0].toString(), 
-                iMethodParams[1].toString()) : null;
-        return ioResult;
-    }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final List<OExpression> arguments = getMethodArguments();
+    Object value = getSource().evaluate(context, candidate);
+    value = value != null ? value.toString().replace(
+                arguments.get(0).evaluate(context, candidate).toString(), 
+                arguments.get(0).evaluate(context, candidate).toString()) : null;
+        return value;
+  }
+    
+  @Override
+  public OSQLMethodReplace copy() {
+    final OSQLMethodReplace method = new OSQLMethodReplace();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
+    
 }

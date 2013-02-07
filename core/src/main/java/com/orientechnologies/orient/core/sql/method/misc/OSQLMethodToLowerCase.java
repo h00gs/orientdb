@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 
 /**
  *
@@ -26,15 +25,23 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
  */
 public class OSQLMethodToLowerCase extends OAbstractSQLMethod {
 
-    public static final String NAME = "tolowercase";
+  public static final String NAME = "tolowercase";
 
-    public OSQLMethodToLowerCase() {
-        super(NAME);
-    }
+  public OSQLMethodToLowerCase() {
+    super(NAME);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        ioResult = ioResult != null ? ioResult.toString().toLowerCase() : null;
-        return ioResult;
-    }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    value = value != null ? value.toString().toLowerCase() : null;
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodToLowerCase copy() {
+    final OSQLMethodToLowerCase method = new OSQLMethodToLowerCase();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

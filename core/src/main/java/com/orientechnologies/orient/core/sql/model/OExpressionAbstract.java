@@ -24,7 +24,7 @@ import java.util.List;
  */
 public abstract class OExpressionAbstract implements OExpression{
 
-  private final String alias;
+  protected String alias;
 
   public OExpressionAbstract() {
     this(null);
@@ -37,6 +37,11 @@ public abstract class OExpressionAbstract implements OExpression{
   @Override
   public String getAlias() {
     return alias;
+  }
+
+  @Override
+  public void setAlias(String alias) {
+    this.alias = alias;
   }
   
   @Override

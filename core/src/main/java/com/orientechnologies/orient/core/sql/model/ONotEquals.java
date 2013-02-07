@@ -72,6 +72,9 @@ public class ONotEquals extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
-  
+  @Override
+  public ONotEquals copy() {
+    return new ONotEquals(alias,getLeft(),getRight());
+  }
   
 }

@@ -17,9 +17,10 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 import java.text.Normalizer;
+import java.util.List;
 
 /**
  *
@@ -28,27 +29,35 @@ import java.text.Normalizer;
  */
 public class OSQLMethodNormalize extends OAbstractSQLMethod {
 
-    public static final String NAME = "normalize";
+  public static final String NAME = "normalize";
 
-    public OSQLMethodNormalize() {
-        super(NAME, 0, 2);
+  public OSQLMethodNormalize() {
+    super(NAME, 0, 2);
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final List<OExpression> arguments = getMethodArguments();
+    Object value = getSource().evaluate(context, candidate);
+    if (value != null) {
+      final Normalizer.Form form = arguments.size() > 0 ? Normalizer.Form
+              .valueOf(OStringSerializerHelper.getStringContent(arguments.get(0).evaluate(context, candidate).toString())) : Normalizer.Form.NFD;
+
+      String normalized = Normalizer.normalize(value.toString(), form);
+      if (arguments.size() > 1) {
+        normalized = normalized.replaceAll(OStringSerializerHelper.getStringContent(arguments.get(0).evaluate(context, candidate).toString()), "");
+      } else {
+        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+      }
+      value = normalized;
     }
-
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-
-        if (ioResult != null) {
-            final Normalizer.Form form = iMethodParams != null && iMethodParams.length > 0 ? Normalizer.Form
-                    .valueOf(OStringSerializerHelper.getStringContent(iMethodParams[0].toString())) : Normalizer.Form.NFD;
-
-            String normalized = Normalizer.normalize(ioResult.toString(), form);
-            if (iMethodParams != null && iMethodParams.length > 1) {
-                normalized = normalized.replaceAll(OStringSerializerHelper.getStringContent(iMethodParams[0].toString()), "");
-            } else {
-                normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-            }
-            ioResult = normalized;
-        }
-        return ioResult;
-    }
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodNormalize copy() {
+    final OSQLMethodNormalize method = new OSQLMethodNormalize();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

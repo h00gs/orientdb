@@ -69,5 +69,10 @@ public class OIsNull extends OExpressionWithChildren{
     }
     return super.equals(obj);
   }
-  
+
+  @Override
+  public OIsNull copy() {
+    return new OIsNull(alias, getExpression());
+  }
+ 
 }

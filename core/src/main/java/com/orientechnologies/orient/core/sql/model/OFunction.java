@@ -88,5 +88,9 @@ public class OFunction extends OExpressionWithChildren {
     return super.equals(obj);
   }
   
+  @Override
+  public OFunction copy() {
+    return new OFunction(alias, getArguments());
+  }
   
 }

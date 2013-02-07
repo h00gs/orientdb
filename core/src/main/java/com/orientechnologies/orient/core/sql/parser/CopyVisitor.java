@@ -16,6 +16,7 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OAnd;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OContextVariable;
@@ -28,7 +29,6 @@ import com.orientechnologies.orient.core.sql.model.OIsNotNull;
 import com.orientechnologies.orient.core.sql.model.OIsNull;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMap;
-import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.model.ONot;
 import com.orientechnologies.orient.core.sql.model.OOperator;
 import com.orientechnologies.orient.core.sql.model.OOr;
@@ -97,13 +97,16 @@ public class CopyVisitor implements OExpressionVisitor {
   }
   
   @Override
-  public Object visit(OMethod candidate, Object data) {
+  public Object visit(OSQLMethod candidate, Object data) {
     final List<OExpression> args = candidate.getMethodArguments();
     final OExpression source = (OExpression)candidate.getSource().accept(this, data);
+    args.add(source);
     for(int i=0;i<args.size();i++){
       args.set(i, (OExpression)args.get(i).accept(this, data));
     }
-    OMethod copy = new OMethod(candidate.getName(), candidate.getAlias(), source, args);
+    OSQLMethod copy = candidate.copy();
+    copy.getArguments().clear();
+    copy.getArguments().addAll(args);
     return copy;
   }
   

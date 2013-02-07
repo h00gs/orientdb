@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
@@ -27,15 +26,23 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
  */
 public class OSQLMethodToJSON extends OAbstractSQLMethod {
 
-    public static final String NAME = "tojson";
+  public static final String NAME = "tojson";
 
-    public OSQLMethodToJSON() {
-        super(NAME);
-    }
+  public OSQLMethodToJSON() {
+    super(NAME);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        ioResult = ioResult != null && ioResult instanceof ODocument ? ((ODocument) ioResult).toJSON() : null;
-        return ioResult;
-    }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    value = value != null && value instanceof ODocument ? ((ODocument) value).toJSON() : null;
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodToJSON copy() {
+    final OSQLMethodToJSON method = new OSQLMethodToJSON();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

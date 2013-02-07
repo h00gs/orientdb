@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -28,24 +27,31 @@ import java.util.Date;
  */
 public class OSQLMethodFormat extends OAbstractSQLMethod {
 
-    public static final String NAME = "format";
+  public static final String NAME = "format";
 
-    public OSQLMethodFormat() {
-        super(NAME, 1);
+  public OSQLMethodFormat() {
+    super(NAME, 1);
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    final Object v = getMethodArguments().get(0).evaluate(context, candidate);
+    if (v != null) {
+      if (value instanceof Date) {
+        value = new SimpleDateFormat(v.toString()).format(value);
+      } else {
+        value = value != null ? String.format(v.toString(), value) : null;
+      }
     }
 
-    @Override
-    public Object execute(OIdentifiable iRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        
-        final Object v = getParameterValue(iRecord, iMethodParams[0].toString());
-        if (v != null) {
-            if (ioResult instanceof Date) {
-                ioResult = new SimpleDateFormat(v.toString()).format(ioResult);
-            } else {
-                ioResult = ioResult != null ? String.format(v.toString(), ioResult) : null;
-            }
-        }
-
-        return ioResult;
-    }
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodFormat copy() {
+    final OSQLMethodFormat method = new OSQLMethodFormat();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

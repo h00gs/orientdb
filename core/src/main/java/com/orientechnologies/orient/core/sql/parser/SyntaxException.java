@@ -14,34 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql.method.misc;
-
-import com.orientechnologies.orient.core.command.OCommandContext;
+package com.orientechnologies.orient.core.sql.parser;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
- * @author Luca Garulli
  */
-public class OSQLMethodTrim extends OAbstractSQLMethod {
+public final class SyntaxException extends Exception {
 
-  public static final String NAME = "trim";
-
-  public OSQLMethodTrim() {
-    super(NAME);
+  public SyntaxException() {
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    Object value = getSource().evaluate(context, candidate);
-    value = value != null ? value.toString().trim() : null;
-    return value;
+  public SyntaxException(Throwable cause) {
+    super(cause);
+  }
+
+  public SyntaxException(String message) {
+    super(message);
+  }
+
+  public SyntaxException(String message, Throwable cause) {
+    super(message, cause);
   }
   
-  @Override
-  public OSQLMethodTrim copy() {
-    final OSQLMethodTrim method = new OSQLMethodTrim();
-    method.getArguments().addAll(getArguments());
-    return method;
-  }
 }

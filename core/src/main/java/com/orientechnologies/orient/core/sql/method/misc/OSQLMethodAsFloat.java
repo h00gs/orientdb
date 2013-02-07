@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 
 /**
  *
@@ -26,19 +25,27 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
  */
 public class OSQLMethodAsFloat extends OAbstractSQLMethod {
 
-    public static final String NAME = "asfloat";
+  public static final String NAME = "asfloat";
 
-    public OSQLMethodAsFloat() {
-        super(NAME);
-    }
+  public OSQLMethodAsFloat() {
+    super(NAME);
+  }
 
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, OCommandContext iContext, Object ioResult, Object[] iMethodParams) {
-        if (ioResult instanceof Number) {
-            ioResult = ((Number) ioResult).floatValue();
-        } else {
-            ioResult = ioResult != null ? new Float(ioResult.toString().trim()) : null;
-        }
-        return ioResult;
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = getSource().evaluate(context, candidate);
+    if (value instanceof Number) {
+      value = ((Number) value).floatValue();
+    } else {
+      value = value != null ? new Float(value.toString().trim()) : null;
     }
+    return value;
+  }
+  
+  @Override
+  public OSQLMethodAsFloat copy() {
+    final OSQLMethodAsFloat method = new OSQLMethodAsFloat();
+    method.getArguments().addAll(getArguments());
+    return method;
+  }
 }

@@ -72,4 +72,9 @@ public class ONot extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
+  @Override
+  public ONot copy() {
+    return new ONot(alias,getExpression());
+  }
+  
 }

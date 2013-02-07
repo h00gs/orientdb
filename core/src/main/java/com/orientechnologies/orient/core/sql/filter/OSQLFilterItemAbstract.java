@@ -103,15 +103,10 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
       // APPLY OPERATIONS FOLLOWING THE STACK ORDER
       OSQLMethod operator = null;
 
-      try {
         for (OPair<OSQLMethod, Object[]> op : operationsChain) {
           operator = op.getKey();
-          ioResult = operator.execute(iRecord, null, ioResult, op.getValue());
+          ioResult = operator.evaluate(iContext, iRecord);
         }
-      } catch (ParseException e) {
-        OLogManager.instance().exception("Error on conversion of value '%s' using field operator %s", e,
-            OCommandExecutionException.class, ioResult, operator.getName());
-      }
     }
 
     return ioResult;

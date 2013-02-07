@@ -70,4 +70,9 @@ public class OIsNotNull extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
+  @Override
+  public OIsNotNull copy() {
+    return new OIsNotNull(alias, getExpression());
+  }
+  
 }

@@ -29,10 +29,10 @@ public final class OLiteral extends OExpressionAbstract{
   private final Object value;
 
   public OLiteral(Object value) {
-    this(value,null);
+    this(null,value);
   }
   
-  public OLiteral(Object value, String alias) {
+  public OLiteral(String alias, Object value) {
     super(alias);
     this.value = value;
   }
@@ -92,5 +92,11 @@ public final class OLiteral extends OExpressionAbstract{
     }
     return true;
   }
+
+  @Override
+  public OLiteral copy() {
+    return new OLiteral(alias, value);
+  }
+  
   
 }

@@ -37,6 +37,7 @@ import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import com.orientechnologies.orient.core.sql.parser.SyntaxException;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +79,11 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     final String sql = ((OCommandRequestText) iRequest).getText();
     final ParseTree tree = OSQL.compileExpression(sql);
     if(tree instanceof OSQLParser.CommandContext){
-      visit((OSQLParser.CommandContext)tree);
+      try {
+        visit((OSQLParser.CommandContext)tree);
+      } catch (SyntaxException ex) {
+        throw new OException(ex.getMessage(), ex);
+      }
     }else{
       throw new OException("Parse error, query is not a valid INSERT INTO.");
     }
@@ -234,7 +239,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   // GRAMMAR PARSING ///////////////////////////////////////////////////////////
   
   
-  private void visit(OSQLParser.CommandContext candidate) {
+  private void visit(OSQLParser.CommandContext candidate) throws SyntaxException {
     final Object commandTree = candidate.getChild(0);
     if(commandTree instanceof OSQLParser.CommandInsertIntoByValuesContext){
       visit((OSQLParser.CommandInsertIntoByValuesContext)commandTree);
@@ -245,7 +250,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     }
   }
   
-  private void visit(OSQLParser.CommandInsertIntoByValuesContext candidate){    
+  private void visit(OSQLParser.CommandInsertIntoByValuesContext candidate) throws SyntaxException{    
     //variables
     String target;
     final List<String> fields = new ArrayList<String>();
@@ -281,7 +286,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     this.newRecords = entries;
   }
   
-  private void visit(OSQLParser.CommandInsertIntoBySetContext candidate){    
+  private void visit(OSQLParser.CommandInsertIntoBySetContext candidate) throws SyntaxException{    
     //variables
     final String target;
     final List<String> fields = new ArrayList<String>();

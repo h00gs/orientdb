@@ -16,14 +16,14 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
-import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
-import com.orientechnologies.orient.core.sql.model.OMethod;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
+import com.orientechnologies.orient.core.sql.method.OSQLMethodFactory;
 import com.orientechnologies.orient.core.sql.model.OAnd;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OEquals;
@@ -45,6 +45,8 @@ import java.util.List;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
+import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 /**
@@ -53,24 +55,26 @@ import java.util.LinkedHashMap;
  */
 public final class SQLGrammarUtils {
 
+  private static ClassLoader CLASSLOADER = SQLGrammarUtils.class.getClassLoader();
+  
   private SQLGrammarUtils() {
   }
   
   
-  public static OCommandExecutor visit(OSQLParser.CommandContext candidate) {
+  public static OCommandExecutor visit(OSQLParser.CommandContext candidate) throws SyntaxException {
     
     final OCommandExecutor command;
     final Object commandTree = candidate.getChild(0);
     if(commandTree instanceof OSQLParser.CommandUnknownedContext){
       command = visit((OSQLParser.CommandUnknownedContext)commandTree);
     }else{
-      throw new OException("Unknowned command " + candidate.getClass()+" "+candidate);
+      throw new SyntaxException("Unknowned command " + candidate.getClass()+" "+candidate);
     }
     
     return command;
   }
     
-  private static OCommandCustom visit(OSQLParser.CommandUnknownedContext candidate){
+  private static OCommandCustom visit(OSQLParser.CommandUnknownedContext candidate) throws SyntaxException {
     //variables
     final List<Object> elements = new ArrayList<Object>();
     
@@ -83,7 +87,7 @@ public final class SQLGrammarUtils {
     return new OCommandCustom(elements);
   }
   
-  public static Object visit(ParseTree candidate){
+  public static Object visit(ParseTree candidate) throws SyntaxException {
     if(candidate instanceof ExpressionContext){
       return visit((ExpressionContext)candidate);
     }else if(candidate instanceof WordContext){
@@ -105,11 +109,11 @@ public final class SQLGrammarUtils {
     }else if(candidate instanceof FilterContext){
       return visit((FilterContext)candidate);
     }else{
-      throw new OException("Unexpected parse tree element :"+candidate.getClass()+" "+candidate);
+      throw new SyntaxException("Unexpected parse tree element :"+candidate.getClass()+" "+candidate);
     }
   }
   
-  public static OExpression visit(ExpressionContext candidate){
+  public static OExpression visit(ExpressionContext candidate) throws SyntaxException {
     final int nbChild = candidate.getChildCount();
     final List<OExpression> elements = new ArrayList<OExpression>(nbChild);
     for(int i=0;i<nbChild;i++){
@@ -123,32 +127,32 @@ public final class SQLGrammarUtils {
     }else if(nbChild == 2){
       //can be a method call
       final OExpression source = (OExpression) elements.get(0);
-      final OMethod method = (OMethod) elements.get(1);
-      final OMethod res = new OMethod(method.getName(), source, method.getMethodArguments());
-      return res;
+      final OSQLMethod method = (OSQLMethod) elements.get(1);
+      method.getArguments().add(0, source); //add the source as first argument.
+      return method;
     }else if(nbChild == 3){
       //can be '(' exp ')'
       return elements.get(1);
     }else{
-      throw new OException("Unexpected number of arguments");
+      throw new SyntaxException("Unexpected number of arguments");
     }
     
   }
   
-  public static OName visit(WordContext candidate){
+  public static OName visit(WordContext candidate) throws SyntaxException {
     return new OName(candidate.WORD().getText());
   }
   
-  public static OUnset visit(UnsetContext candidate){
+  public static OUnset visit(UnsetContext candidate) throws SyntaxException {
     return new OUnset();
   }
   
-  public static OLiteral visit(IdentifierContext candidate){
+  public static OLiteral visit(IdentifierContext candidate) throws SyntaxException {
     final ORecordId oid = new ORecordId(candidate.getText());
     return new OLiteral(oid);
   } 
   
-  public static OCollection visit(CollectionContext candidate) {
+  public static OCollection visit(CollectionContext candidate) throws SyntaxException {
     final List col = new ArrayList();
     final List<ExpressionContext> values = candidate.expression();
     for (int i = 0, n = values.size(); i < n; i++) {
@@ -157,7 +161,7 @@ public final class SQLGrammarUtils {
     return new OCollection(col);
   }
 
-  public static OMap visit(MapContext candidate) {
+  public static OMap visit(MapContext candidate) throws SyntaxException {
     final LinkedHashMap map = new LinkedHashMap();
     final List<LiteralContext> keys = candidate.literal();
     final List<ExpressionContext> values = candidate.expression();
@@ -167,7 +171,7 @@ public final class SQLGrammarUtils {
     return new OMap(map);
   }
   
-  public static OLiteral visit(LiteralContext candidate){
+  public static OLiteral visit(LiteralContext candidate) throws SyntaxException {
     if(candidate.TEXT() != null){
       String txt =candidate.TEXT().getText();
       txt = txt.substring(1,txt.length()-1);
@@ -185,35 +189,37 @@ public final class SQLGrammarUtils {
       return new OLiteral(null);
       
     }else{
-      throw new OException("Should not happen");
+      throw new SyntaxException("Should not happen");
     }
   }
   
-  public static OFunction visit(FunctionCallContext candidate){
+  public static OFunction visit(FunctionCallContext candidate) throws SyntaxException {
     final String name = ((WordContext)candidate.getChild(0)).getText();
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
     return new OFunction(name, args);
   }
   
-  public static OMethod visit(MethodCallContext candidate){
+  public static OSQLMethod visit(MethodCallContext candidate) throws SyntaxException {
     final String name = ((WordContext)candidate.getChild(1)).getText();
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(2)) );
-    return new OMethod(name, null, args);
+    final OSQLMethod method = createMethod(name);
+    method.getArguments().addAll(args);
+    return method;
   }
     
-  public static OExpression visit(OSQLParser.ProjectionContext candidate) {
+  public static OExpression visit(OSQLParser.ProjectionContext candidate) throws SyntaxException {
     
     OExpression exp;
     if(candidate.word() != null){
       exp = new OName(candidate.word().getText());
     }else{
-      throw new OException("Unknowned command " + candidate.getClass()+" "+candidate);
+      throw new SyntaxException("Unknowned command " + candidate.getClass()+" "+candidate);
     }
     
     return exp;
   }
   
-  public static OExpression visit(OSQLParser.FilterContext candidate){
+  public static OExpression visit(OSQLParser.FilterContext candidate) throws SyntaxException {
     final int nbChild = candidate.getChildCount();
     if(nbChild == 1){
       //can be a word, literal, functionCall
@@ -240,14 +246,14 @@ public final class SQLGrammarUtils {
         }else if(candidate.filterIn().collection() != null){
           right = (OExpression)visit(candidate.filterIn().collection());
         }else{
-          throw new OException("Unexpected arguments");
+          throw new SyntaxException("Unexpected arguments");
         }
         return new OIn(left,right);
       }else if(candidate.NOT() != null){
         return new ONot(
                 (OExpression)visit(candidate.getChild(1)));
       }else{
-        throw new OException("Unexpected arguments");
+        throw new SyntaxException("Unexpected arguments");
       }
     }else if(nbChild == 3){
       //can be :
@@ -291,11 +297,11 @@ public final class SQLGrammarUtils {
       return new OIsNotNull(
               (OExpression) visit(candidate.getChild(0)));
     }else{
-      throw new OException("Unexpected number of arguments");
+      throw new SyntaxException("Unexpected number of arguments");
     }
   }
   
-  public static List<OExpression> visit(ArgumentsContext candidate){
+  public static List<OExpression> visit(ArgumentsContext candidate) throws SyntaxException {
     final int nbChild = candidate.getChildCount();
     final List<OExpression> elements = new ArrayList<OExpression>(nbChild);
     for(int i=1;i<nbChild-1;i+=2){
@@ -303,6 +309,18 @@ public final class SQLGrammarUtils {
       elements.add((OExpression)visit(child));
     }
     return elements;
+  }
+  
+  public static OSQLMethod createMethod(String name) throws SyntaxException{
+    name = name.toLowerCase();
+    final Iterator<OSQLMethodFactory> ite = lookupProviderWithOrientClassLoader(OSQLMethodFactory.class, CLASSLOADER);
+    while (ite.hasNext()) {
+      final OSQLMethodFactory factory = ite.next();
+      if (factory.hasMethod(name)) {
+        return factory.createMethod(name);
+      }
+    }
+    throw new SyntaxException("No method for name : "+name);
   }
   
 }

@@ -73,4 +73,9 @@ public class OInferiorEquals extends OExpressionWithChildren{
     return super.equals(obj);
   }
     
+  @Override
+  public OInferiorEquals copy() {
+    return new OInferiorEquals(alias, getLeft(),getRight());
+  }
+  
 }

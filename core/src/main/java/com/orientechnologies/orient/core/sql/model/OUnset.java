@@ -73,4 +73,9 @@ public class OUnset extends OExpressionAbstract{
     return true;
   }
   
+  @Override
+  public OUnset copy() {
+    return new OUnset();
+  }
+  
 }

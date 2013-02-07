@@ -37,7 +37,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  */
 public class OSQL {
   
-  public static OCommandExecutor parse(String osql){
+  public static OCommandExecutor parse(String osql) throws SyntaxException{
     final ParseTree tree = compileExpression(osql);
     return toOrient(tree);
   }
@@ -53,7 +53,7 @@ public class OSQL {
       return sentence;
   }
   
-  public static OCommandExecutor toOrient(ParseTree tree){
+  public static OCommandExecutor toOrient(ParseTree tree) throws SyntaxException{
     return SQLGrammarUtils.visit((OSQLParser.CommandContext)tree);
   }
   
