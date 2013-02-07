@@ -53,10 +53,18 @@ COMMA 	: ',';
 DOUBLEDOT 	: ':';
 DOT 	: '.';
 WS  :   ( ' ' | '\t' | '\r'| '\n' ) -> skip ;
+
+// math operations
 UNARY : '+' | '-' ;
-MULT : '*' | '/' ;
-EQUALS : '=' ;
-fragment DIGIT : '0'..'9' ;
+MULT : '*';
+DIV : '/';
+COMPARE_EQL     : '='  ;
+COMPARE_INF     : '<'  ;
+COMPARE_SUP     : '>'  ;
+COMPARE_INF_EQL : '<=' ;
+COMPARE_SUP_EQL : '>=' ;
+COMPARE_DIF     : '!=' | '<>' ;
+
     
 // case insensitive
 fragment A: ('a'|'A');
@@ -85,6 +93,7 @@ fragment W: ('w'|'W');
 fragment X: ('x'|'X');
 fragment Y: ('y'|'Y');
 fragment Z: ('z'|'Z');
+fragment DIGIT : '0'..'9' ;
 fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '{' | '}' | '[' | ']'| '=' | '.'| ':' | '#');
 
 LPAREN : '(';
@@ -178,13 +187,20 @@ expression
 
 filterAnd : AND filter ;
 filterOr : OR filter ;
+filterIn : IN (literal|collection) ;
 filter
   : expression
   | LPAREN filter RPAREN
   | filter filterAnd
   | filter filterOr
+  | filter filterIn
   | NOT filter
-  | filter EQUALS filter
+  | filter COMPARE_EQL     filter
+  | filter COMPARE_INF     filter
+  | filter COMPARE_SUP     filter
+  | filter COMPARE_INF_EQL filter
+  | filter COMPARE_SUP_EQL filter
+  | filter COMPARE_DIF     filter
   | filter IS NULL
   | filter IS NOT NULL
   ;
@@ -201,17 +217,18 @@ commandInsertIntoBySet
   ;
 insertCluster : CLUSTER word ;
 insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
-insertSet     : word EQUALS expression ;
+insertSet     : word COMPARE_EQL expression ;
 insertFields  : LPAREN word(COMMA word)* RPAREN ;
 
 commandAlterClass : ALTER CLASS word word (cword|NULL) ;
 cword             : (word|literal|COMMA) (word|literal|COMMA)* ;
 
 commandSelect
-  : SELECT (projection)* from (WHERE filter)? groupBy? orderBy? skip? limit?
+  : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit?
   ;
 projection
-  : ( word
+  : ( MULT
+    | word
     | ORID_ATTR
     | OCLASS_ATTR
     | OVERSION_ATTR

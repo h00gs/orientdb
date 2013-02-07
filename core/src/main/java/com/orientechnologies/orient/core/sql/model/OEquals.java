@@ -50,8 +50,12 @@ public class OEquals extends OExpressionWithChildren{
 
   @Override
   public Object evaluate(OCommandContext context, Object candidate) {
-    final Object value1 = children.get(0).evaluate(context, candidate);
-    final Object value2 = children.get(1).evaluate(context, candidate);
+    return equals(getLeft(), getRight(), context, candidate);
+  }
+
+  static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
+    final Object value1 = left.evaluate(context, candidate);
+    final Object value2 = right.evaluate(context, candidate);
     
     if (value1 == value2) {
       // Includes the (value1 == null && value2 == null) case.
@@ -76,7 +80,7 @@ public class OEquals extends OExpressionWithChildren{
     
     return false;
   }
-
+  
   private static boolean numberEqual(final Number value1, final Number value2) {
     final Number n1 = (Number) value1;
     final Number n2 = (Number) value2;

@@ -27,12 +27,18 @@ import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.model.OAnd;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OEquals;
+import com.orientechnologies.orient.core.sql.model.OIn;
+import com.orientechnologies.orient.core.sql.model.OInferior;
+import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
 import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OIsNotNull;
 import com.orientechnologies.orient.core.sql.model.OIsNull;
 import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.ONot;
+import com.orientechnologies.orient.core.sql.model.ONotEquals;
 import com.orientechnologies.orient.core.sql.model.OOr;
+import com.orientechnologies.orient.core.sql.model.OSuperior;
+import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.ArrayList;
 import java.util.List;
@@ -216,6 +222,7 @@ public final class SQLGrammarUtils {
       //can be :
       //filter filterAnd
       //filter filterOr
+      //filter filterIn
       //NOT filter
       if(candidate.filterAnd() != null){
         return new OAnd(
@@ -225,6 +232,17 @@ public final class SQLGrammarUtils {
         return new OOr(
                 (OExpression)visit(candidate.getChild(0)), 
                 (OExpression)visit(candidate.filterOr().filter()));
+      }else if(candidate.filterIn() != null){
+        final OExpression left = (OExpression)visit(candidate.getChild(0));
+        final OExpression right;
+        if(candidate.filterIn().literal() != null){
+          right = (OExpression)visit(candidate.filterIn().literal());
+        }else if(candidate.filterIn().collection() != null){
+          right = (OExpression)visit(candidate.filterIn().collection());
+        }else{
+          throw new OException("Unexpected arguments");
+        }
+        return new OIn(left,right);
       }else if(candidate.NOT() != null){
         return new ONot(
                 (OExpression)visit(candidate.getChild(1)));
@@ -234,10 +252,30 @@ public final class SQLGrammarUtils {
     }else if(nbChild == 3){
       //can be :
       // '(' filter ')'
-      //filter EQUALS filter
+      //filter COMPARE_X filter
       //filter IS NULL
-      if(candidate.EQUALS() != null){
+      if(candidate.COMPARE_EQL()!= null){
         return new OEquals(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.COMPARE_DIF()!= null){
+        return new ONotEquals(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.COMPARE_INF()!= null){
+        return new OInferior(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.COMPARE_INF_EQL()!= null){
+        return new OInferiorEquals(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.COMPARE_SUP()!= null){
+        return new OSuperior(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.COMPARE_SUP_EQL()!= null){
+        return new OSuperiorEquals(
                 (OExpression) visit(candidate.getChild(0)),
                 (OExpression) visit(candidate.getChild(2)));
       }else if(candidate.IS()!= null){

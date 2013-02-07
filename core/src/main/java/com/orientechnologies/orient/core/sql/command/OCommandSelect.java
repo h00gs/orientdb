@@ -187,6 +187,11 @@ public class OCommandSelect extends OCommandAbstract{
     
     //parse projections
     for(OSQLParser.ProjectionContext proj : candidate.projection()){
+      if(proj.MULT() != null){
+        //all values requested
+        projections.clear();
+        break;
+      }
       projections.add(SQLGrammarUtils.visit(proj));
     }
     
