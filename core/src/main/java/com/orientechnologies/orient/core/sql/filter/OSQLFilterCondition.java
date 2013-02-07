@@ -37,7 +37,7 @@ import com.orientechnologies.orient.core.query.OQueryRuntimeValueMulti;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.sql.OSQLHelper;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
 import com.orientechnologies.orient.core.sql.query.OSQLQuery;
 
@@ -267,10 +267,10 @@ public class OSQLFilterCondition {
       // NESTED CONDITION: EVALUATE IT RECURSIVELY
       return ((OSQLFilterCondition) iValue).evaluate(iCurrentRecord, iCurrentResult, iContext);
 
-    if (iValue instanceof OSQLFunctionRuntime) {
+    if (iValue instanceof OSQLFunction) {
       // STATELESS FUNCTION: EXECUTE IT
-      final OSQLFunctionRuntime f = (OSQLFunctionRuntime) iValue;
-      return f.execute(iCurrentRecord, iCurrentResult, iContext);
+      final OSQLFunction f = (OSQLFunction) iValue;
+      return f.evaluate(iContext, iValue);
     }
 
     final Iterable<?> multiValue = OMultiValue.getMultiValueIterable(iValue);

@@ -66,7 +66,8 @@ public class OSQLFunctionMin extends OSQLFunctionMathAbstract {
   }
 
   public boolean aggregateResults() {
-    return configuredParameters.length == 1;
+    return true;
+    //return configuredParameters.length == 1;
   }
 
   public String getSyntax() {
@@ -74,12 +75,17 @@ public class OSQLFunctionMin extends OSQLFunctionMathAbstract {
   }
 
   @Override
+  public OSQLFunctionMin copy() {
+    final OSQLFunctionMin fct = new OSQLFunctionMin();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+  
   public Object getResult() {
     return context;
   }
 
   @SuppressWarnings("unchecked")
-  @Override
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     Comparable<Object> context = null;
     for (Object iParameter : resultsToMerge) {
@@ -93,5 +99,10 @@ public class OSQLFunctionMin extends OSQLFunctionMathAbstract {
         context = value;
     }
     return context;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

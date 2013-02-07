@@ -16,7 +16,6 @@
 package com.orientechnologies.orient.core.sql.functions.math;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -75,30 +74,36 @@ public class OSQLFunctionAverage extends OSQLFunctionMathAbstract {
     return "Syntax error: avg(<field> [,<field>*])";
   }
 
-  @Override
   public Object getResult() {
-    if (returnDistributedResult()) {
-      final Map<String, Object> doc = new HashMap<String, Object>();
-      doc.put("sum", sum);
-      doc.put("total", total);
-      return doc;
-    } else {
-      if (sum instanceof Integer)
-        return sum.intValue() / total;
-      else if (sum instanceof Long)
-        return sum.longValue() / total;
-      else if (sum instanceof Float)
-        return sum.floatValue() / total;
-      else if (sum instanceof Double)
-        return sum.doubleValue() / total;
-      else if (sum instanceof BigDecimal)
-        return ((BigDecimal) sum).divide(new BigDecimal(total));
-    }
     return null;
+//    if (returnDistributedResult()) {
+//      final Map<String, Object> doc = new HashMap<String, Object>();
+//      doc.put("sum", sum);
+//      doc.put("total", total);
+//      return doc;
+//    } else {
+//      if (sum instanceof Integer)
+//        return sum.intValue() / total;
+//      else if (sum instanceof Long)
+//        return sum.longValue() / total;
+//      else if (sum instanceof Float)
+//        return sum.floatValue() / total;
+//      else if (sum instanceof Double)
+//        return sum.doubleValue() / total;
+//      else if (sum instanceof BigDecimal)
+//        return ((BigDecimal) sum).divide(new BigDecimal(total));
+//    }
+//    return null;
+  }
+  
+  @Override
+  public OSQLFunctionAverage copy() {
+    final OSQLFunctionAverage fct = new OSQLFunctionAverage();
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
   @SuppressWarnings("unchecked")
-  @Override
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     Number sum = null;
     int total = 0;
@@ -126,8 +131,13 @@ public class OSQLFunctionAverage extends OSQLFunctionMathAbstract {
     return null;
   }
 
-  @Override
   public boolean aggregateResults() {
-    return configuredParameters.length == 1;
+    return false;
+    //return configuredParameters.length == 1;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

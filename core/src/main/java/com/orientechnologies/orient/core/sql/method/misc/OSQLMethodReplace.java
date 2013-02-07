@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import java.util.List;
 
@@ -25,7 +26,7 @@ import java.util.List;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodReplace extends OAbstractSQLMethod {
+public class OSQLMethodReplace extends OSQLMethod {
 
     public static final String NAME = "replace";
 

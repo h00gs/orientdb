@@ -20,7 +20,8 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItem;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionConfigurableAbstract;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
  * Extract the last item of multi values (arrays, collections and maps) or return the same value for non multi-value types.
@@ -28,7 +29,7 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionConfigurableA
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionLast extends OSQLFunctionConfigurableAbstract {
+public class OSQLFunctionLast extends OSQLFunctionAbstract {
   public static final String NAME = "last";
   private Object             last;
 
@@ -50,22 +51,32 @@ public class OSQLFunctionLast extends OSQLFunctionConfigurableAbstract {
 
     return value;
   }
-
-  public boolean aggregateResults() {
-    return configuredParameters.length == 1;
-  }
-
-  @Override
-  public Object getResult() {
-    return last;
-  }
-
-  @Override
-  public boolean filterResult() {
-    return true;
-  }
+//
+//  public boolean aggregateResults() {
+//    return configuredParameters.length == 1;
+//  }
+//
+//  @Override
+//  public Object getResult() {
+//    return last;
+//  }
+//
+//  @Override
+//  public boolean filterResult() {
+//    return true;
+//  }
 
   public String getSyntax() {
     return "Syntax error: last(<field>)";
+  }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

@@ -26,6 +26,7 @@ import java.util.Set;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * This operator can work as aggregate or inline. If only one argument is passed than aggregates, otherwise executes, and returns,
@@ -111,7 +112,6 @@ public class OSQLFunctionDifference extends OSQLFunctionMultiValueAbstract<Set<O
     return "Syntax error: difference(<field>*)";
   }
 
-  @Override
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     final Set<Object> result = new HashSet<Object>();
     final Set<Object> rejected = new HashSet<Object>();
@@ -131,4 +131,15 @@ public class OSQLFunctionDifference extends OSQLFunctionMultiValueAbstract<Set<O
     final Set<Object> objAsField = (Set<Object>) objAsMap.get(field);
     return objAsField;
   }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
 }

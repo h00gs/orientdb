@@ -102,7 +102,6 @@ public abstract class OSQLFunctionPathFinder<T extends Comparable<T>> extends OS
     return false;
   }
 
-  @Override
   public Object getResult() {
     return settledNodes;
   }

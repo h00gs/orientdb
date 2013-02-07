@@ -26,6 +26,7 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * This operator can work as aggregate or inline. If only one argument is passed than aggregates, otherwise executes, and returns,
@@ -95,7 +96,6 @@ public class OSQLFunctionIntersect extends OSQLFunctionMultiValueAbstract<Set<Ob
   }
 
   @SuppressWarnings("unchecked")
-  @Override
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     final Collection<Object> result = new HashSet<Object>();
     if (!resultsToMerge.isEmpty()) {
@@ -111,5 +111,15 @@ public class OSQLFunctionIntersect extends OSQLFunctionMultiValueAbstract<Set<Ob
       }
     }
     return result;
+  }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

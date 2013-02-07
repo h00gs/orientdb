@@ -16,36 +16,32 @@
 package com.orientechnologies.orient.core.sql.functions.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
- * Returns different values based on the condition. If it's true the first value is returned, otherwise the second one.
- * 
- * <p>
- * Syntax: <blockquote>
- * 
+ * Returns different values based on the condition. If it's true the first value
+ * is returned, otherwise the second one.
+ *
+ * <p> Syntax: <blockquote>
+ *
  * <pre>
  * if(&lt;field|value|expression&gt;, &lt;return_value_if_true&gt; [,&lt;return_value_if_false&gt;])
  * </pre>
- * 
+ *
  * </blockquote>
- * 
- * <p>
- * Examples: <blockquote>
- * 
+ *
+ * <p> Examples: <blockquote>
+ *
  * <pre>
  * SELECT <b>if(rich, 'rich', 'poor')</b> FROM ...
  * <br/>
  * SELECT <b>if( eval( 'salary > 1000000' ), 'rich', 'poor')</b> FROM ...
  * </pre>
- * 
+ *
  * </blockquote>
- * 
+ *
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  */
-
 public class OSQLFunctionIf extends OSQLFunctionAbstract {
 
   public static final String NAME = "if";
@@ -55,31 +51,37 @@ public class OSQLFunctionIf extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object execute(final OIdentifiable iCurrentRecord, final ODocument iCurrentResult, final Object[] iFuncParams,
-      final OCommandContext iContext) {
+  public String getSyntax() {
+    return "Syntax error: if(<field|value|expression>, <return_value_if_true> [,<return_value_if_false>])";
+  }
+
+  @Override
+  public OSQLFunctionIf copy() {
+    final OSQLFunctionIf fct = new OSQLFunctionIf();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
 
     boolean result;
-
     try {
-      Object condition = iFuncParams[0];
-      if (condition instanceof Boolean)
+      Object condition = children.get(0).evaluate(context, candidate);
+      if (condition instanceof Boolean) {
         result = (Boolean) condition;
-      else if (condition instanceof String)
+      } else if (condition instanceof String) {
         result = Boolean.parseBoolean(condition.toString());
-      else if (condition instanceof Number)
+      } else if (condition instanceof Number) {
         result = ((Number) condition).intValue() > 0;
-      else
+      } else {
         return null;
-
-      return result ? iFuncParams[1] : iFuncParams[2];
+      }
+      return result ? children.get(1).evaluate(context, candidate)
+              : children.get(2).evaluate(context, candidate);
 
     } catch (Exception e) {
       return null;
     }
-  }
-
-  @Override
-  public String getSyntax() {
-    return "Syntax error: if(<field|value|expression>, <return_value_if_true> [,<return_value_if_false>])";
   }
 }

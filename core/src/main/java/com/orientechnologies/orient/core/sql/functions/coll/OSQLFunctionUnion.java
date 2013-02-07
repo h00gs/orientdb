@@ -27,6 +27,7 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OFlattenIterator;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * This operator can work as aggregate or inline. If only one argument is passed than aggregates, otherwise executes, and returns, a
@@ -80,7 +81,6 @@ public class OSQLFunctionUnion extends OSQLFunctionMultiValueAbstract<Set<Object
     return "Syntax error: union(<field>*)";
   }
 
-  @Override
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     final Collection<Object> result = new HashSet<Object>();
     for (Object iParameter : resultsToMerge) {
@@ -91,5 +91,15 @@ public class OSQLFunctionUnion extends OSQLFunctionMultiValueAbstract<Set<Object
       }
     }
     return result;
+  }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

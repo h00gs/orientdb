@@ -22,13 +22,14 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentHelper;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodField extends OAbstractSQLMethod {
+public class OSQLMethodField extends OSQLMethod {
 
     public static final String NAME = "field";
 
@@ -66,5 +67,10 @@ public class OSQLMethodField extends OAbstractSQLMethod {
     final OSQLMethodField method = new OSQLMethodField();
     method.getArguments().addAll(getArguments());
     return method;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

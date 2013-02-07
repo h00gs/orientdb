@@ -57,7 +57,7 @@ import com.orientechnologies.orient.core.sql.filter.OSQLFilterCondition;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItem;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.coll.OSQLFunctionDistinct;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionCount;
 import com.orientechnologies.orient.core.sql.operator.OIndexReuseType;
@@ -645,7 +645,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
 
         if (projections != null && projections.size() == 1) {
           final Object v = projections.values().iterator().next();
-          if (v instanceof OSQLFunctionRuntime && ((OSQLFunctionRuntime) v).getFunction() instanceof OSQLFunctionCount) {
+          if (v instanceof OSQLFunction && ((OSQLFunction) v) instanceof OSQLFunctionCount) {
             if (!(compiledFilter.getRootCondition().getLeft() instanceof OSQLFilterCondition || compiledFilter.getRootCondition()
                 .getRight() instanceof OSQLFilterCondition))
               // OPTIMIZATION: JUST COUNT IT
@@ -860,9 +860,9 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
           projectionDefinition = null;
           projections = null;
 
-          if (groupedResult == null && flattenTarget instanceof OSQLFunctionRuntime
-              && ((OSQLFunctionRuntime) flattenTarget).aggregateResults())
-            getProjectionGroup(null);
+//          if (groupedResult == null && flattenTarget instanceof OSQLFunction
+//              && ((OSQLFunction) flattenTarget).aggregateResults())
+//            getProjectionGroup(null);
 
           continue;
         }
@@ -876,11 +876,11 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
 
         for (Object p : projections.values()) {
 
-          if (groupedResult == null && p instanceof OSQLFunctionRuntime && ((OSQLFunctionRuntime) p).aggregateResults()) {
-            // AGGREGATE IT
-            getProjectionGroup(null);
-            break;
-          }
+//          if (groupedResult == null && p instanceof OSQLFunctionRuntime && ((OSQLFunctionRuntime) p).aggregateResults()) {
+//            // AGGREGATE IT
+//            getProjectionGroup(null);
+//            break;
+//          }
         }
 
       } else {
@@ -978,8 +978,8 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
       for (OIdentifiable id : tempResult) {
         if (flattenTarget instanceof OSQLFilterItem)
           fieldValue = ((OSQLFilterItem) flattenTarget).getValue(id.getRecord(), context);
-        else if (flattenTarget instanceof OSQLFunctionRuntime)
-          fieldValue = ((OSQLFunctionRuntime) flattenTarget).getResult();
+//        else if (flattenTarget instanceof OSQLFunctionRuntime)
+//          fieldValue = ((OSQLFunctionRuntime) flattenTarget).getResult();
         else
           fieldValue = flattenTarget.toString();
 
@@ -1119,17 +1119,17 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     if (!(groupedResult != null && projections.entrySet().size() == 1))
       return false;
 
-    final Object projection = projections.values().iterator().next();
-    if (!(projection instanceof OSQLFunctionRuntime))
-      return false;
-
-    final OSQLFunctionRuntime f = (OSQLFunctionRuntime) projection;
-    if (!f.getRoot().equals(OSQLFunctionCount.NAME))
-      return false;
-
-    if (!((f.configuredParameters == null || f.configuredParameters.length == 0) || (f.configuredParameters != null
-        && f.configuredParameters.length == 1 && f.configuredParameters[0].equals("*"))))
-      return false;
+//    final Object projection = projections.values().iterator().next();
+//    if (!(projection instanceof OSQLFunctionRuntime))
+//      return false;
+//
+//    final OSQLFunctionRuntime f = (OSQLFunctionRuntime) projection;
+//    if (!f.getRoot().equals(OSQLFunctionCount.NAME))
+//      return false;
+//
+//    if (!((f.configuredParameters == null || f.configuredParameters.length == 0) || (f.configuredParameters != null
+//        && f.configuredParameters.length == 1 && f.configuredParameters[0].equals("*"))))
+//      return false;
 
     return true;
   }
@@ -1138,27 +1138,27 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     if (!(groupedResult != null && projections.entrySet().size() == 1))
       return false;
 
-    final Object projection = projections.values().iterator().next();
-    if (!(projection instanceof OSQLFunctionRuntime))
-      return false;
-
-    final OSQLFunctionRuntime f = (OSQLFunctionRuntime) projection;
-    if (!f.getRoot().equals(OSQLFunctionCount.NAME))
-      return false;
-
-    if (!(f.configuredParameters != null && f.configuredParameters.length == 1 && f.configuredParameters[0] instanceof OSQLFunctionRuntime))
-      return false;
-
-    final OSQLFunctionRuntime fConfigured = (OSQLFunctionRuntime) f.configuredParameters[0];
-    if (!fConfigured.getRoot().equals(OSQLFunctionDistinct.NAME))
-      return false;
-
-    if (!(fConfigured.configuredParameters != null && fConfigured.configuredParameters.length == 1 && fConfigured.configuredParameters[0] instanceof OSQLFilterItemField))
-      return false;
-
-    final OSQLFilterItemField field = (OSQLFilterItemField) fConfigured.configuredParameters[0];
-    if (!field.getRoot().equals("key"))
-      return false;
+//    final Object projection = projections.values().iterator().next();
+//    if (!(projection instanceof OSQLFunctionRuntime))
+//      return false;
+//
+//    final OSQLFunctionRuntime f = (OSQLFunctionRuntime) projection;
+//    if (!f.getRoot().equals(OSQLFunctionCount.NAME))
+//      return false;
+//
+//    if (!(f.configuredParameters != null && f.configuredParameters.length == 1 && f.configuredParameters[0] instanceof OSQLFunctionRuntime))
+//      return false;
+//
+//    final OSQLFunctionRuntime fConfigured = (OSQLFunctionRuntime) f.configuredParameters[0];
+//    if (!fConfigured.getRoot().equals(OSQLFunctionDistinct.NAME))
+//      return false;
+//
+//    if (!(fConfigured.configuredParameters != null && fConfigured.configuredParameters.length == 1 && fConfigured.configuredParameters[0] instanceof OSQLFilterItemField))
+//      return false;
+//
+//    final OSQLFilterItemField field = (OSQLFilterItemField) fConfigured.configuredParameters[0];
+//    if (!field.getRoot().equals("key"))
+//      return false;
 
     return true;
   }
@@ -1251,29 +1251,29 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
         && projections != null && projections.size() == 1) {
       final Map.Entry<String, Object> entry = projections.entrySet().iterator().next();
 
-      if (entry.getValue() instanceof OSQLFunctionRuntime) {
-        final OSQLFunctionRuntime rf = (OSQLFunctionRuntime) entry.getValue();
-        if (rf.function instanceof OSQLFunctionCount && rf.configuredParameters.length == 1
-            && "*".equals(rf.configuredParameters[0])) {
-          long count = 0;
-
-          if (parsedTarget.getTargetClasses() != null) {
-            final OClass cls = parsedTarget.getTargetClasses().keySet().iterator().next();
-            count = cls.count();
-          } else if (parsedTarget.getTargetClusters() != null) {
-            for (String cluster : parsedTarget.getTargetClusters().keySet()) {
-              count += getDatabase().countClusterElements(cluster);
-            }
-          } else if (parsedTarget.getTargetIndex() != null) {
-            count += getDatabase().getMetadata().getIndexManager().getIndex(parsedTarget.getTargetIndex()).getSize();
-          }
-
-          if (tempResult == null)
-            tempResult = new ArrayList<OIdentifiable>();
-          ((Collection<OIdentifiable>) tempResult).add(new ODocument().field(entry.getKey(), count));
-          return true;
-        }
-      }
+//      if (entry.getValue() instanceof OSQLFunctionRuntime) {
+//        final OSQLFunctionRuntime rf = (OSQLFunctionRuntime) entry.getValue();
+//        if (rf.function instanceof OSQLFunctionCount && rf.configuredParameters.length == 1
+//            && "*".equals(rf.configuredParameters[0])) {
+//          long count = 0;
+//
+//          if (parsedTarget.getTargetClasses() != null) {
+//            final OClass cls = parsedTarget.getTargetClasses().keySet().iterator().next();
+//            count = cls.count();
+//          } else if (parsedTarget.getTargetClusters() != null) {
+//            for (String cluster : parsedTarget.getTargetClusters().keySet()) {
+//              count += getDatabase().countClusterElements(cluster);
+//            }
+//          } else if (parsedTarget.getTargetIndex() != null) {
+//            count += getDatabase().getMetadata().getIndexManager().getIndex(parsedTarget.getTargetIndex()).getSize();
+//          }
+//
+//          if (tempResult == null)
+//            tempResult = new ArrayList<OIdentifiable>();
+//          tempResult.add(new ODocument().field(entry.getKey(), count));
+//          return true;
+//        }
+//      }
     }
 
     if (orderedFields != null && !orderedFields.isEmpty()) {

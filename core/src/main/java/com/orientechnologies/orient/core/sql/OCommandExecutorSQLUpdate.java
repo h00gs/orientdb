@@ -40,7 +40,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilter;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItem;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 
 /**
@@ -230,8 +230,8 @@ public class OCommandExecutorSQLUpdate extends OCommandExecutorSQLSetAware imple
 
       if (v instanceof OSQLFilterItem)
         v = ((OSQLFilterItem) v).getValue(record, context);
-      else if (v instanceof OSQLFunctionRuntime)
-        v = ((OSQLFunctionRuntime) v).execute(record, null, context);
+      else if (v instanceof OSQLFunction)
+        v = ((OSQLFunction) v).evaluate(context,record);
 
       coll.add(v);
       recordUpdated = true;
@@ -265,8 +265,8 @@ public class OCommandExecutorSQLUpdate extends OCommandExecutorSQLSetAware imple
 
         if (v instanceof OSQLFilterItem)
           v = ((OSQLFilterItem) v).getValue(record, context);
-        else if (pair.getValue() instanceof OSQLFunctionRuntime)
-          v = ((OSQLFunctionRuntime) v).execute(record, null, context);
+        else if (pair.getValue() instanceof OSQLFunction)
+          v = ((OSQLFunction) v).evaluate(context,record);
 
         map.put(pair.getKey(), v);
         recordUpdated = true;

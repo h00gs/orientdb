@@ -18,12 +18,8 @@ package com.orientechnologies.orient.core.sql.functions.misc;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.record.impl.ORecordBytes;
 import com.orientechnologies.orient.core.serialization.OBase64Utils;
-import com.orientechnologies.orient.core.serialization.OSerializableStream;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -33,30 +29,38 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
  */
 public class OSQLFunctionDecode extends OSQLFunctionAbstract {
 
-    public static final String NAME = "decode";
+  public static final String NAME = "decode";
 
-    /**
-     * Get the date at construction to have the same date for all the iteration.
-     */
-    public OSQLFunctionDecode() {
-        super(NAME, 2, 2);
+  /**
+   * Get the date at construction to have the same date for all the iteration.
+   */
+  public OSQLFunctionDecode() {
+    super(NAME, 2, 2);
+  }
+
+  @Override
+  public String getSyntax() {
+    return "Syntax error: decode(<binaryfield>, <format>)";
+  }
+
+  @Override
+  public OSQLFunctionDecode copy() {
+    final OSQLFunctionDecode fct = new OSQLFunctionDecode();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    
+    final String str = children.get(0).evaluate(context, candidate).toString();
+    final String format = children.get(1).evaluate(context, candidate).toString();
+
+    if (OSQLFunctionEncode.FORMAT_BASE64.equalsIgnoreCase(format)) {
+      return OBase64Utils.decode(str);
+    } else {
+      throw new OException("unknowned format :" + format);
     }
-
-    @Override
-    public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-
-        final String candidate = iParameters[0].toString();
-        final String format = iParameters[1].toString();
-
-        if(OSQLFunctionEncode.FORMAT_BASE64.equalsIgnoreCase(format)){
-            return OBase64Utils.decode(candidate);
-        }else{
-            throw new OException("unknowned format :"+format);
-        }
-    }
-
-    @Override
-    public String getSyntax() {
-        return "Syntax error: decode(<binaryfield>, <format>)";
-    }
+  }
+  
 }

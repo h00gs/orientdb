@@ -47,7 +47,7 @@ import com.orientechnologies.orient.core.sql.filter.OSQLFilter;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterCondition;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.filter.OSQLTarget;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperatorEquals;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperatorNotEquals;
@@ -323,17 +323,18 @@ public abstract class OCommandExecutorSQLResultsetAbstract extends OCommandExecu
           subQuery.setContext(context);
           subQuery.getContext().setVariable("current", iRecord);
           varValue = ODatabaseRecordThreadLocal.INSTANCE.get().query(subQuery);
-        } else if (letValue instanceof OSQLFunctionRuntime) {
-          final OSQLFunctionRuntime f = (OSQLFunctionRuntime) letValue;
-          if (f.getFunction().aggregateResults()) {
-            f.execute(iRecord, null, context);
-            varValue = f.getFunction().getResult();
-          } else
-            varValue = f.execute(iRecord, null, context);
+        } else if (letValue instanceof OSQLFunction) {
+          final OSQLFunction f = (OSQLFunction) letValue;
+//          if (f.getFunction().aggregateResults()) {
+//            f.execute(iRecord, null, context);
+//            varValue = f.getFunction().getResult();
+//          } else
+//            varValue = f.execute(iRecord, null, context);
         } else
           varValue = ODocumentHelper.getFieldValue(iRecord, ((String) letValue).trim(), context);
 
-        context.setVariable(varName, varValue);
+//        context.setVariable(varName, varValue);
+        context.setVariable(varName, null);
       }
     }
   }
@@ -414,91 +415,91 @@ public abstract class OCommandExecutorSQLResultsetAbstract extends OCommandExecu
    * @return
    */
   protected void optimize() {
-    if (compiledFilter != null)
-      optimizeBranch(null, compiledFilter.getRootCondition());
+//    if (compiledFilter != null)
+//      optimizeBranch(null, compiledFilter.getRootCondition());
   }
 
-  /**
-   * Check function arguments and pre calculate it if possible
-   * 
-   * @param function
-   * @return optimized function, same function if no change
-   */
-  protected Object optimizeFunction(OSQLFunctionRuntime function) {
-    boolean precalculate = true;
-    for (int i = 0; i < function.configuredParameters.length; ++i) {
-      if (function.configuredParameters[i] instanceof OSQLFilterItemField) {
-        precalculate = false;
-      } else if (function.configuredParameters[i] instanceof OSQLFunctionRuntime) {
-        final Object res = optimizeFunction((OSQLFunctionRuntime) function.configuredParameters[i]);
-        function.configuredParameters[i] = res;
-        if (res instanceof OSQLFunctionRuntime || res instanceof OSQLFilterItemField) {
-          // function might have been optimized but result is still not static
-          precalculate = false;
-        }
-      }
-    }
-
-    if (precalculate) {
-      // all fields are static, we can calculate it only once.
-      return function.execute(null, null, null); // we can pass nulls here, they wont be used
-    } else {
-      return function;
-    }
-  }
-
-  protected void optimizeBranch(final OSQLFilterCondition iParentCondition, OSQLFilterCondition iCondition) {
-    if (iCondition == null)
-      return;
-
-    Object left = iCondition.getLeft();
-
-    if (left instanceof OSQLFilterCondition) {
-      // ANALYSE LEFT RECURSIVELY
-      optimizeBranch(iCondition, (OSQLFilterCondition) left);
-    } else if (left instanceof OSQLFunctionRuntime) {
-      left = optimizeFunction((OSQLFunctionRuntime) left);
-      iCondition.setLeft(left);
-    }
-
-    Object right = iCondition.getRight();
-
-    if (right instanceof OSQLFilterCondition) {
-      // ANALYSE RIGHT RECURSIVELY
-      optimizeBranch(iCondition, (OSQLFilterCondition) right);
-    } else if (right instanceof OSQLFunctionRuntime) {
-      right = optimizeFunction((OSQLFunctionRuntime) right);
-      iCondition.setRight(right);
-    }
-
-    final OQueryOperator oper = iCondition.getOperator();
-
-    Object result = null;
-
-    if (left instanceof OSQLFilterItemField && right instanceof OSQLFilterItemField) {
-      if (((OSQLFilterItemField) left).getRoot().equals(((OSQLFilterItemField) right).getRoot())) {
-        if (oper instanceof OQueryOperatorEquals)
-          result = Boolean.TRUE;
-        else if (oper instanceof OQueryOperatorNotEquals)
-          result = Boolean.FALSE;
-      }
-    }
-
-    if (result != null) {
-      if (iParentCondition != null)
-        if (iCondition == iParentCondition.getLeft())
-          // REPLACE LEFT
-          iCondition.setLeft(result);
-        else
-          // REPLACE RIGHT
-          iCondition.setRight(result);
-      else {
-        // REPLACE ROOT CONDITION
-        if (result instanceof Boolean && ((Boolean) result))
-          compiledFilter.setRootCondition(null);
-      }
-    }
-  }
+//  /**
+//   * Check function arguments and pre calculate it if possible
+//   * 
+//   * @param function
+//   * @return optimized function, same function if no change
+//   */
+//  protected Object optimizeFunction(OSQLFunctionRuntime function) {
+//    boolean precalculate = true;
+//    for (int i = 0; i < function.configuredParameters.length; ++i) {
+//      if (function.configuredParameters[i] instanceof OSQLFilterItemField) {
+//        precalculate = false;
+//      } else if (function.configuredParameters[i] instanceof OSQLFunctionRuntime) {
+//        final Object res = optimizeFunction((OSQLFunctionRuntime) function.configuredParameters[i]);
+//        function.configuredParameters[i] = res;
+//        if (res instanceof OSQLFunctionRuntime || res instanceof OSQLFilterItemField) {
+//          // function might have been optimized but result is still not static
+//          precalculate = false;
+//        }
+//      }
+//    }
+//
+//    if (precalculate) {
+//      // all fields are static, we can calculate it only once.
+//      return function.execute(null, null, null); // we can pass nulls here, they wont be used
+//    } else {
+//      return function;
+//    }
+//  }
+//
+//  protected void optimizeBranch(final OSQLFilterCondition iParentCondition, OSQLFilterCondition iCondition) {
+//    if (iCondition == null)
+//      return;
+//
+//    Object left = iCondition.getLeft();
+//
+//    if (left instanceof OSQLFilterCondition) {
+//      // ANALYSE LEFT RECURSIVELY
+//      optimizeBranch(iCondition, (OSQLFilterCondition) left);
+//    } else if (left instanceof OSQLFunctionRuntime) {
+//      left = optimizeFunction((OSQLFunctionRuntime) left);
+//      iCondition.setLeft(left);
+//    }
+//
+//    Object right = iCondition.getRight();
+//
+//    if (right instanceof OSQLFilterCondition) {
+//      // ANALYSE RIGHT RECURSIVELY
+//      optimizeBranch(iCondition, (OSQLFilterCondition) right);
+//    } else if (right instanceof OSQLFunctionRuntime) {
+//      right = optimizeFunction((OSQLFunctionRuntime) right);
+//      iCondition.setRight(right);
+//    }
+//
+//    final OQueryOperator oper = iCondition.getOperator();
+//
+//    Object result = null;
+//
+//    if (left instanceof OSQLFilterItemField && right instanceof OSQLFilterItemField) {
+//      if (((OSQLFilterItemField) left).getRoot().equals(((OSQLFilterItemField) right).getRoot())) {
+//        if (oper instanceof OQueryOperatorEquals)
+//          result = Boolean.TRUE;
+//        else if (oper instanceof OQueryOperatorNotEquals)
+//          result = Boolean.FALSE;
+//      }
+//    }
+//
+//    if (result != null) {
+//      if (iParentCondition != null)
+//        if (iCondition == iParentCondition.getLeft())
+//          // REPLACE LEFT
+//          iCondition.setLeft(result);
+//        else
+//          // REPLACE RIGHT
+//          iCondition.setRight(result);
+//      else {
+//        // REPLACE ROOT CONDITION
+//        if (result instanceof Boolean && ((Boolean) result))
+//          compiledFilter.setRootCondition(null);
+//      }
+//    }
+//  }
 
   protected ORID[] getRange() {
     final ORID beginRange;

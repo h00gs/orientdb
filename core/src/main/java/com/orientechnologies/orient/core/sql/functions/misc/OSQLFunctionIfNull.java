@@ -16,8 +16,6 @@
 package com.orientechnologies.orient.core.sql.functions.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -64,22 +62,31 @@ public class OSQLFunctionIfNull extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object execute(final OIdentifiable iCurrentRecord, final ODocument iCurrentResult, final Object[] iFuncParams,
-      final OCommandContext iContext) {
-    /*
-     * iFuncParams [0] field/value to check for null [1] return value if [0] is null [2] optional return value if [0] is not null
-     */
-    if (iFuncParams[0] != null) {
-      if (iFuncParams.length == 3) {
-        return iFuncParams[2];
-      }
-      return iFuncParams[0];
-    }
-    return iFuncParams[1];
-  }
-
-  @Override
   public String getSyntax() {
     return "Syntax error: ifnull(<field|value>, <return_value_if_null> [,<return_value_if_not_null>])";
   }
+  
+  @Override
+  public OSQLFunctionIfNull copy() {
+    final OSQLFunctionIfNull fct = new OSQLFunctionIfNull();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    /*
+     * iFuncParams [0] field/value to check for null [1] return value if [0] is null [2] optional return value if [0] is not null
+     */
+    final Object param0 = children.get(0).evaluate(context, candidate);
+    if (param0 != null) {
+      if (children.size() == 3) {
+        return children.get(2).evaluate(context, candidate);
+      }
+      
+      return param0;
+    }
+    return children.get(1).evaluate(context, candidate);
+  }
+  
 }

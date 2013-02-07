@@ -15,10 +15,9 @@
  */
 package com.orientechnologies.orient.core.sql.functions;
 
-import java.util.List;
-
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.storage.OAutoshardedStorage;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.sql.model.OIndexResult;
+import com.orientechnologies.orient.core.sql.model.OSortBy;
 
 /**
  * Abstract class to extend to build Custom SQL Functions. Extend it and register it with:
@@ -28,65 +27,54 @@ import com.orientechnologies.orient.core.storage.OAutoshardedStorage;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public abstract class OSQLFunctionAbstract implements OSQLFunction {
-  protected String name;
-  protected int    minParams;
-  protected int    maxParams;
-
-  public OSQLFunctionAbstract(final String iName, final int iMinParams, final int iMaxParams) {
-    this.name = iName;
-    this.minParams = iMinParams;
-    this.maxParams = iMaxParams;
+public abstract class OSQLFunctionAbstract extends OSQLFunction {
+  
+  protected final String name;
+  protected final int minParams;
+  protected final int maxParams;
+  
+  public OSQLFunctionAbstract(String name){
+    this(name, 0);
+  }
+  
+  public OSQLFunctionAbstract(String name, int nbparams) {
+    this(name, nbparams, nbparams);
   }
 
+  public OSQLFunctionAbstract(String name, int minparams, int maxparams) {
+    this.name = name;
+    this.minParams = minparams;
+    this.maxParams = maxparams;
+  }
+  
+  @Override
   public String getName() {
     return name;
   }
 
+  @Override
   public int getMinParams() {
     return minParams;
   }
 
+  @Override
   public int getMaxParams() {
     return maxParams;
   }
 
   @Override
-  public String toString() {
-    return name + "()";
+  protected String thisToString() {
+    return "(Function) "+getName();
+  }
+  
+  @Override
+  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  public void config(final Object[] iConfiguredParameters) {
+  @Override
+  public int compareTo(OSQLFunction o) {
+    return this.getName().compareTo(o.getName());
   }
-
-  public boolean aggregateResults() {
-    return false;
-  }
-
-  public boolean filterResult() {
-    return false;
-  }
-
-  public Object getResult() {
-    return null;
-  }
-
-  public void setResult(final Object iResult) {
-  }
-
-  public boolean shouldMergeDistributedResult() {
-    return false;
-  }
-
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    throw new IllegalStateException("By default SQL function execution result can not be merged");
-  }
-
-  protected boolean returnDistributedResult() {
-    return ODatabaseRecordThreadLocal.INSTANCE.get().getStorage() instanceof OAutoshardedStorage;
-  }
-
-  protected long getDistributedStorageId() {
-    return ((OAutoshardedStorage) ODatabaseRecordThreadLocal.INSTANCE.get().getStorage()).getStorageId();
-  }
+  
 }

@@ -19,8 +19,11 @@ import java.util.List;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.model.OIndexResult;
+import com.orientechnologies.orient.core.sql.model.OSortBy;
 
 /**
  * Dynamic function factory bound to the database's functions
@@ -28,27 +31,27 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
  * @author Luca Garulli
  * 
  */
-public class ODatabaseFunction implements OSQLFunction {
+public class ODatabaseFunction extends OSQLFunction {
   private final OFunction f;
 
   public ODatabaseFunction(final OFunction f) {
     this.f = f;
   }
-
-  @Override
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iFuncParams, final OCommandContext iContext) {
-    return f.executeInContext(iContext, iFuncParams);
-  }
-
-  @Override
-  public boolean aggregateResults() {
-    return false;
-  }
-
-  @Override
-  public boolean filterResult() {
-    return false;
-  }
+//
+//  @Override
+//  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iFuncParams, final OCommandContext iContext) {
+//    return f.executeInContext(iContext, iFuncParams);
+//  }
+//
+//  @Override
+//  public boolean aggregateResults() {
+//    return false;
+//  }
+//
+//  @Override
+//  public boolean filterResult() {
+//    return false;
+//  }
 
   @Override
   public String getName() {
@@ -80,26 +83,51 @@ public class ODatabaseFunction implements OSQLFunction {
     return buffer.toString();
   }
 
+//  @Override
+//  public Object getResult() {
+//    return null;
+//  }
+//
+//  @Override
+//  public void setResult(final Object iResult) {
+//  }
+//
+//  @Override
+//  public void config(final Object[] configuredParameters) {
+//  }
+//
+//  @Override
+//  public boolean shouldMergeDistributedResult() {
+//    return false;
+//  }
+//
+//  @Override
+//  public Object mergeDistributedResult(List<Object> resultsToMerge) {
+//    return null;
+//  }
+
   @Override
-  public Object getResult() {
-    return null;
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override
-  public void setResult(final Object iResult) {
+  protected String thisToString() {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override
-  public void config(final Object[] configuredParameters) {
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override
-  public boolean shouldMergeDistributedResult() {
-    return false;
+  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    return null;
+  public int compareTo(OSQLFunction o) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

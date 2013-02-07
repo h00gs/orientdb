@@ -16,7 +16,9 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
+import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
 
 /**
  *
@@ -36,11 +38,11 @@ public interface OExpressionVisitor {
   
   Object visit(OUnset candidate, Object data);
   
-  Object visit(OFunction candidate, Object data);
+  Object visit(OSQLFunction candidate, Object data);
   
   Object visit(OSQLMethod candidate, Object data);
           
-  Object visit(OOperator candidate, Object data);
+  Object visit(OQueryOperator candidate, Object data);
   
   Object visit(OAnd candidate, Object data);
   

@@ -16,6 +16,7 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OAnd;
 import com.orientechnologies.orient.core.sql.model.OCollection;
@@ -24,15 +25,15 @@ import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
 import com.orientechnologies.orient.core.sql.model.OName;
-import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OIsNotNull;
 import com.orientechnologies.orient.core.sql.model.OIsNull;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.ONot;
-import com.orientechnologies.orient.core.sql.model.OOperator;
 import com.orientechnologies.orient.core.sql.model.OOr;
 import com.orientechnologies.orient.core.sql.model.OUnset;
+import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,12 +88,14 @@ public class CopyVisitor implements OExpressionVisitor {
   }
   
   @Override
-  public Object visit(OFunction candidate, Object data) {
-    final List<OExpression> args = candidate.getArguments();
+  public Object visit(OSQLFunction candidate, Object data) {
+    final List<OExpression> args = new ArrayList<OExpression>(candidate.getArguments());
     for(int i=0;i<args.size();i++){
       args.set(i, (OExpression)args.get(i).accept(this, data));
     }
-    OFunction copy = new OFunction(candidate.getName(), candidate.getAlias(), args);
+    OSQLFunction copy = candidate.copy();
+    copy.getArguments().clear();
+    copy.getArguments().addAll(args);
     return copy;
   }
   
@@ -111,13 +114,14 @@ public class CopyVisitor implements OExpressionVisitor {
   }
   
   @Override
-  public Object visit(OOperator candidate, Object data) {
-    final List<OExpression> args = candidate.getArguments();
-    for(int i=0;i<args.size();i++){
-      args.set(i, (OExpression)args.get(i).accept(this, data));
-    }
-    OOperator copy = new OOperator(candidate.getName(), candidate.getAlias(), args);
-    return copy;
+  public Object visit(OQueryOperator candidate, Object data) {
+    throw new UnsupportedOperationException("Unknowned expression :"+candidate.getClass());
+//    final List<OExpression> args = candidate.getArguments();
+//    for(int i=0;i<args.size();i++){
+//      args.set(i, (OExpression)args.get(i).accept(this, data));
+//    }
+//    OOperator copy = new OOperator(candidate.getName(), candidate.getAlias(), args);
+//    return copy;
   }
 
   @Override

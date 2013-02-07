@@ -52,21 +52,20 @@ public class OSQLFunctionEval extends OSQLFunctionMathAbstract {
     }
   }
 
-  public boolean aggregateResults() {
-    return false;
-  }
-
   public String getSyntax() {
     return "Syntax error: eval(<expression>)";
   }
 
   @Override
-  public Object getResult() {
-    return null;
+  public OSQLFunctionEval copy() {
+    final OSQLFunctionEval fct = new OSQLFunctionEval();
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
   @Override
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    return null;
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
+  
 }

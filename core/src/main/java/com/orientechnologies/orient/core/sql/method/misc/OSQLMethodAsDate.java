@@ -18,6 +18,7 @@ package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -26,7 +27,7 @@ import java.util.Date;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodAsDate extends OAbstractSQLMethod {
+public class OSQLMethodAsDate extends OSQLMethod {
 
   public static final String NAME = "asdate";
 

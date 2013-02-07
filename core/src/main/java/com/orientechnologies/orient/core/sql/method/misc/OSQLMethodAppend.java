@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 
@@ -26,7 +25,7 @@ import com.orientechnologies.orient.core.sql.model.OExpression;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodAppend extends OAbstractSQLMethod {
+public class OSQLMethodAppend extends OSQLMethod {
 
   public static final String NAME = "append";
 

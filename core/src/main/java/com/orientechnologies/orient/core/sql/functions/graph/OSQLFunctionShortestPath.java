@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OSQLHelper;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * Shortest path algorithm to find the shortest path from one node to another node in a directed graph.
@@ -81,5 +82,15 @@ public class OSQLFunctionShortestPath extends OSQLFunctionPathFinder<Integer> {
   @Override
   protected Integer sumDistances(final Integer iDistance1, final Integer iDistance2) {
     return iDistance1.intValue() + iDistance2.intValue();
+  }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

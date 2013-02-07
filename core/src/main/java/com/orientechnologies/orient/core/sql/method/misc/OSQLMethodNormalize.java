@@ -18,6 +18,7 @@ package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import java.text.Normalizer;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodNormalize extends OAbstractSQLMethod {
+public class OSQLMethodNormalize extends OSQLMethod {
 
   public static final String NAME = "normalize";
 

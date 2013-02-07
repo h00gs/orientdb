@@ -295,41 +295,41 @@ public class SQLFunctionsTest {
     database.command(new OSQLSynchQuery<ODocument>("select blaaaa(salary) as max from Account")).execute();
   }
 
-  @Test
-  public void queryCustomFunction() {
-    OSQLEngine.getInstance().registerFunction("bigger", new OSQLFunctionAbstract("bigger", 2, 2) {
-      public String getSyntax() {
-        return "bigger(<first>, <second>)";
-      }
-
-      public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-          OCommandContext iContext) {
-        if (iParameters[0] == null || iParameters[1] == null)
-          // CHECK BOTH EXPECTED PARAMETERS
-          return null;
-
-        if (!(iParameters[0] instanceof Number) || !(iParameters[1] instanceof Number))
-          // EXCLUDE IT FROM THE RESULT SET
-          return null;
-
-        // USE DOUBLE TO AVOID LOSS OF PRECISION
-        final double v1 = ((Number) iParameters[0]).doubleValue();
-        final double v2 = ((Number) iParameters[1]).doubleValue();
-
-        return Math.max(v1, v2);
-      }
-    });
-
-    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select from Account where bigger(id,1000) = 1000"))
-        .execute();
-
-    Assert.assertTrue(result.size() != 0);
-    for (ODocument d : result) {
-      Assert.assertTrue((Integer) d.field("id") <= 1000);
-    }
-
-    OSQLEngine.getInstance().unregisterFunction("bigger");
-  }
+//  @Test
+//  public void queryCustomFunction() {
+//    OSQLEngine.getInstance().registerFunction("bigger", new OSQLFunctionAbstract("bigger", 2, 2) {
+//      public String getSyntax() {
+//        return "bigger(<first>, <second>)";
+//      }
+//
+//      public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
+//          OCommandContext iContext) {
+//        if (iParameters[0] == null || iParameters[1] == null)
+//          // CHECK BOTH EXPECTED PARAMETERS
+//          return null;
+//
+//        if (!(iParameters[0] instanceof Number) || !(iParameters[1] instanceof Number))
+//          // EXCLUDE IT FROM THE RESULT SET
+//          return null;
+//
+//        // USE DOUBLE TO AVOID LOSS OF PRECISION
+//        final double v1 = ((Number) iParameters[0]).doubleValue();
+//        final double v2 = ((Number) iParameters[1]).doubleValue();
+//
+//        return Math.max(v1, v2);
+//      }
+//    });
+//
+//    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select from Account where bigger(id,1000) = 1000"))
+//        .execute();
+//
+//    Assert.assertTrue(result.size() != 0);
+//    for (ODocument d : result) {
+//      Assert.assertTrue((Integer) d.field("id") <= 1000);
+//    }
+//
+//    OSQLEngine.getInstance().unregisterFunction("bigger");
+//  }
 
   @Test
   public void queryAsLong() {

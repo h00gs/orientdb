@@ -21,6 +21,7 @@ import java.util.Set;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -50,12 +51,21 @@ public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
     return null;
   }
 
-  @Override
   public boolean filterResult() {
     return true;
   }
 
   public String getSyntax() {
     return "Syntax error: distinct(<field>)";
+  }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

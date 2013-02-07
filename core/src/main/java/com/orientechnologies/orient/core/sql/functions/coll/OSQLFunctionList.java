@@ -25,6 +25,7 @@ import java.util.Map;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * This operator add an item in a list. The list accepts duplicates.
@@ -39,27 +40,27 @@ public class OSQLFunctionList extends OSQLFunctionMultiValueAbstract<List<Object
     super(NAME, 1, -1);
   }
 
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-      OCommandContext iContext) {
-    if (iParameters.length > 1)
-      // IN LINE MODE
-      context = new ArrayList<Object>();
-
-    for (Object value : iParameters) {
-      if (value != null) {
-        if (iParameters.length == 1 && context == null)
-          // AGGREGATION MODE (STATEFULL)
-          context = new ArrayList<Object>();
-
-        if (value instanceof Collection<?>)
-          // INSERT EVERY SINGLE COLLECTION ITEM
-          context.addAll((Collection<?>) value);
-        else
-          context.add(value);
-      }
-    }
-    return prepareResult(context);
-  }
+//  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
+//      OCommandContext iContext) {
+//    if (iParameters.length > 1)
+//      // IN LINE MODE
+//      context = new ArrayList<Object>();
+//
+//    for (Object value : iParameters) {
+//      if (value != null) {
+//        if (iParameters.length == 1 && context == null)
+//          // AGGREGATION MODE (STATEFULL)
+//          context = new ArrayList<Object>();
+//
+//        if (value instanceof Collection<?>)
+//          // INSERT EVERY SINGLE COLLECTION ITEM
+//          context.addAll((Collection<?>) value);
+//        else
+//          context.add(value);
+//      }
+//    }
+//    return prepareResult(context);
+//  }
 
   public String getSyntax() {
     return "Syntax error: list(<value>*)";
@@ -69,36 +70,45 @@ public class OSQLFunctionList extends OSQLFunctionMultiValueAbstract<List<Object
     return false;
   }
 
+//  @Override
+//  public List<Object> getResult() {
+//    final List<Object> res = context;
+//    context = null;
+//    return prepareResult(res);
+//  }
+
+//  protected List<Object> prepareResult(List<Object> res) {
+//    if (returnDistributedResult()) {
+//      final Map<String, Object> doc = new HashMap<String, Object>();
+//      doc.put("node", getDistributedStorageId());
+//      doc.put("context", res);
+//      return Collections.<Object> singletonList(doc);
+//    } else {
+//      return res;
+//    }
+//  }
+//
+//  @SuppressWarnings("unchecked")
+//  public Object mergeDistributedResult(List<Object> resultsToMerge) {
+//    final Map<Long, Collection<Object>> chunks = new HashMap<Long, Collection<Object>>();
+//    for (Object iParameter : resultsToMerge) {
+//      final Map<String, Object> container = (Map<String, Object>) ((Collection<?>) iParameter).iterator().next();
+//      chunks.put((Long) container.get("node"), (Collection<Object>) container.get("context"));
+//    }
+//    final Collection<Object> result = new ArrayList<Object>();
+//    for (Collection<Object> chunk : chunks.values()) {
+//      result.addAll(chunk);
+//    }
+//    return result;
+//  }
+
   @Override
-  public List<Object> getResult() {
-    final List<Object> res = context;
-    context = null;
-    return prepareResult(res);
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  protected List<Object> prepareResult(List<Object> res) {
-    if (returnDistributedResult()) {
-      final Map<String, Object> doc = new HashMap<String, Object>();
-      doc.put("node", getDistributedStorageId());
-      doc.put("context", res);
-      return Collections.<Object> singletonList(doc);
-    } else {
-      return res;
-    }
-  }
-
-  @SuppressWarnings("unchecked")
   @Override
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    final Map<Long, Collection<Object>> chunks = new HashMap<Long, Collection<Object>>();
-    for (Object iParameter : resultsToMerge) {
-      final Map<String, Object> container = (Map<String, Object>) ((Collection<?>) iParameter).iterator().next();
-      chunks.put((Long) container.get("node"), (Collection<Object>) container.get("context"));
-    }
-    final Collection<Object> result = new ArrayList<Object>();
-    for (Collection<Object> chunk : chunks.values()) {
-      result.addAll(chunk);
-    }
-    return result;
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

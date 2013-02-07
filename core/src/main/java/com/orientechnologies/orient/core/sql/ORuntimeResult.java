@@ -25,7 +25,7 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * Handles runtime results.
@@ -97,9 +97,9 @@ public class ORuntimeResult {
           projectionValue = ((OSQLFilterItemVariable) v).getValue(inputDocument, iContext);
         } else if (v instanceof OSQLFilterItemField)
           projectionValue = ((OSQLFilterItemField) v).getValue(inputDocument, iContext);
-        else if (v instanceof OSQLFunctionRuntime) {
-          final OSQLFunctionRuntime f = (OSQLFunctionRuntime) v;
-          projectionValue = f.execute(inputDocument, iValue, iContext);
+        else if (v instanceof OSQLFunction) {
+          final OSQLFunction f = (OSQLFunction) v;
+          projectionValue = f.evaluate(iContext,inputDocument);
         } else
           projectionValue = v;
 
@@ -120,14 +120,14 @@ public class ORuntimeResult {
         if (!iValue.containsField(projection.getKey())) {
           // ONLY IF NOT ALREADY CONTAINS A VALUE, OTHERWISE HAS BEEN SET MANUALLY (INDEX?)
           final Object v = projection.getValue();
-          if (v instanceof OSQLFunctionRuntime) {
-            final OSQLFunctionRuntime f = (OSQLFunctionRuntime) v;
-            canExcludeResult = f.filterResult();
+          if (v instanceof OSQLFunction) {
+            final OSQLFunction f = (OSQLFunction) v;
+//            canExcludeResult = f.filterResult();
+//
+//            Object fieldValue = f.getResult();
 
-            Object fieldValue = f.getResult();
-
-            if (fieldValue != null)
-              iValue.field(projection.getKey(), fieldValue);
+//            if (fieldValue != null)
+//              iValue.field(projection.getKey(), fieldValue);
           }
         }
       }

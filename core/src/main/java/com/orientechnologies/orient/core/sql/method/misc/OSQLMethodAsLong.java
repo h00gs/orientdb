@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import java.util.Date;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Date;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodAsLong extends OAbstractSQLMethod {
+public class OSQLMethodAsLong extends OSQLMethod {
 
   public static final String NAME = "aslong";
 

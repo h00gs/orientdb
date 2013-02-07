@@ -36,6 +36,9 @@ import com.orientechnologies.orient.core.serialization.serializer.OStringSeriali
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.method.OSQLMethodFactory;
 import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodField;
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
 
 /**
  * Represents an object field as value in the query condition.
@@ -47,7 +50,7 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
 
   private static ClassLoader                  orientClassLoader = OSQLFilterItemAbstract.class.getClassLoader();
 
-  protected List<OPair<OSQLMethod, Object[]>> operationsChain   = null;
+  protected List<Entry<OSQLMethod, Object[]>> operationsChain   = null;
 
   public OSQLFilterItemAbstract(final OBaseParser iQueryToParse, final String iText) {
     final List<String> parts = OStringSerializerHelper.smartSplit(iText, '.');
@@ -55,7 +58,7 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
     setRoot(iQueryToParse, parts.get(0));
 
     if (parts.size() > 1) {
-      operationsChain = new ArrayList<OPair<OSQLMethod, Object[]>>();
+      operationsChain = new ArrayList<Entry<OSQLMethod, Object[]>>();
 
       // GET ALL SPECIAL OPERATIONS
       for (int i = 1; i < parts.size(); ++i) {
@@ -80,7 +83,7 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
               }
 
               // SPECIAL OPERATION FOUND: ADD IT IN TO THE CHAIN
-              operationsChain.add(new OPair<OSQLMethod, Object[]>(method, arguments));
+              operationsChain.add(new SimpleEntry<OSQLMethod, Object[]>(method, arguments));
           }else{
             // ERROR: OPERATOR NOT FOUND OR MISPELLED
             throw new OQueryParsingException(iQueryToParse.parserText,
@@ -88,7 +91,7 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
                 0);
           }
         } else {
-          operationsChain.add(new OPair<OSQLMethod, Object[]>(getMethod(OSQLMethodField.NAME), new Object[] { part }));
+          operationsChain.add(new SimpleEntry<OSQLMethod, Object[]>(getMethod(OSQLMethodField.NAME), new Object[] { part }));
         }
       }
     }
@@ -103,7 +106,7 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
       // APPLY OPERATIONS FOLLOWING THE STACK ORDER
       OSQLMethod operator = null;
 
-        for (OPair<OSQLMethod, Object[]> op : operationsChain) {
+        for (Entry<OSQLMethod, Object[]> op : operationsChain) {
           operator = op.getKey();
           ioResult = operator.evaluate(iContext, iRecord);
         }
@@ -123,7 +126,7 @@ public abstract class OSQLFilterItemAbstract implements OSQLFilterItem {
     if (root != null)
       buffer.append(root);
     if (operationsChain != null) {
-      for (OPair<OSQLMethod, Object[]> op : operationsChain) {
+      for (Entry<OSQLMethod, Object[]> op : operationsChain) {
         buffer.append('.');
         buffer.append(op.getKey());
         if (op.getValue() != null) {

@@ -17,13 +17,14 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodTrim extends OAbstractSQLMethod {
+public class OSQLMethodTrim extends OSQLMethod {
 
   public static final String NAME = "trim";
 

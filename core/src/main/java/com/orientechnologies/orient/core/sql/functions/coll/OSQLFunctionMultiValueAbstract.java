@@ -15,7 +15,9 @@
  */
 package com.orientechnologies.orient.core.sql.functions.coll;
 
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionConfigurableAbstract;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
+import java.util.Set;
+
 
 /**
  * Abstract class for multi-value based functions implementations.
@@ -23,7 +25,7 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionConfigurableA
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public abstract class OSQLFunctionMultiValueAbstract<T> extends OSQLFunctionConfigurableAbstract {
+public abstract class OSQLFunctionMultiValueAbstract<T> extends OSQLFunctionAbstract {
 
   protected T context;
 
@@ -31,18 +33,25 @@ public abstract class OSQLFunctionMultiValueAbstract<T> extends OSQLFunctionConf
     super(iName, iMinParams, iMaxParams);
   }
 
-  @Override
   public boolean aggregateResults() {
-    return configuredParameters.length == 1;
+    return false;
+    //return configuredParameters.length == 1;
   }
 
-  @Override
   public T getResult() {
     return context;
   }
 
-  @Override
   public boolean shouldMergeDistributedResult() {
     return true;
   }
+  
+  protected Object prepareResult(Set<Object> context) {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+  
+  protected boolean returnDistributedResult() {
+    return false;
+  }
+  
 }

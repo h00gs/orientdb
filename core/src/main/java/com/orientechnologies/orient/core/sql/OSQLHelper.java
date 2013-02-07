@@ -43,7 +43,6 @@ import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemParameter;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
 import com.orientechnologies.orient.core.sql.filter.OSQLPredicate;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
 
 /**
  * SQL Helper class
@@ -207,9 +206,9 @@ public class OSQLHelper {
     if (beginParenthesis > -1 && (separator == -1 || separator > beginParenthesis)) {
       final int endParenthesis = iWord.indexOf(OStringSerializerHelper.EMBEDDED_END, beginParenthesis);
 
-      if (endParenthesis > -1 && Character.isLetter(iWord.charAt(0)))
+//      if (endParenthesis > -1 && Character.isLetter(iWord.charAt(0)))
         // FUNCTION: CREATE A RUN-TIME CONTAINER FOR IT TO SAVE THE PARAMETERS
-        return new OSQLFunctionRuntime(iCommand, iWord);
+//        return new OSQLFunctionRuntime(iCommand, iWord);
     }
 
     return null;

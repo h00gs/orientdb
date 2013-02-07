@@ -17,10 +17,8 @@ package com.orientechnologies.orient.core.sql.functions.misc;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.ORecord;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ORecordBytes;
 import com.orientechnologies.orient.core.serialization.OBase64Utils;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
@@ -33,46 +31,55 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
  */
 public class OSQLFunctionEncode extends OSQLFunctionAbstract {
 
-    public static final String NAME = "encode";
-    public static final String FORMAT_BASE64 = "base64";
+  public static final String NAME = "encode";
+  public static final String FORMAT_BASE64 = "base64";
 
-    /**
-     * Get the date at construction to have the same date for all the iteration.
-     */
-    public OSQLFunctionEncode() {
-        super(NAME, 2, 2);
+  /**
+   * Get the date at construction to have the same date for all the iteration.
+   */
+  public OSQLFunctionEncode() {
+    super(NAME, 2, 2);
+  }
+
+  @Override
+  public String getSyntax() {
+    return "Syntax error: encode(<binaryfield>, <format>)";
+  }
+
+  @Override
+  public OSQLFunctionEncode copy() {
+    final OSQLFunctionEncode fct = new OSQLFunctionEncode();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    
+    final Object src = children.get(0).evaluate(context, candidate);
+    final String format = children.get(1).evaluate(context, candidate).toString();
+
+    byte[] data = null;
+    if (src instanceof byte[]) {
+      data = (byte[]) src;
+    } else if (src instanceof ORecordId) {
+      final ORecord rec = ((ORecordId) src).getRecord();
+      if (rec instanceof ORecordBytes) {
+        data = ((ORecordBytes) rec).toStream();
+      }
+    } else if (src instanceof OSerializableStream) {
+      data = ((OSerializableStream) src).toStream();
     }
 
-    public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-
-        final Object candidate = iParameters[0];
-        final String format = iParameters[1].toString();
-
-        byte[] data = null;
-        if (candidate instanceof byte[]) {
-            data = (byte[]) candidate;
-        } else if (candidate instanceof ORecordId) {
-            final ORecord rec = ((ORecordId) candidate).getRecord();
-            if (rec instanceof ORecordBytes) {
-                data = ((ORecordBytes) rec).toStream();
-            }
-        } else if (candidate instanceof OSerializableStream) {
-            data = ((OSerializableStream) candidate).toStream();
-        }
-
-        if(data == null){
-            return null;
-        }
-        
-        if(FORMAT_BASE64.equalsIgnoreCase(format)){
-            return OBase64Utils.encodeBytes(data);
-        }else{
-            throw new OException("unknowned format :"+format);
-        }
+    if (data == null) {
+      return null;
     }
 
-    @Override
-    public String getSyntax() {
-        return "Syntax error: encode(<binaryfield>, <format>)";
+    if (FORMAT_BASE64.equalsIgnoreCase(format)) {
+      return OBase64Utils.encodeBytes(data);
+    } else {
+      throw new OException("unknowned format :" + format);
     }
+  }
+  
 }

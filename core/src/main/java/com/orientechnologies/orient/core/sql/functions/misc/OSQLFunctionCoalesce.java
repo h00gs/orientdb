@@ -1,8 +1,6 @@
 package com.orientechnologies.orient.core.sql.functions.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -48,17 +46,26 @@ public class OSQLFunctionCoalesce extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-    int length = iParameters.length;
-    for (int i = 0; i < length; i++) {
-      if (iParameters[i] != null)
-        return iParameters[i];
-    }
-    return null;
-  }
-
-  @Override
   public String getSyntax() {
     return "Returns the first not-null parameter or null if all parameters are null. Syntax: coalesce(<field|value> [,<field|value>]*)";
   }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final int length = children.size();
+    for (int i = 0; i < length; i++) {
+      final Object obj = children.get(i).evaluate(context, candidate);
+      if (obj != null)
+        return obj;
+    }
+    return null;
+  }
+  
+  @Override
+  public OSQLFunctionCoalesce copy() {
+    final OSQLFunctionCoalesce fct = new OSQLFunctionCoalesce();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
 }

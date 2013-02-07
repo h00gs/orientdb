@@ -19,7 +19,6 @@ package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.sql.model.OExpression;
-import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
@@ -46,6 +45,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
 import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionFactory;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
@@ -193,10 +194,12 @@ public final class SQLGrammarUtils {
     }
   }
   
-  public static OFunction visit(FunctionCallContext candidate) throws SyntaxException {
+  public static OSQLFunction visit(FunctionCallContext candidate) throws SyntaxException {
     final String name = ((WordContext)candidate.getChild(0)).getText();
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
-    return new OFunction(name, args);
+    final OSQLFunction fct = createFunction(name);
+    fct.getArguments().addAll(args);
+    return fct;
   }
   
   public static OSQLMethod visit(MethodCallContext candidate) throws SyntaxException {
@@ -321,6 +324,18 @@ public final class SQLGrammarUtils {
       }
     }
     throw new SyntaxException("No method for name : "+name);
+  }
+  
+  public static OSQLFunction createFunction(String name) throws SyntaxException{
+    name = name.toLowerCase();
+    final Iterator<OSQLFunctionFactory> ite = lookupProviderWithOrientClassLoader(OSQLFunctionFactory.class, CLASSLOADER);
+    while (ite.hasNext()) {
+      final OSQLFunctionFactory factory = ite.next();
+      if (factory.hasFunction(name)) {
+        return factory.createFunction(name);
+      }
+    }
+    throw new SyntaxException("No function for name : "+name);
   }
   
 }

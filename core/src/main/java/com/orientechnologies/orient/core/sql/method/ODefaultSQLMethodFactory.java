@@ -54,38 +54,38 @@ import java.util.Set;
  */
 public class ODefaultSQLMethodFactory implements OSQLMethodFactory{
 
-    private final Map<String,OSQLMethod> methods = new HashMap<String, OSQLMethod>();
+    private final Map<String,Class> methods = new HashMap<String, Class>();
 
     public ODefaultSQLMethodFactory() {
-        methods.put(OSQLMethodAppend.NAME, new OSQLMethodAppend());
-        methods.put(OSQLMethodAsBoolean.NAME, new OSQLMethodAsBoolean());
-        methods.put(OSQLMethodAsDate.NAME, new OSQLMethodAsDate());
-        methods.put(OSQLMethodAsDateTime.NAME, new OSQLMethodAsDateTime());
-        methods.put(OSQLMethodAsDecimal.NAME, new OSQLMethodAsDecimal());
-        methods.put(OSQLMethodAsFloat.NAME, new OSQLMethodAsFloat());
-        methods.put(OSQLMethodAsInteger.NAME, new OSQLMethodAsInteger());
-        methods.put(OSQLMethodAsLong.NAME, new OSQLMethodAsLong());
-        methods.put(OSQLMethodAsString.NAME, new OSQLMethodAsString());
-        methods.put(OSQLMethodCharAt.NAME, new OSQLMethodCharAt());
-        methods.put(OSQLMethodField.NAME, new OSQLMethodField());
-        methods.put(OSQLMethodFormat.NAME, new OSQLMethodFormat());
-        methods.put(OSQLMethodIndexOf.NAME, new OSQLMethodIndexOf());
-        methods.put(OSQLMethodKeys.NAME, new OSQLMethodKeys());
-        methods.put(OSQLMethodLeft.NAME, new OSQLMethodLeft());
-        methods.put(OSQLMethodLength.NAME, new OSQLMethodLength());
-        methods.put(OSQLMethodNormalize.NAME, new OSQLMethodNormalize());
-        methods.put(OSQLMethodPrefix.NAME, new OSQLMethodPrefix());
-        methods.put(OSQLMethodReplace.NAME, new OSQLMethodReplace());
-        methods.put(OSQLMethodRight.NAME, new OSQLMethodRight());
-        methods.put(OSQLMethodSize.NAME, new OSQLMethodSize());
-        methods.put(OSQLMethodSubString.NAME, new OSQLMethodSubString());
-        methods.put(OSQLMethodToJSON.NAME, new OSQLMethodToJSON());
-        methods.put(OSQLMethodToLowerCase.NAME, new OSQLMethodToLowerCase());
-        methods.put(OSQLMethodToUpperCase.NAME, new OSQLMethodToUpperCase());
-        methods.put(OSQLMethodTrim.NAME, new OSQLMethodTrim());
-        methods.put(OSQLMethodValues.NAME, new OSQLMethodValues());
+        methods.put(OSQLMethodAppend.NAME, OSQLMethodAppend.class);
+        methods.put(OSQLMethodAsBoolean.NAME, OSQLMethodAsBoolean.class);
+        methods.put(OSQLMethodAsDate.NAME, OSQLMethodAsDate.class);
+        methods.put(OSQLMethodAsDateTime.NAME, OSQLMethodAsDateTime.class);
+        methods.put(OSQLMethodAsDecimal.NAME, OSQLMethodAsDecimal.class);
+        methods.put(OSQLMethodAsFloat.NAME, OSQLMethodAsFloat.class);
+        methods.put(OSQLMethodAsInteger.NAME, OSQLMethodAsInteger.class);
+        methods.put(OSQLMethodAsLong.NAME, OSQLMethodAsLong.class);
+        methods.put(OSQLMethodAsString.NAME, OSQLMethodAsString.class);
+        methods.put(OSQLMethodCharAt.NAME, OSQLMethodCharAt.class);
+        methods.put(OSQLMethodField.NAME, OSQLMethodField.class);
+        methods.put(OSQLMethodFormat.NAME, OSQLMethodFormat.class);
+        methods.put(OSQLMethodIndexOf.NAME, OSQLMethodIndexOf.class);
+        methods.put(OSQLMethodKeys.NAME, OSQLMethodKeys.class);
+        methods.put(OSQLMethodLeft.NAME, OSQLMethodLeft.class);
+        methods.put(OSQLMethodLength.NAME, OSQLMethodLength.class);
+        methods.put(OSQLMethodNormalize.NAME, OSQLMethodNormalize.class);
+        methods.put(OSQLMethodPrefix.NAME, OSQLMethodPrefix.class);
+        methods.put(OSQLMethodReplace.NAME, OSQLMethodReplace.class);
+        methods.put(OSQLMethodRight.NAME, OSQLMethodRight.class);
+        methods.put(OSQLMethodSize.NAME, OSQLMethodSize.class);
+        methods.put(OSQLMethodSubString.NAME, OSQLMethodSubString.class);
+        methods.put(OSQLMethodToJSON.NAME, OSQLMethodToJSON.class);
+        methods.put(OSQLMethodToLowerCase.NAME, OSQLMethodToLowerCase.class);
+        methods.put(OSQLMethodToUpperCase.NAME, OSQLMethodToUpperCase.class);
+        methods.put(OSQLMethodTrim.NAME, OSQLMethodTrim.class);
+        methods.put(OSQLMethodValues.NAME, OSQLMethodValues.class);
     }
-    
+        
     @Override
     public boolean hasMethod(String iName) {
         return methods.containsKey(iName);
@@ -96,14 +96,26 @@ public class ODefaultSQLMethodFactory implements OSQLMethodFactory{
         return methods.keySet();
     }
 
-    @Override
-    public OSQLMethod createMethod(String name) throws OCommandExecutionException {
-        final OSQLMethod m = methods.get(name);
-        if(m == null){
-            throw new OCommandExecutionException("Unknowned method name :" + name);
-        }
-        return m;
+  @Override
+  public OSQLMethod createMethod(String name) throws OCommandExecutionException {
+    final Object obj = methods.get(name);
+
+    if (obj == null) {
+      throw new OCommandExecutionException("Unknowned method name :" + name);
     }
-        
-    
+
+    if (obj instanceof OSQLMethod) {
+      return (OSQLMethod) obj;
+    } else {
+      // it's a class
+      final Class<?> clazz = (Class<?>) obj;
+      try {
+        return (OSQLMethod) clazz.newInstance();
+      } catch (Exception e) {
+        throw new OCommandExecutionException("Error in creation of method " + name
+                + "(). Probably there is not an empty constructor or the constructor generates errors", e);
+      }
+    }
+  }
+
 }

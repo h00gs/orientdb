@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import java.math.BigDecimal;
 
 /**
@@ -24,7 +25,7 @@ import java.math.BigDecimal;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodAsDecimal extends OAbstractSQLMethod {
+public class OSQLMethodAsDecimal extends OSQLMethod {
 
   public static final String NAME = "asdecimal";
 

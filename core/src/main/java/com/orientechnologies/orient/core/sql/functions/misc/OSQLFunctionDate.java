@@ -22,9 +22,7 @@ import java.util.TimeZone;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OQueryParsingException;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -37,7 +35,6 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 public class OSQLFunctionDate extends OSQLFunctionAbstract {
   public static final String NAME = "date";
 
-  private Date               date;
   private SimpleDateFormat   format;
 
   /**
@@ -45,31 +42,6 @@ public class OSQLFunctionDate extends OSQLFunctionAbstract {
    */
   public OSQLFunctionDate() {
     super(NAME, 0, 3);
-    date = new Date();
-  }
-
-  public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-    if (iParameters.length == 0)
-      return date;
-
-    if (iParameters[0] instanceof Number)
-      return new Date(((Number) iParameters[0]).longValue());
-
-    if (format == null) {
-      if (iParameters.length > 1)
-        format = new SimpleDateFormat((String) iParameters[1]);
-      else
-        format = ODatabaseRecordThreadLocal.INSTANCE.get().getStorage().getConfiguration().getDateTimeFormatInstance();
-
-      if (iParameters.length == 3)
-        format.setTimeZone(TimeZone.getTimeZone(iParameters[2].toString()));
-    }
-
-    try {
-      return format.parse((String) iParameters[0]);
-    } catch (ParseException e) {
-      throw new OQueryParsingException("Error on formatting date '" + iParameters[0] + "' using the format: " + format, e);
-    }
   }
 
   public boolean aggregateResults(final Object[] configuredParameters) {
@@ -80,9 +52,47 @@ public class OSQLFunctionDate extends OSQLFunctionAbstract {
     return "Syntax error: date([<date-as-string>] [,<format>] [,<timezone>])";
   }
 
-  @Override
   public Object getResult() {
     format = null;
     return null;
   }
+  
+  @Override
+  public OSQLFunctionDate copy() {
+    final OSQLFunctionDate fct = new OSQLFunctionDate();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    if (children.isEmpty()){
+      return new Date();
+    }
+
+    final Object param0 = children.get(0).evaluate(context, candidate);
+    if (param0 instanceof Number){
+      return new Date(((Number) param0).longValue());
+    }
+
+    if (format == null) {
+      if (children.size() > 1) {
+        final Object param1 = children.get(1).evaluate(context, candidate);
+        format = new SimpleDateFormat((String)param1);
+      } else{
+        format = ODatabaseRecordThreadLocal.INSTANCE.get().getStorage().getConfiguration().getDateTimeFormatInstance();
+      }
+      if (children.size() == 3){
+        final Object param2 = children.get(2).evaluate(context, candidate);
+        format.setTimeZone(TimeZone.getTimeZone(param2.toString()));
+      }
+    }
+
+    try {
+      return format.parse((String)param0);
+    } catch (ParseException e) {
+      throw new OQueryParsingException("Error on formatting date '" + param0 + "' using the format: " + format, e);
+    }
+  }
+  
 }

@@ -22,6 +22,8 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionSysdate;
 
 /**
  * Computes the sum of field. Uses the context to save the last sum number. When different Number class are used, take the class
@@ -65,21 +67,26 @@ public class OSQLFunctionSum extends OSQLFunctionMathAbstract {
     }
   }
 
-  @Override
   public boolean aggregateResults() {
-    return configuredParameters.length == 1;
+    return true;
+    //return configuredParameters.length == 1;
   }
 
   public String getSyntax() {
     return "Syntax error: sum(<field> [,<field>*])";
   }
 
-  @Override
   public Object getResult() {
     return sum;
   }
 
   @Override
+  public OSQLFunctionSum copy() {
+    final OSQLFunctionSum fct = new OSQLFunctionSum();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+  
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     Number sum = null;
     for (Object iParameter : resultsToMerge) {
@@ -94,5 +101,10 @@ public class OSQLFunctionSum extends OSQLFunctionMathAbstract {
       }
     }
     return sum;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

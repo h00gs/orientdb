@@ -39,7 +39,6 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentHelper;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSelect;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
 import com.orientechnologies.orient.core.sql.functions.coll.OSQLFunctionDistinct;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
@@ -84,13 +83,13 @@ public class ODistributedSelectQueryExecutor extends OAbstractDistributedQueryEx
     this.anyFunctionAggregate = executor.isAnyFunctionAggregates();
     if (executor.getProjections() != null) {
       for (Map.Entry<String, Object> projection : executor.getProjections().entrySet()) {
-        if (projection.getValue() instanceof OSQLFunctionRuntime) {
-          final OSQLFunctionRuntime fr = (OSQLFunctionRuntime) projection.getValue();
-          if (fr.getFunction().shouldMergeDistributedResult()) {
-            mergers.add(new OPair<String, OSQLFunction>(projection.getKey(), fr.getFunction()));
-          } else if (fr.getFunction() instanceof OSQLFunctionDistinct) {
-            distinct = new OPair<String, OSQLFunctionDistinct>(projection.getKey(), (OSQLFunctionDistinct) fr.getFunction());
-          }
+        if (projection.getValue() instanceof OSQLFunction) {
+          final OSQLFunction fr = (OSQLFunction) projection.getValue();
+//          if (fr.getFunction().shouldMergeDistributedResult()) {
+//            mergers.add(new OPair<String, OSQLFunction>(projection.getKey(), fr));
+//          } else if (fr.getFunction() instanceof OSQLFunctionDistinct) {
+//            distinct = new OPair<String, OSQLFunctionDistinct>(projection.getKey(), (OSQLFunctionDistinct) fr.getFunction());
+//          }
         }
       }
     }
@@ -176,7 +175,7 @@ public class ODistributedSelectQueryExecutor extends OAbstractDistributedQueryEx
       for (OIdentifiable o : result) {
         dataToMerge.add(((ODocument) o).field(merger.getKey()));
       }
-      values.put(merger.getKey(), merger.getValue().mergeDistributedResult(dataToMerge));
+//      values.put(merger.getKey(), merger.getValue().mergeDistributedResult(dataToMerge));
     }
     if (distinct != null) {
       final List<OIdentifiable> resultToMerge = new ArrayList<OIdentifiable>(result);

@@ -17,10 +17,10 @@
 package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.model.OExpression;
-import com.orientechnologies.orient.core.sql.model.OFunction;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OMap;
@@ -168,13 +168,17 @@ public class SQLParserTest {
   
   @Test
   public void testFunction() throws SyntaxException{
-    final String sql = "call( 4 , \"sometext\" )";
+    final String sql = "max( 4 , 36 , 21 )";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
-    assertEquals(objs.get(0),
-            new OFunction("call", Arrays.asList((OExpression)new OLiteral(4), new OLiteral("sometext")))
-               );
+    
+    final OSQLFunction fct = SQLGrammarUtils.createFunction("max");
+    fct.getArguments().add(new OLiteral(4));
+    fct.getArguments().add(new OLiteral(36));
+    fct.getArguments().add(new OLiteral(21));
+    
+    assertEquals(objs.get(0),fct);
   }
   
   @Test

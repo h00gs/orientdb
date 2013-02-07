@@ -26,6 +26,7 @@ import java.util.Set;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * This operator add an item in a set. The set doesn't accept duplicates, so adding multiple times the same value has no effect: the
@@ -72,26 +73,25 @@ public class OSQLFunctionSet extends OSQLFunctionMultiValueAbstract<Set<Object>>
     return configuredParameters.length == 1;
   }
 
-  @Override
-  public Set<Object> getResult() {
-    final Set<Object> res = context;
-    context = null;
-    return prepareResult(res);
-  }
+//  @Override
+//  public Set<Object> getResult() {
+//    final Set<Object> res = context;
+//    context = null;
+//    return prepareResult(res);
+//  }
 
-  protected Set<Object> prepareResult(Set<Object> res) {
-    if (returnDistributedResult()) {
-      final Map<String, Object> doc = new HashMap<String, Object>();
-      doc.put("node", getDistributedStorageId());
-      doc.put("context", context);
-      return Collections.<Object> singleton(doc);
-    } else {
-      return res;
-    }
-  }
+//  protected Set<Object> prepareResult(Set<Object> res) {
+//    if (returnDistributedResult()) {
+//      final Map<String, Object> doc = new HashMap<String, Object>();
+//      doc.put("node", getDistributedStorageId());
+//      doc.put("context", context);
+//      return Collections.<Object> singleton(doc);
+//    } else {
+//      return res;
+//    }
+//  }
 
   @SuppressWarnings("unchecked")
-  @Override
   public Object mergeDistributedResult(List<Object> resultsToMerge) {
     final Map<Long, Collection<Object>> chunks = new HashMap<Long, Collection<Object>>();
     for (Object iParameter : resultsToMerge) {
@@ -104,4 +104,15 @@ public class OSQLFunctionSet extends OSQLFunctionMultiValueAbstract<Set<Object>>
     }
     return result;
   }
+
+  @Override
+  public OSQLFunction copy() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
 }

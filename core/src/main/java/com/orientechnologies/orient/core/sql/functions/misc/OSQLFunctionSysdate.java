@@ -20,8 +20,6 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -34,7 +32,6 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 public class OSQLFunctionSysdate extends OSQLFunctionAbstract {
   public static final String NAME = "sysdate";
 
-  private final Date         now;
   private SimpleDateFormat   format;
 
   /**
@@ -42,32 +39,40 @@ public class OSQLFunctionSysdate extends OSQLFunctionAbstract {
    */
   public OSQLFunctionSysdate() {
     super(NAME, 0, 2);
-    now = new Date();
-  }
-
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-    if (iParameters.length == 0)
-      return now;
-
-    if (format == null) {
-      format = new SimpleDateFormat((String) iParameters[0]);
-      if (iParameters.length == 2)
-        format.setTimeZone(TimeZone.getTimeZone(iParameters[1].toString()));
-    }
-
-    return format.format(now);
   }
 
   public boolean aggregateResults(final Object[] configuredParameters) {
     return false;
   }
 
+  @Override
   public String getSyntax() {
     return "Syntax error: sysdate([<format>] [,<timezone>])";
   }
+  
+  @Override
+  public OSQLFunctionSysdate copy() {
+    final OSQLFunctionSysdate fct = new OSQLFunctionSysdate();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
 
   @Override
-  public Object getResult() {
-    return null;
+  public Object evaluate(OCommandContext context, Object candidate) {
+    if (children.isEmpty()){
+      return new Date();
+    }
+
+    final String param0 = (String)children.get(0).evaluate(context, candidate);
+    if (format == null) {      
+      format = new SimpleDateFormat(param0);
+      if (children.size() == 2){
+        final String param1 = (String)children.get(1).evaluate(context, candidate);
+        format.setTimeZone(TimeZone.getTimeZone(param1));
+      }
+    }
+
+    return format.format(new Date());
   }
+  
 }

@@ -33,16 +33,27 @@ public class OSQLFunctionFormat extends OSQLFunctionAbstract {
 		super(NAME, 2, -1);
 	}
 
-	public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-		final Object[] args = new Object[iParameters.length - 1];
-
-		for (int i = 0; i < args.length; ++i)
-			args[i] = iParameters[i + 1];
-
-		return String.format((String) iParameters[0], args);
-	}
-
+  @Override
 	public String getSyntax() {
 		return "Syntax error: format(<format>, <arg1> [,<argN>]*)";
 	}
+  
+  @Override
+  public OSQLFunctionFormat copy() {
+    final OSQLFunctionFormat fct = new OSQLFunctionFormat();
+    fct.getArguments().addAll(getArguments());
+    return fct;
+  }
+
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final Object[] args = new Object[children.size() - 1];
+
+		for (int i = 0; i < args.length; ++i){
+			args[i] = children.get(i+1).evaluate(context, candidate);
+    }
+    final String src = (String)children.get(0).evaluate(context, candidate);
+		return String.format(src, args);
+  }
+  
 }

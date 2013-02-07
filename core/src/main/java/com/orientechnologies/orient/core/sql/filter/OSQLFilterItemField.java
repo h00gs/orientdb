@@ -26,6 +26,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentHelper;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodField;
+import java.util.Map;
 
 /**
  * Represent an object field as value in the query condition.
@@ -82,7 +83,7 @@ public class OSQLFilterItemField extends OSQLFilterItemAbstract {
       return true;
     }
 
-    for (OPair<OSQLMethod, Object[]> pair : operationsChain) {
+    for (Map.Entry<OSQLMethod, Object[]> pair : operationsChain) {
       if (!pair.getKey().getName().equals(OSQLMethodField.NAME)) {
         return false;
       }

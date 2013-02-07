@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -25,7 +26,7 @@ import java.util.Date;
  * @author Johann Sorel (Geomatys)
  * @author Luca Garulli
  */
-public class OSQLMethodFormat extends OAbstractSQLMethod {
+public class OSQLMethodFormat extends OSQLMethod {
 
   public static final String NAME = "format";
 

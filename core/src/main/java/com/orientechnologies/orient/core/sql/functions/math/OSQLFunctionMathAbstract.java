@@ -15,9 +15,9 @@
  */
 package com.orientechnologies.orient.core.sql.functions.math;
 
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 import java.math.BigDecimal;
 
-import com.orientechnologies.orient.core.sql.functions.OSQLFunctionConfigurableAbstract;
 
 /**
  * Abstract class for math functions.
@@ -25,7 +25,7 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionConfigurableA
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public abstract class OSQLFunctionMathAbstract extends OSQLFunctionConfigurableAbstract {
+public abstract class OSQLFunctionMathAbstract extends OSQLFunctionAbstract {
 
 	public OSQLFunctionMathAbstract(String iName, int iMinParams, int iMaxParams) {
 		super(iName, iMinParams, iMaxParams);
@@ -63,13 +63,4 @@ public abstract class OSQLFunctionMathAbstract extends OSQLFunctionConfigurableA
 		return iClass1;
 	}
 
-	@Override
-	public boolean aggregateResults() {
-		return configuredParameters.length == 1;
-	}
-
-	@Override
-	public boolean shouldMergeDistributedResult() {
-		return true;
-	}
 }
