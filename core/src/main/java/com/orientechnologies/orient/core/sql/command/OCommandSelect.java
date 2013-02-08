@@ -23,6 +23,7 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.OClusterPosition;
 import com.orientechnologies.orient.core.id.OClusterPositionLong;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorCluster;
@@ -34,6 +35,7 @@ import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordSchemaAware;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
@@ -41,8 +43,12 @@ import com.orientechnologies.orient.core.sql.parser.SyntaxException;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
@@ -53,12 +59,12 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * 
  * @author Johann Sorel (Geomatys)
  */
-public class OCommandSelect extends OCommandAbstract{
+public class OCommandSelect extends OCommandAbstract implements Iterable {
   
   public static final String KEYWORD_SELECT = "SELECT";
 
   private List<OExpression> projections;
-  private String source;
+  private OQuerySource source;
   private OExpression filter;
   private long skip;
   
@@ -79,10 +85,15 @@ public class OCommandSelect extends OCommandAbstract{
     System.err.println("|||||||||||||||||||| "+ sql);
     final ParseTree tree = OSQL.compileExpression(sql);
     if(tree instanceof OSQLParser.CommandContext){
-      try {
-        visit((OSQLParser.CommandContext)tree);
-      } catch (SyntaxException ex) {
-        throw new OException(ex.getMessage(), ex);
+      final Object commandTree = tree.getChild(0);
+      if(commandTree instanceof OSQLParser.CommandSelectContext){
+        try {
+          visit((OSQLParser.CommandSelectContext)commandTree);
+        } catch (SyntaxException ex) {
+          throw new OException(ex.getMessage(), ex);
+        }
+      }else{
+        throw new OException("Unknowned command " + commandTree.getClass()+" "+commandTree);
       }
     }else{
       throw new OException("Parse error, query is not a valid INSERT INTO.");
@@ -95,8 +106,19 @@ public class OCommandSelect extends OCommandAbstract{
     return (RET)this;
   }
 
+  public <RET extends OCommandExecutor> RET parse(OSQLParser.CommandSelectContext ast) {
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+    try {
+      visit(ast);
+    } catch (SyntaxException ex) {
+      throw new OException("Parse error, query is not a valid INSERT INTO.");
+    }
+    return (RET)this;
+  }
+  
   @Override
-  public Object execute(final Map<Object, Object> iArgs) {
+  public Collection execute(final Map<Object, Object> iArgs) {
     if(iArgs != null && !iArgs.isEmpty()){
       //we need to set value where we have OUnknowned
       final UnknownResolverVisitor visitor = new UnknownResolverVisitor(iArgs);
@@ -105,96 +127,67 @@ public class OCommandSelect extends OCommandAbstract{
       }
     }
     
-    final ODatabaseRecord db = getDatabase();
-    final OSchema schema = db.getMetadata().getSchema();
-    final OClass clazz = schema.getClass(source);
-    final int[] clusters = clazz.getClusterIds();
     final OCommandContext context = getContext();
-    
     final List result = new ArrayList();
+    final Iterable<? extends OIdentifiable> target = source.createIterator();
+    final Iterator<? extends OIdentifiable> ite = target.iterator();
     
-//    final OIdentifiableIterator<ORecordInternal<?>> target = new ORecordIteratorClass<ORecordInternal<?>>(
-//            db, (ODatabaseRecordAbstract) db, source, true).setRange(null, null);
-//    
-//    long nbvalid = 0;
-//    clustersSearch:
-//    while(target.hasNext()){
-//      final ORecord rec = target.next().getRecord();
-//      //filter
-//      final Object valid = filter.evaluate(context, rec);
-//      if(!Boolean.TRUE.equals(valid)){
-//        continue;
-//      }
-//
-//      //check limit
-//      nbvalid++;
-//      result.add(rec);
-//      if(limit>=0 && nbvalid==limit){
-//        //reached the limit
-//        break clustersSearch;
-//      }
-//    }
-    
-    //iterate on all clusters
-    long nbtested = 0;
     long nbvalid = 0;
+    long nbtested = 0;
+    
     clustersSearch:
-    for(int clusterId : clusters){
-      final String clusterName = db.getClusterNameById(clusterId);
-      final ORecordIteratorCluster ite = db.browseCluster(clusterName);
-      
-      //iterate on all datas
-      while(ite.hasNext()){
-        final ORecord candidate = ite.next().getRecord();
-        
-        //filter
-        final Object valid = filter.evaluate(context, candidate);
-        if(!Boolean.TRUE.equals(valid)){
-          continue;
-        }
-        nbtested++;
-        
-        //check skip
-        if(nbtested <= skip){
-          continue;
-        }
-        
-        nbvalid++;
-        
-        //projections
-        final ODocument record;
-        if(!projections.isEmpty()){
-          record = new ODocument();
-          record.setIdentity(-1, new OClusterPositionLong(nbvalid-1));
-          for(int i=0,n=projections.size();i<n;i++){
-            final OExpression projection = projections.get(i);
-            String projname = projection.getAlias();
-            if(projname == null) projname = String.valueOf(i);
-            final Object value = projection.evaluate(context, candidate);
-            record.field(projname, value);
+    while (ite.hasNext()) {
+      final ORecord candidate = ite.next().getRecord();
+
+      //filter
+      final Object valid = filter.evaluate(context, candidate);
+      if (!Boolean.TRUE.equals(valid)) {
+        continue;
+      }
+      nbtested++;
+
+      //check skip
+      if (nbtested <= skip) {
+        continue;
+      }
+
+      nbvalid++;
+
+      //projections
+      final ODocument record;
+      if (!projections.isEmpty()) {
+        record = new ODocument();
+        record.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
+        for (int i = 0, n = projections.size(); i < n; i++) {
+          final OExpression projection = projections.get(i);
+          String projname = projection.getAlias();
+          if (projname == null) {
+            projname = String.valueOf(i);
           }
-        }else{
-          record = (ODocument) candidate;
+          final Object value = projection.evaluate(context, candidate);
+          record.field(projname, value);
         }
-        
-        result.add(record);
-        
-        //notify listener if needed
-        if(request != null){
-          final OCommandResultListener listener = request.getResultListener();
-          if(listener != null){
-            if(!listener.result(record)){
-              //stop search requested
-              break clustersSearch;
-            }
+      } else {
+        record = (ODocument) candidate;
+      }
+
+      result.add(record);
+
+      //notify listener if needed
+      if (request != null) {
+        final OCommandResultListener listener = request.getResultListener();
+        if (listener != null) {
+          if (!listener.result(record)) {
+            //stop search requested
+            break clustersSearch;
           }
         }
-        
-        //check limit
-        if(limit>=0 && nbvalid==limit){
-          //reached the limit
-          break clustersSearch;
-        }
+      }
+
+      //check limit
+      if (limit >= 0 && nbvalid == limit) {
+        //reached the limit
+        break clustersSearch;
       }
     }
     
@@ -202,16 +195,7 @@ public class OCommandSelect extends OCommandAbstract{
   }
   
   // GRAMMAR PARSING ///////////////////////////////////////////////////////////
-  
-  private void visit(OSQLParser.CommandContext candidate) throws SyntaxException {
-    final Object commandTree = candidate.getChild(0);
-    if(commandTree instanceof OSQLParser.CommandSelectContext){
-      visit((OSQLParser.CommandSelectContext)commandTree);
-    }else{
-      throw new OException("Unknowned command " + candidate.getClass()+" "+candidate);
-    }
-  }
-  
+    
   private void visit(OSQLParser.CommandSelectContext candidate) throws SyntaxException{    
     //variables
     projections = new ArrayList<OExpression>();
@@ -230,7 +214,8 @@ public class OCommandSelect extends OCommandAbstract{
     
     //parse source
     final OSQLParser.FromContext from = candidate.from();
-    source = from.word().getText();
+    source = new OQuerySource();
+    source.parse(from);
     
     //parse filter
     if(candidate.filter()!= null){
@@ -250,6 +235,10 @@ public class OCommandSelect extends OCommandAbstract{
     }
     
   }
-  
+
+  @Override
+  public Iterator iterator() {
+    return execute(null).iterator();
+  }
   
 }

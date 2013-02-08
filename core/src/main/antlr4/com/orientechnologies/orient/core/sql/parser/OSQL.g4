@@ -188,7 +188,7 @@ expression
 
 filterAnd : AND filter ;
 filterOr : OR filter ;
-filterIn : IN (literal|collection) ;
+filterIn : IN (literal|collection|commandSelect) ;
 filter
   : expression
   | LPAREN filter RPAREN
@@ -243,7 +243,9 @@ from
   : FROM 
     ( ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? word
     | identifier
-    | collection ) 
+    | collection
+    | commandSelect
+    | LPAREN commandSelect RPAREN ) 
   ;
 groupBy        : GROUP BY word ;
 orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;

@@ -53,7 +53,7 @@ public class OCollection extends OExpressionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  public List evaluate(OCommandContext context, Object candidate) {
     final List value = new ArrayList();
     for(OExpression exp : children){
       value.add(exp.evaluate(context, candidate));
