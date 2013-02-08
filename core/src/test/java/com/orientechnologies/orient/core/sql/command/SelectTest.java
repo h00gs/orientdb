@@ -83,9 +83,13 @@ public class SelectTest {
     car2.save();
     
     final ODocument car3 = db.newInstance(clazz.getName());
-    car3.field("name","supreme");
-    car3.field("size",310);
+    car3.field("size",260);
     car3.save();
+    
+    final ODocument car4 = db.newInstance(clazz.getName());
+    car4.field("name","supreme");
+    car4.field("size",310);
+    car4.save();
     
     db.close();
   }
@@ -94,7 +98,7 @@ public class SelectTest {
   public void selectAll1(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car");
     final List<ODocument> docs = db.query(query);
-    assertEquals(docs.size(), 3 );
+    assertEquals(docs.size(), 4 );
     assertEquals(docs.get(0).fieldNames().length, 2);
   }
   
@@ -102,7 +106,7 @@ public class SelectTest {
   public void selectAll2(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT * FROM car");
     final List<ODocument> docs = db.query(query);
-    assertEquals(docs.size(), 3 );
+    assertEquals(docs.size(), 4 );
     assertEquals(docs.get(0).fieldNames().length, 2);
   }
   
@@ -110,22 +114,24 @@ public class SelectTest {
   public void selectField(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name FROM car");
     final List<ODocument> docs = db.query(query);
-    assertEquals(docs.size(), 3);
+    assertEquals(docs.size(), 4);
     assertEquals(docs.get(0).fieldNames().length, 1);
     assertEquals(docs.get(0).field("0"), "tempo");
     assertEquals(docs.get(1).field("0"), "fiesta");
-    assertEquals(docs.get(2).field("0"), "supreme");
+    assertEquals(docs.get(2).field("0"), null);
+    assertEquals(docs.get(3).field("0"), "supreme");
   }
   
   @Test
   public void selectAlias(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name AS brand FROM car");
     final List<ODocument> docs = db.query(query);
-    assertEquals(docs.size(), 3);
+    assertEquals(docs.size(), 4);
     assertEquals(docs.get(0).fieldNames().length, 1);
     assertEquals(docs.get(0).field("brand"), "tempo");
     assertEquals(docs.get(1).field("brand"), "fiesta");
-    assertEquals(docs.get(2).field("brand"), "supreme");
+    assertEquals(docs.get(2).field("brand"), null);
+    assertEquals(docs.get(3).field("brand"), "supreme");
   }
   
   @Test
@@ -151,14 +157,16 @@ public class SelectTest {
   public void selectMethod(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT size.asInteger().append(' length'), name.charAt(2) AS letter FROM car");
     final List<ODocument> docs = db.query(query);
-    assertEquals(docs.size(), 3);
+    assertEquals(docs.size(), 4);
     assertEquals(docs.get(0).fieldNames().length, 2);
     assertEquals(docs.get(0).field("letter"), "m");
     assertEquals(docs.get(1).field("letter"), "e");
-    assertEquals(docs.get(2).field("letter"), "p");
+    assertEquals(docs.get(2).field("letter"), null);
+    assertEquals(docs.get(3).field("letter"), "p");
     assertEquals(docs.get(0).field("0"), "250 length");
     assertEquals(docs.get(1).field("0"), "160 length");
-    assertEquals(docs.get(2).field("0"), "310 length");
+    assertEquals(docs.get(2).field("0"), "260 length");
+    assertEquals(docs.get(3).field("0"), "310 length");
   }
   
   @Test
@@ -189,13 +197,36 @@ public class SelectTest {
     List<ODocument> docs = db.query(query);
     String id1 = docs.get(0).getIdentity().toString();
     String id2 = docs.get(1).getIdentity().toString();
+    String id3 = docs.get(2).getIdentity().toString();
     
-    query = new OSQLSynchQuery("SELECT FROM ["+id1+","+id2+"]");
+    query = new OSQLSynchQuery("SELECT FROM ["+id1+","+id2+","+id3+"]");
     docs = db.query(query);    
-    assertEquals(docs.size(), 2);
+    assertEquals(docs.size(), 3);
     assertEquals(docs.get(0).fieldNames().length, 2);
     assertEquals(docs.get(0).field("name"), "fiesta");
-    assertEquals(docs.get(1).field("name"), "supreme");
+    assertEquals(docs.get(1).field("name"), null);
+    assertEquals(docs.get(2).field("name"), "supreme");
+  }
+  
+  @Test
+  public void selectWhereBasic(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE size > 200");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 3);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "tempo");
+    assertEquals(docs.get(1).field("name"), null);
+    assertEquals(docs.get(2).field("name"), "supreme");
+  }
+  
+  @Test
+  public void selectWhereComplex(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name IS NOT NULL AND (size < 200 OR name = 'tempo')");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 2);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "tempo");
+    assertEquals(docs.get(1).field("name"), "fiesta");
   }
   
 }

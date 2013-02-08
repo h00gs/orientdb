@@ -190,21 +190,20 @@ filterAnd : AND filter ;
 filterOr : OR filter ;
 filterIn : IN (literal|collection|commandSelect) ;
 filter
-  : expression
-  | LPAREN filter RPAREN
+  : LPAREN filter RPAREN
   | filter filterAnd
   | filter filterOr
   | filter filterIn
   | NOT filter
-  | filter COMPARE_EQL     filter
-  | filter COMPARE_INF     filter
-  | filter COMPARE_SUP     filter
-  | filter COMPARE_INF_EQL filter
-  | filter COMPARE_SUP_EQL filter
-  | filter COMPARE_DIF     filter
-  | filter IS NULL
-  | filter IS NOT NULL
-  | filter LIKE filter
+  | expression COMPARE_EQL     expression
+  | expression COMPARE_INF     expression
+  | expression COMPARE_SUP     expression
+  | expression COMPARE_INF_EQL expression
+  | expression COMPARE_SUP_EQL expression
+  | expression COMPARE_DIF     expression
+  | expression IS NULL
+  | expression IS NOT NULL
+  | expression LIKE expression
   ;
 
 // COMMANDS
@@ -230,6 +229,7 @@ commandSelect
   ;
 projection
   : ( MULT
+    | expression
     | filter
     | ORID_ATTR
     | OCLASS_ATTR

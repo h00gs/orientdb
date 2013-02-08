@@ -216,6 +216,8 @@ public final class SQLGrammarUtils {
     OExpression exp;
     if(candidate.filter() != null){
       exp = visit(candidate.filter());
+    }else if(candidate.expression()!= null){
+      exp = visit(candidate.expression());
     }else{
       throw new SyntaxException("Unknowned command " + candidate.getClass()+" "+candidate);
     }

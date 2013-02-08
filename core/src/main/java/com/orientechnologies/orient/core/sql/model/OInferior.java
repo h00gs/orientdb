@@ -91,6 +91,13 @@ public class OInferior extends OExpressionWithChildren{
     if (objright == null) {
       return null;
     }
+    
+    if(objleft instanceof Number && objright instanceof Number){
+      final Double dl = (Double)((Number)objleft).doubleValue();
+      final Double dr = (Double)((Number)objright).doubleValue();
+      return dl.compareTo(dr);
+    }
+    
     return ((Comparable) objleft).compareTo(objright);
   }
 
