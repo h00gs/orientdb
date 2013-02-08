@@ -98,12 +98,14 @@ public final class ODefaultSQLFunctionFactory implements OSQLFunctionFactory {
   }
 
   @Override
-  public boolean hasFunction(final String name) {
+  public boolean hasFunction(String name) {
+    name = name.toUpperCase(Locale.ENGLISH);
     return FUNCTIONS.containsKey(name);
   }
 
   @Override
-  public OSQLFunction createFunction(final String name) {
+  public OSQLFunction createFunction(String name) {
+    name = name.toUpperCase(Locale.ENGLISH);
     final Object obj = FUNCTIONS.get(name);
 
     if (obj == null)

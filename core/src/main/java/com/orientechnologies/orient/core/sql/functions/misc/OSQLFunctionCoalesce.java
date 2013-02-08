@@ -64,6 +64,7 @@ public class OSQLFunctionCoalesce extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionCoalesce copy() {
     final OSQLFunctionCoalesce fct = new OSQLFunctionCoalesce();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

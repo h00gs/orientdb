@@ -60,6 +60,7 @@ public class OSQLFunctionDate extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionDate copy() {
     final OSQLFunctionDate fct = new OSQLFunctionDate();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

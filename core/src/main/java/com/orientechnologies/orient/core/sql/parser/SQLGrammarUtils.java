@@ -327,7 +327,6 @@ public final class SQLGrammarUtils {
   }
   
   public static OSQLMethod createMethod(String name) throws SyntaxException{
-    name = name.toLowerCase();
     final Iterator<OSQLMethodFactory> ite = lookupProviderWithOrientClassLoader(OSQLMethodFactory.class, CLASSLOADER);
     while (ite.hasNext()) {
       final OSQLMethodFactory factory = ite.next();
@@ -339,7 +338,6 @@ public final class SQLGrammarUtils {
   }
   
   public static OSQLFunction createFunction(String name) throws SyntaxException{
-    name = name.toLowerCase();
     final Iterator<OSQLFunctionFactory> ite = lookupProviderWithOrientClassLoader(OSQLFunctionFactory.class, CLASSLOADER);
     while (ite.hasNext()) {
       final OSQLFunctionFactory factory = ite.next();

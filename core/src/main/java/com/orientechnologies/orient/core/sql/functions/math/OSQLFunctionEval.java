@@ -59,6 +59,7 @@ public class OSQLFunctionEval extends OSQLFunctionMathAbstract {
   @Override
   public OSQLFunctionEval copy() {
     final OSQLFunctionEval fct = new OSQLFunctionEval();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

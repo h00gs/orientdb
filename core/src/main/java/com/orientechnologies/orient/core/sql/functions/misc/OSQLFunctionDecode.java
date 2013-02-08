@@ -46,6 +46,7 @@ public class OSQLFunctionDecode extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionDecode copy() {
     final OSQLFunctionDecode fct = new OSQLFunctionDecode();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

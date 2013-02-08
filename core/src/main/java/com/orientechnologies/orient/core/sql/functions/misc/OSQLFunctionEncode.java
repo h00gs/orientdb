@@ -49,6 +49,7 @@ public class OSQLFunctionEncode extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionEncode copy() {
     final OSQLFunctionEncode fct = new OSQLFunctionEncode();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

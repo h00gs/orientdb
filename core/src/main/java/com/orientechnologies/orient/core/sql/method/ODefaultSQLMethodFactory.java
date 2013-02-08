@@ -88,7 +88,8 @@ public class ODefaultSQLMethodFactory implements OSQLMethodFactory{
         
     @Override
     public boolean hasMethod(String iName) {
-        return methods.containsKey(iName);
+      iName = iName.toLowerCase();
+      return methods.containsKey(iName);
     }
 
     @Override
@@ -98,6 +99,7 @@ public class ODefaultSQLMethodFactory implements OSQLMethodFactory{
 
   @Override
   public OSQLMethod createMethod(String name) throws OCommandExecutionException {
+    name = name.toLowerCase();
     final Object obj = methods.get(name);
 
     if (obj == null) {

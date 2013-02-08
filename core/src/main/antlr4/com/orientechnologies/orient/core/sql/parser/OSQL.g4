@@ -247,9 +247,9 @@ from
     | commandSelect
     | LPAREN commandSelect RPAREN ) 
   ;
-groupBy        : GROUP BY word ;
+groupBy        : GROUP BY expression (COMMA expression)* ;
 orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;
-orderByElement : word (ASC|DESC)? ;
+orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 

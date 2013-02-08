@@ -58,6 +58,7 @@ public class OSQLFunctionIf extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionIf copy() {
     final OSQLFunctionIf fct = new OSQLFunctionIf();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

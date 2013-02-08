@@ -69,6 +69,7 @@ public class OSQLFunctionIfNull extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionIfNull copy() {
     final OSQLFunctionIfNull fct = new OSQLFunctionIfNull();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

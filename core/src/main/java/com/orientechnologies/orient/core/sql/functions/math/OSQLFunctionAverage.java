@@ -99,6 +99,7 @@ public class OSQLFunctionAverage extends OSQLFunctionMathAbstract {
   @Override
   public OSQLFunctionAverage copy() {
     final OSQLFunctionAverage fct = new OSQLFunctionAverage();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

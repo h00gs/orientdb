@@ -53,6 +53,7 @@ public class OSQLFunctionSysdate extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionSysdate copy() {
     final OSQLFunctionSysdate fct = new OSQLFunctionSysdate();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

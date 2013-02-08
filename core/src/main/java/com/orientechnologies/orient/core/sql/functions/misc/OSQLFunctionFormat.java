@@ -41,6 +41,7 @@ public class OSQLFunctionFormat extends OSQLFunctionAbstract {
   @Override
   public OSQLFunctionFormat copy() {
     final OSQLFunctionFormat fct = new OSQLFunctionFormat();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

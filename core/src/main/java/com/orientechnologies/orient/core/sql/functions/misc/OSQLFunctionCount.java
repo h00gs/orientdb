@@ -15,8 +15,6 @@
  */
 package com.orientechnologies.orient.core.sql.functions.misc;
 
-import java.util.List;
-
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.sql.functions.math.OSQLFunctionMathAbstract;
 
@@ -30,7 +28,7 @@ import com.orientechnologies.orient.core.sql.functions.math.OSQLFunctionMathAbst
 public class OSQLFunctionCount extends OSQLFunctionMathAbstract {
   public static final String NAME  = "count";
 
-  private long               total = 0;
+  private long total = 0;
 
   public OSQLFunctionCount() {
     super(NAME, 1, 1);
@@ -38,41 +36,19 @@ public class OSQLFunctionCount extends OSQLFunctionMathAbstract {
 
   @Override
   public Object evaluate(OCommandContext context, Object candidate) {
-    if (children.get(0) != null){
-      total++;
-    }
+    total++;
     return total;
   }
   
-  public boolean aggregateResults() {
-    return true;
-  }
-
   @Override
   public String getSyntax() {
     return "Syntax error: count(<field>|*)";
-  }
-
-  public Object getResult() {
-    return total;
-  }
-
-  public void setResult(final Object iResult) {
-    total = ((Number) iResult).longValue();
-  }
-
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    long total = 0;
-    for (Object iParameter : resultsToMerge) {
-      final long value = (Long) iParameter;
-      total += value;
-    }
-    return total;
   }
   
   @Override
   public OSQLFunctionCount copy() {
     final OSQLFunctionCount fct = new OSQLFunctionCount();
+    fct.setAlias(alias);
     fct.getArguments().addAll(getArguments());
     return fct;
   }

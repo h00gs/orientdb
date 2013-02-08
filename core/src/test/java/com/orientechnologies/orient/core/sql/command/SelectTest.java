@@ -68,28 +68,63 @@ public class SelectTest {
     db = db.create();
     
     final OSchema schema = db.getMetadata().getSchema();
-    final OClass clazz = schema.createClass("Car");
-    clazz.createProperty("name", OType.STRING);
-    clazz.createProperty("size", OType.DOUBLE);
     
-    final ODocument car1 = db.newInstance(clazz.getName());
+    //car test type
+    final OClass carClass = schema.createClass("Car");
+    carClass.createProperty("name", OType.STRING);
+    carClass.createProperty("size", OType.DOUBLE);    
+    final ODocument car1 = db.newInstance(carClass.getName());
     car1.field("name","tempo");
     car1.field("size",250);
-    car1.save();
-    
-    final ODocument car2 = db.newInstance(clazz.getName());
+    car1.save();    
+    final ODocument car2 = db.newInstance(carClass.getName());
     car2.field("name","fiesta");
     car2.field("size",160);
-    car2.save();
-    
-    final ODocument car3 = db.newInstance(clazz.getName());
+    car2.save();    
+    final ODocument car3 = db.newInstance(carClass.getName());
     car3.field("size",260);
-    car3.save();
-    
-    final ODocument car4 = db.newInstance(clazz.getName());
+    car3.save();    
+    final ODocument car4 = db.newInstance(carClass.getName());
     car4.field("name","supreme");
     car4.field("size",310);
     car4.save();
+    
+    //person test type
+    final OClass personClass = schema.createClass("person");
+    personClass.createProperty("name", OType.STRING);    
+    personClass.createProperty("size", OType.DOUBLE);    
+    personClass.createProperty("weight", OType.DOUBLE);    
+    personClass.createProperty("points", OType.INTEGER);    
+    final ODocument person1 = db.newInstance(personClass.getName());
+    person1.field("name","chief");
+    person1.field("size",1.8);
+    person1.field("weight",60);
+    person1.field("points",100);
+    person1.save();    
+    final ODocument person2 = db.newInstance(personClass.getName());
+    person2.field("name","joe");
+    person2.field("size",1.3);
+    person2.field("weight",52);
+    person2.field("points",80);
+    person2.save();
+    final ODocument person3 = db.newInstance(personClass.getName());
+    person3.field("name","mary");
+    person3.field("size",1.7);
+    person3.field("weight",34.5);
+    person3.field("points",100);
+    person3.save();    
+    final ODocument person4 = db.newInstance(personClass.getName());
+    person4.field("name","alex");
+    person4.field("size",2.1);
+    person4.field("weight",52);
+    person4.field("points",100);
+    person4.save();    
+    final ODocument person5 = db.newInstance(personClass.getName());
+    person5.field("name","suzan");
+    person5.field("size",1.55);
+    person5.field("weight",52);
+    person5.field("points",80);
+    person5.save();
     
     db.close();
   }
@@ -227,6 +262,104 @@ public class SelectTest {
     assertEquals(docs.get(0).fieldNames().length, 2);
     assertEquals(docs.get(0).field("name"), "tempo");
     assertEquals(docs.get(1).field("name"), "fiesta");
+  }
+  
+  public void selectOrderBy(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 5);
+    assertEquals(docs.get(0).field("name"), "joe");
+    assertEquals(docs.get(1).field("name"), "suzan");
+    assertEquals(docs.get(2).field("name"), "mary");
+    assertEquals(docs.get(3).field("name"), "chief");
+    assertEquals(docs.get(4).field("name"), "alex");
+  }
+  
+  public void selectOrderByASC(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size ASC");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 5);
+    assertEquals(docs.get(0).field("name"), "joe");
+    assertEquals(docs.get(1).field("name"), "suzan");
+    assertEquals(docs.get(2).field("name"), "mary");
+    assertEquals(docs.get(3).field("name"), "chief");
+    assertEquals(docs.get(4).field("name"), "alex");
+  }
+  
+  public void selectOrderByDESC(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size DESC");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 5);
+    assertEquals(docs.get(0).field("name"), "alex");
+    assertEquals(docs.get(1).field("name"), "chief");
+    assertEquals(docs.get(2).field("name"), "mary");
+    assertEquals(docs.get(3).field("name"), "suzan");
+    assertEquals(docs.get(4).field("name"), "joe");
+  }
+  
+  public void selectOrderByMultiple(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY weight ASC, size DESC ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 5);
+    assertEquals(docs.get(0).field("name"), "mary");
+    assertEquals(docs.get(1).field("name"), "alex");
+    assertEquals(docs.get(2).field("name"), "suzan");
+    assertEquals(docs.get(3).field("name"), "joe");
+    assertEquals(docs.get(4).field("name"), "chief");
+  }
+  
+  public void selectGroupBy(){
+    final OSQLSynchQuery query = new OSQLSynchQuery(
+            "SELECT weight AS w, count(name) AS nb, min(size) AS min, sum(points) AS sum "
+            + "FROM person "
+            + "GROUP BY weight "
+            + "ORDER BY w");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 3);
+    assertEquals(docs.get(0).field("w"), 34.5d);
+    assertEquals(docs.get(0).field("nb"), 1l);
+    assertEquals(docs.get(0).field("min"), 1.7d);
+    assertEquals(docs.get(0).field("sum"), 100);
+    assertEquals(docs.get(1).field("w"), 52d);
+    assertEquals(docs.get(1).field("nb"), 3l);
+    assertEquals(docs.get(1).field("min"), 1.3d);
+    assertEquals(docs.get(1).field("sum"), 260d);
+    assertEquals(docs.get(2).field("w"), 60d);
+    assertEquals(docs.get(2).field("nb"), 1l);
+    assertEquals(docs.get(2).field("min"), 1.8d);
+    assertEquals(docs.get(2).field("sum"), 100);
+  }
+  
+  public void selectGroupByOrdeByComplex(){
+    final OSQLSynchQuery query = new OSQLSynchQuery(
+            "SELECT weight AS w, points AS p, count(name) AS nb, min(size) AS min, sum(points) AS sum "
+            + "FROM person "
+            + "GROUP BY weight, points ORDER BY w, sum DESC");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 4);
+    assertEquals(docs.get(0).field("w"), 34.5d);
+    assertEquals(docs.get(0).field("p"), 100);
+    assertEquals(docs.get(0).field("nb"), 1l);
+    assertEquals(docs.get(0).field("min"), 1.7d);
+    assertEquals(docs.get(0).field("sum"), 100);
+    
+    assertEquals(docs.get(1).field("w"), 52d);
+    assertEquals(docs.get(1).field("p"), 80);
+    assertEquals(docs.get(1).field("nb"), 2l);
+    assertEquals(docs.get(1).field("min"), 1.3d);
+    assertEquals(docs.get(1).field("sum"), 160d);
+    
+    assertEquals(docs.get(2).field("w"), 52d);
+    assertEquals(docs.get(2).field("p"), 100);
+    assertEquals(docs.get(2).field("nb"), 1l);
+    assertEquals(docs.get(2).field("min"), 2.1d);
+    assertEquals(docs.get(2).field("sum"), 100);
+    
+    assertEquals(docs.get(3).field("w"), 60d);
+    assertEquals(docs.get(3).field("p"), 100);
+    assertEquals(docs.get(3).field("nb"), 1l);
+    assertEquals(docs.get(3).field("min"), 1.8d);
+    assertEquals(docs.get(3).field("sum"), 100);
   }
   
 }
