@@ -26,6 +26,7 @@ OR : O R ;
 ORDER : O R D E R ;
 BY : B Y ;
 LIMIT : L I M I T ;
+LIKE : L I K E ;
 RANGE : R A N G E ;
 ASC : A S C ;
 AS : A S;
@@ -203,6 +204,7 @@ filter
   | filter COMPARE_DIF     filter
   | filter IS NULL
   | filter IS NOT NULL
+  | filter LIKE filter
   ;
 
 // COMMANDS
@@ -228,7 +230,7 @@ commandSelect
   ;
 projection
   : ( MULT
-    | word
+    | filter
     | ORID_ATTR
     | OCLASS_ATTR
     | OVERSION_ATTR

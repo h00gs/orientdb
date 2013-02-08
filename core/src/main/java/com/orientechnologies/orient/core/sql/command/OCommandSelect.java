@@ -23,6 +23,8 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.id.OClusterPosition;
+import com.orientechnologies.orient.core.id.OClusterPositionLong;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorCluster;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
@@ -30,6 +32,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordSchemaAware;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
@@ -57,6 +60,7 @@ public class OCommandSelect extends OCommandAbstract{
   private List<OExpression> projections;
   private String source;
   private OExpression filter;
+  private long skip;
   
   //keep the base request to notify result changes.
   private OSQLAsynchQuery<ORecordSchemaAware<?>> request;
@@ -132,6 +136,7 @@ public class OCommandSelect extends OCommandAbstract{
 //    }
     
     //iterate on all clusters
+    long nbtested = 0;
     long nbvalid = 0;
     clustersSearch:
     for(int clusterId : clusters){
@@ -140,21 +145,45 @@ public class OCommandSelect extends OCommandAbstract{
       
       //iterate on all datas
       while(ite.hasNext()){
-        final ORecord rec = ite.next().getRecord();
+        final ORecord candidate = ite.next().getRecord();
         
         //filter
-        final Object valid = filter.evaluate(context, rec);
+        final Object valid = filter.evaluate(context, candidate);
         if(!Boolean.TRUE.equals(valid)){
           continue;
         }
+        nbtested++;
         
-        result.add(rec);
+        //check skip
+        if(nbtested <= skip){
+          continue;
+        }
+        
+        nbvalid++;
+        
+        //projections
+        final ODocument record;
+        if(!projections.isEmpty()){
+          record = new ODocument();
+          record.setIdentity(-1, new OClusterPositionLong(nbvalid-1));
+          for(int i=0,n=projections.size();i<n;i++){
+            final OExpression projection = projections.get(i);
+            String projname = projection.getAlias();
+            if(projname == null) projname = String.valueOf(i);
+            final Object value = projection.evaluate(context, candidate);
+            record.field(projname, value);
+          }
+        }else{
+          record = (ODocument) candidate;
+        }
+        
+        result.add(record);
         
         //notify listener if needed
         if(request != null){
           final OCommandResultListener listener = request.getResultListener();
           if(listener != null){
-            if(!listener.result(rec)){
+            if(!listener.result(record)){
               //stop search requested
               break clustersSearch;
             }
@@ -162,7 +191,6 @@ public class OCommandSelect extends OCommandAbstract{
         }
         
         //check limit
-        nbvalid++;
         if(limit>=0 && nbvalid==limit){
           //reached the limit
           break clustersSearch;
@@ -188,6 +216,7 @@ public class OCommandSelect extends OCommandAbstract{
     //variables
     projections = new ArrayList<OExpression>();
     setLimit(-1);
+    skip = -1;
     
     //parse projections
     for(OSQLParser.ProjectionContext proj : candidate.projection()){
@@ -210,6 +239,12 @@ public class OCommandSelect extends OCommandAbstract{
       filter = OExpression.INCLUDE;
     }
     
+    //parse skip
+    if(candidate.skip() != null){
+      skip = Integer.valueOf(candidate.skip().INT().getText());
+    }
+    
+    //parse limit
     if(candidate.limit() != null){
       setLimit(Integer.valueOf(candidate.limit().INT().getText()));
     }

@@ -47,6 +47,7 @@ import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
 import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionFactory;
+import com.orientechnologies.orient.core.sql.model.OLike;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
@@ -213,10 +214,14 @@ public final class SQLGrammarUtils {
   public static OExpression visit(OSQLParser.ProjectionContext candidate) throws SyntaxException {
     
     OExpression exp;
-    if(candidate.word() != null){
-      exp = new OName(candidate.word().getText());
+    if(candidate.filter() != null){
+      exp = visit(candidate.filter());
     }else{
       throw new SyntaxException("Unknowned command " + candidate.getClass()+" "+candidate);
+    }
+    
+    if(candidate.alias() != null){
+      exp.setAlias(candidate.alias().word().getText());
     }
     
     return exp;
@@ -263,6 +268,7 @@ public final class SQLGrammarUtils {
       // '(' filter ')'
       //filter COMPARE_X filter
       //filter IS NULL
+      //filter LIKE filter
       if(candidate.COMPARE_EQL()!= null){
         return new OEquals(
                 (OExpression) visit(candidate.getChild(0)),
@@ -285,6 +291,10 @@ public final class SQLGrammarUtils {
                 (OExpression) visit(candidate.getChild(2)));
       }else if(candidate.COMPARE_SUP_EQL()!= null){
         return new OSuperiorEquals(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.LIKE()!= null){
+        return new OLike(
                 (OExpression) visit(candidate.getChild(0)),
                 (OExpression) visit(candidate.getChild(2)));
       }else if(candidate.IS()!= null){
