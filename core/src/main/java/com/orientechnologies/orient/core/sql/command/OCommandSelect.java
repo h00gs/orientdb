@@ -109,6 +109,9 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       for(int i=0;i<projections.size();i++){
         projections.set(i, (OExpression)projections.get(i).accept(visitor,null));
       }
+      if(filter != null){
+        filter = (OExpression) filter.accept(visitor, null);
+      }
     }
     
     result.clear();

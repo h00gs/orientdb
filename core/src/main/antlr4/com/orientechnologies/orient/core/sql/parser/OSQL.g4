@@ -170,7 +170,7 @@ UNICODE_ESC
     
 word        : WORD ;
 identifier  : IDENTIFIER INT ':' INT;
-unset       : UNSET;
+unset       : UNSET | (DOUBLEDOT word);
 number    	: (UNARY^)? (INT|FLOAT)	;
 map         : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
 collection  : LBRACKET (expression (COMMA expression)*)? RBRACKET ;

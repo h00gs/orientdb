@@ -29,18 +29,27 @@ import java.util.Map.Entry;
  */
 public class UnknownResolverVisitor extends CopyVisitor{
   
+  private final Map parameters;
   private final Iterator<Entry> entries;
   
   public UnknownResolverVisitor(Map parameters) {
+    this.parameters = parameters;
     entries = parameters.entrySet().iterator();
   }
 
   @Override
   public Object visit(OUnset candidate, Object data) {
-    if(!entries.hasNext()){
-      throw new OException("Unmapped ? parameter");
+    final String paramName = candidate.getParameterName();
+    final Object value;
+    if(paramName != null){
+      value = parameters.get(paramName);
+    }else{
+      if(!entries.hasNext()){
+        throw new OException("Unmapped ? parameter");
+      }
+      value = entries.next().getValue();
     }
-    final Object value = entries.next().getValue();
+    
     return new OLiteral(value);
   }
   

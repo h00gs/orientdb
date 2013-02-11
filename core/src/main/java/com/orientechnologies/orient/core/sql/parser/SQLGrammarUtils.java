@@ -186,7 +186,12 @@ public final class SQLGrammarUtils {
   }
   
   public static OUnset visit(UnsetContext candidate) throws OCommandSQLParsingException {
-    return new OUnset();
+    if(candidate.UNSET() == null){
+      return new OUnset(candidate.word().getText());
+    }else{
+      return new OUnset();
+    }
+    
   }
   
   public static OLiteral visit(IdentifierContext candidate) throws OCommandSQLParsingException {

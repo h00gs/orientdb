@@ -23,7 +23,9 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -264,6 +266,7 @@ public class SelectTest {
     assertEquals(docs.get(1).field("name"), "fiesta");
   }
   
+  @Test
   public void selectOrderBy(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size");
     final List<ODocument> docs = db.query(query);
@@ -275,6 +278,7 @@ public class SelectTest {
     assertEquals(docs.get(4).field("name"), "alex");
   }
   
+  @Test
   public void selectOrderByASC(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size ASC");
     final List<ODocument> docs = db.query(query);
@@ -286,6 +290,7 @@ public class SelectTest {
     assertEquals(docs.get(4).field("name"), "alex");
   }
   
+  @Test
   public void selectOrderByDESC(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size DESC");
     final List<ODocument> docs = db.query(query);
@@ -297,6 +302,7 @@ public class SelectTest {
     assertEquals(docs.get(4).field("name"), "joe");
   }
   
+  @Test
   public void selectOrderByMultiple(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY weight ASC, size DESC ");
     final List<ODocument> docs = db.query(query);
@@ -308,6 +314,7 @@ public class SelectTest {
     assertEquals(docs.get(4).field("name"), "chief");
   }
   
+  @Test
   public void selectGroupBy(){
     final OSQLSynchQuery query = new OSQLSynchQuery(
             "SELECT weight AS w, count(name) AS nb, min(size) AS min, sum(points) AS sum "
@@ -330,6 +337,7 @@ public class SelectTest {
     assertEquals(docs.get(2).field("sum"), 100);
   }
   
+  @Test
   public void selectGroupByOrdeByComplex(){
     final OSQLSynchQuery query = new OSQLSynchQuery(
             "SELECT weight AS w, points AS p, count(name) AS nb, min(size) AS min, sum(points) AS sum "
@@ -360,6 +368,24 @@ public class SelectTest {
     assertEquals(docs.get(3).field("nb"), 1l);
     assertEquals(docs.get(3).field("min"), 1.8d);
     assertEquals(docs.get(3).field("sum"), 100);
+  }
+  
+  @Test
+  public void selectWithParameterUnnamed(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name = ?");
+    final List<ODocument> docs = db.query(query,"fiesta");
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+  }
+  
+  @Test
+  public void selectWithParameterNamed(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name = :name");
+    final Map parameters = new HashMap();
+    parameters.put("name", "fiesta");
+    final List<ODocument> docs = db.query(query,parameters);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
   }
   
 }

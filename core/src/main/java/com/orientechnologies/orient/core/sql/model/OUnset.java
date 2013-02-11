@@ -25,14 +25,28 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
  */
 public class OUnset extends OExpressionAbstract{
 
+  private final String name;
+
+  public OUnset() {
+    this(null);
+  }
+
+  public OUnset(String name) {
+    this.name = name;
+  }
+
+  public String getParameterName() {
+    return name;
+  }
+  
   @Override
   protected String thisToString() {
-    return "(Unset) ?";
+    return "(Unset) " + ((name==null)? "?" : name);
   }
 
   @Override
   public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException("Uset expression must be resolved before execution.");
   }
 
   @Override
@@ -75,7 +89,7 @@ public class OUnset extends OExpressionAbstract{
   
   @Override
   public OUnset copy() {
-    return new OUnset();
+    return new OUnset(name);
   }
   
 }
