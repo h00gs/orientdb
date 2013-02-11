@@ -26,10 +26,10 @@ import com.orientechnologies.orient.core.iterator.ORecordIteratorClusters;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecordInternal;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import com.orientechnologies.orient.core.sql.parser.SyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -85,7 +85,7 @@ public class OQuerySource {
     }
   }
   
-  public void parse(OSQLParser.FromContext candidate) throws SyntaxException {
+  public void parse(OSQLParser.FromContext candidate) throws OCommandSQLParsingException {
 
     if(candidate.identifier() != null){
       //single identifier
@@ -124,7 +124,7 @@ public class OQuerySource {
       //class
       targetClasse = candidate.word().getText();
     }else{
-      throw new SyntaxException("Unexpected source definition.");
+      throw new OCommandSQLParsingException("Unexpected source definition.");
     }
     
   }

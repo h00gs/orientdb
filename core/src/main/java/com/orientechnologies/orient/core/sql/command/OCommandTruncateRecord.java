@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
-import java.util.HashSet;
 import java.util.Map;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
-import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.version.OVersionFactory;
 
 /**
@@ -35,45 +38,31 @@ import com.orientechnologies.orient.core.version.OVersionFactory;
  * loaded correctly.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-public class OCommandExecutorSQLTruncateRecord extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
+public class OCommandTruncateRecord extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
   public static final String KEYWORD_TRUNCATE = "TRUNCATE";
-  public static final String KEYWORD_RECORD   = "RECORD";
-  private Set<String>        records          = new HashSet<String>();
+  public static final String KEYWORD_RECORD = "RECORD";
+  private Set<String> records = new HashSet<String>();
+  
+  public OCommandTruncateRecord() {
+  }
 
-  @SuppressWarnings("unchecked")
-  public OCommandExecutorSQLTruncateRecord parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+  public OCommandTruncateRecord parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_TRUNCATE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_TRUNCATE + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_RECORD))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_RECORD + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserText, oldPos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected one or more records. Use " + getSyntax(), parserText, oldPos);
-
-    if (word.charAt(0) == '[')
-      // COLLECTION
-      OStringSerializerHelper.getCollection(parserText, oldPos, records);
-    else {
-      records.add(word.toString());
+    final OSQLParser.CommandTruncateRecordContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandTruncateRecordContext.class);
+    
+    if(candidate.identifier() != null){
+      records.add(candidate.identifier().getText());
+    }else if(candidate.collection() != null){
+      final Collection col = SQLGrammarUtils.visit(candidate.collection()).evaluate(null, null);
+      records.addAll(col);
     }
-
-    if (records.isEmpty())
-      throw new OCommandSQLParsingException("Missed record(s). Use " + getSyntax(), parserText, oldPos);
     return this;
   }
 
@@ -102,4 +91,5 @@ public class OCommandExecutorSQLTruncateRecord extends OCommandExecutorSQLAbstra
   public String getSyntax() {
     return "TRUNCATE RECORD <rid>*";
   }
+  
 }

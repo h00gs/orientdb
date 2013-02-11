@@ -18,6 +18,7 @@ package com.orientechnologies.orient.core.command;
 import java.util.Map;
 
 import com.orientechnologies.common.listener.OProgressListener;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 
 /**
  * Generic GOF command pattern implementation.
@@ -39,7 +40,7 @@ public interface OCommandExecutor {
    * @see #execute(Object...)
    * @return
    */
-  public <RET extends OCommandExecutor> RET parse(OCommandRequest iRequest);
+  public <RET extends OCommandExecutor> RET parse(OCommandRequest iRequest) throws OCommandSQLParsingException;
 
   /**
    * Execute the requested command parsed previously.

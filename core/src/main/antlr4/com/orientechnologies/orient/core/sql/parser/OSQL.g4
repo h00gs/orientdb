@@ -38,6 +38,10 @@ OVERSION_ATTR: '@' V E R S I O N ;
 OSIZE_ATTR: '@' S I Z E ;
 OTYPE_ATTR: '@' T Y P E ;
 CLUSTER : C L U S T E R ;
+DATABASE : D A T A B A S E ;
+PROPERTY : P R O P E R T Y ;
+TRUNCATE : T R U N C A T E ;
+RECORD : R E C O R D ;
 INDEX : I N D E X ;
 DICTIONARY : D I C T I O N A R Y ;
 ALTER : A L T E R ;
@@ -211,18 +215,30 @@ filter
 commandUnknowned : expression (expression)* ;
 
 commandInsertIntoByValues
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? insertFields VALUES insertEntry (COMMA insertEntry)*
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? insertFields VALUES insertSource
   ;
 commandInsertIntoBySet
   : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? SET insertSet (COMMA insertSet)*
+  ;
+insertSource 
+  : commandSelect
+  | LPAREN insertSource RPAREN
+  | insertEntry (COMMA insertEntry)*
   ;
 insertCluster : CLUSTER word ;
 insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
 insertSet     : word COMPARE_EQL expression ;
 insertFields  : LPAREN word(COMMA word)* RPAREN ;
 
-commandAlterClass : ALTER CLASS word word (cword|NULL) ;
-cword             : (word|literal|COMMA) (word|literal|COMMA)* ;
+commandAlterClass : ALTER CLASS word word cword ;
+cword             : anything | NULL ;
+anything : .*? ;
+
+commandAlterCluster : ALTER CLUSTER (word|number) word cword;
+
+commandAlterDatabase : ALTER DATABASE word cword;
+
+commandAlterProperty : ALTER PROPERTY word DOT word word cword ;
 
 commandSelect
   : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit?
@@ -253,10 +269,20 @@ orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 
+commandTruncateClass : TRUNCATE CLASS word ;
+commandTruncateCluster : TRUNCATE CLUSTER word ;
+commandTruncateRecord : TRUNCATE RECORD (identifier|collection) ;
+
 command
 	: commandUnknowned
   | commandAlterClass
+  | commandAlterCluster
+  | commandAlterDatabase
+  | commandAlterProperty
   | commandInsertIntoByValues
   | commandInsertIntoBySet
   | commandSelect
+  | commandTruncateClass
+  | commandTruncateCluster
+  | commandTruncateRecord
   ;

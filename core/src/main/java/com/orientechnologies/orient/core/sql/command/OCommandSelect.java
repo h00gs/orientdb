@@ -16,11 +16,9 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
-import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -30,15 +28,13 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordSchemaAware;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
-import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.model.OSortBy;
 import com.orientechnologies.orient.core.sql.parser.CopyVisitor;
-import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import com.orientechnologies.orient.core.sql.parser.SyntaxException;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import java.util.ArrayList;
@@ -51,7 +47,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
  * Executes the SQL SELECT statement. the parse() method compiles the query and 
@@ -87,25 +82,11 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   public <RET extends OCommandExecutor> RET parse(OCommandRequest iRequest) {
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-    
-    final String sql = ((OCommandRequestText) iRequest).getText();
-    System.err.println("|||||||||||||||||||| "+ sql);
-    final ParseTree tree = OSQL.compileExpression(sql);
-    if(tree instanceof OSQLParser.CommandContext){
-      final Object commandTree = tree.getChild(0);
-      if(commandTree instanceof OSQLParser.CommandSelectContext){
-        try {
-          visit((OSQLParser.CommandSelectContext)commandTree);
-        } catch (SyntaxException ex) {
-          throw new OException(ex.getMessage(), ex);
-        }
-      }else{
-        throw new OException("Unknowned command " + commandTree.getClass()+" "+commandTree);
-      }
-    }else{
-      throw new OException("Parse error, query is not a valid INSERT INTO.");
-    }
         
+    final OSQLParser.CommandSelectContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandSelectContext.class);
+    visit(candidate);
+      
     if (iRequest instanceof OSQLAsynchQuery) {
       request = (OSQLAsynchQuery)iRequest;
     }
@@ -116,11 +97,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   public <RET extends OCommandExecutor> RET parse(OSQLParser.CommandSelectContext ast) {
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-    try {
-      visit(ast);
-    } catch (SyntaxException ex) {
-      throw new OException("Parse error, query is not a valid INSERT INTO.");
-    }
+    visit(ast);
     return (RET)this;
   }
   
@@ -299,7 +276,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   
   // GRAMMAR PARSING ///////////////////////////////////////////////////////////
     
-  private void visit(OSQLParser.CommandSelectContext candidate) throws SyntaxException{    
+  private void visit(OSQLParser.CommandSelectContext candidate) throws OCommandSQLParsingException{    
     //variables
     projections.clear();
     setLimit(-1);

@@ -16,6 +16,7 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
@@ -45,7 +46,7 @@ import org.testng.annotations.Test;
 public class SQLParserTest {
   
   @Test
-  public void testWord() throws SyntaxException{
+  public void testWord() throws OCommandSQLParsingException{
     final String sql = "hello world";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -55,7 +56,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralText1() throws SyntaxException{
+  public void testLiteralText1() throws OCommandSQLParsingException{
     final String sql = "hello \"world\"";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -65,7 +66,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralText2() throws SyntaxException{
+  public void testLiteralText2() throws OCommandSQLParsingException{
     final String sql = "hello 'world'";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -75,7 +76,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralText3() throws SyntaxException{
+  public void testLiteralText3() throws OCommandSQLParsingException{
     final String sql = "hello 'world'') test'";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -85,7 +86,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralNumber() throws SyntaxException{
+  public void testLiteralNumber() throws OCommandSQLParsingException{
     String sql = "2013";
     OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     List<Object> objs = command.getArguments();
@@ -112,7 +113,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testLiteralNull() throws SyntaxException{
+  public void testLiteralNull() throws OCommandSQLParsingException{
     final String sql = "hello null";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -122,7 +123,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testUnset() throws SyntaxException{
+  public void testUnset() throws OCommandSQLParsingException{
     final String sql = "hello ?";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -132,7 +133,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testCollection() throws SyntaxException{
+  public void testCollection() throws OCommandSQLParsingException{
     final String sql = "[123,'abc',\"def\"]";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -145,7 +146,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testMap() throws SyntaxException{
+  public void testMap() throws OCommandSQLParsingException{
     final String sql = "{'att1':123,'att2':{'satt1':456}}";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -182,7 +183,7 @@ public class SQLParserTest {
 //  }
   
   @Test
-  public void testMethodCall() throws SyntaxException{
+  public void testMethodCall() throws OCommandSQLParsingException{
     final String sql = "'text'.charAt(2)";
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();
@@ -199,7 +200,7 @@ public class SQLParserTest {
   }
   
   @Test
-  public void testMethodStackCall() throws SyntaxException{
+  public void testMethodStackCall() throws OCommandSQLParsingException{
     final String sql = "'t213t'.substring(1,4).asInteger()";    
     final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
     final List<Object> objs = command.getArguments();

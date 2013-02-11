@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,60 +14,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
-import java.io.IOException;
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.storage.OCluster;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
+import java.io.IOException;
 
 /**
  * SQL TRUNCATE CLUSTER command: Truncates an entire record cluster.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-public class OCommandExecutorSQLTruncateCluster extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
+public class OCommandTruncateCluster extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
   public static final String KEYWORD_TRUNCATE = "TRUNCATE";
   public static final String KEYWORD_CLUSTER  = "CLUSTER";
-  private String             clusterName;
+  private String clusterName;
+  
+  public OCommandTruncateCluster() {
+  }
 
-  @SuppressWarnings("unchecked")
-  public OCommandExecutorSQLTruncateCluster parse(final OCommandRequest iRequest) {
+  public OCommandTruncateCluster parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
+    final OSQLParser.CommandTruncateClusterContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandTruncateClusterContext.class);
+    
+    clusterName = candidate.word().getText();
 
-    StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_TRUNCATE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_TRUNCATE + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_CLUSTER))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_CLUSTER + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserText, oldPos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected cluster name. Use " + getSyntax(), parserText, oldPos);
-
-    clusterName = word.toString();
-
-    if (database.getClusterIdByName(clusterName) == -1)
-      throw new OCommandSQLParsingException("Cluster '" + clusterName + "' not found", parserText, oldPos);
+    if (database.getClusterIdByName(clusterName) == -1){
+      throw new OCommandSQLParsingException("Cluster '" + clusterName + "' not found");
+    }
     return this;
   }
 
@@ -94,4 +86,5 @@ public class OCommandExecutorSQLTruncateCluster extends OCommandExecutorSQLAbstr
   public String getSyntax() {
     return "TRUNCATE CLUSTER <cluster-name>";
   }
+  
 }

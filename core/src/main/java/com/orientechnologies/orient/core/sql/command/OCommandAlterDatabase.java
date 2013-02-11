@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,77 +14,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
-import java.util.Arrays;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Locale;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.ODatabaseComplex;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL ALTER DATABASE command: Changes an attribute of the current database.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLAlterDatabase extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
+public class OCommandAlterDatabase extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
   public static final String   KEYWORD_ALTER    = "ALTER";
   public static final String   KEYWORD_DATABASE = "DATABASE";
 
   private ODatabase.ATTRIBUTES attribute;
   private String               value;
+  
+  public OCommandAlterDatabase() {
+  }
 
-  public OCommandExecutorSQLAlterDatabase parse(final OCommandRequest iRequest) {
+  public OCommandAlterDatabase parse(final OCommandRequest iRequest) {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_ALTER))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_ALTER + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_DATABASE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_DATABASE + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Missed the database's attribute to change. Use " + getSyntax(), parserText, oldPos);
-
-    final String attributeAsString = word.toString();
-
+    final OSQLParser.CommandAlterDatabaseContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandAlterDatabaseContext.class);
+    
+    final String attributeAsString = candidate.word().getText();
     try {
       attribute = ODatabase.ATTRIBUTES.valueOf(attributeAsString.toUpperCase(Locale.ENGLISH));
     } catch (IllegalArgumentException e) {
-      throw new OCommandSQLParsingException("Unknown database's attribute '" + attributeAsString + "'. Supported attributes are: "
-          + Arrays.toString(ODatabase.ATTRIBUTES.values()), parserText, oldPos);
+      throw new OCommandSQLParsingException("Unknown database attribute '" + attributeAsString);
     }
-
-    value = parserText.substring(pos + 1).trim();
-
-    if (value.length() == 0)
-      throw new OCommandSQLParsingException("Missed the database's value to change for attribute '" + attribute + "'. Use "
-          + getSyntax(), parserText, oldPos);
-
-    if (value.equalsIgnoreCase("null"))
-      value = null;
-
+    value = SQLGrammarUtils.visit(candidate.cword(), iRequest);
+    
     return this;
   }
 
@@ -104,4 +84,5 @@ public class OCommandExecutorSQLAlterDatabase extends OCommandExecutorSQLAbstrac
   public String getSyntax() {
     return "ALTER DATABASE <attribute-name> <attribute-value>";
   }
+  
 }

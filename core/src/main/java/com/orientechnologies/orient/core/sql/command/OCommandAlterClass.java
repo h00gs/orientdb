@@ -16,14 +16,12 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
-import com.orientechnologies.common.exception.OException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -32,9 +30,8 @@ import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import org.antlr.v4.runtime.tree.ParseTree;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL ALTER PROPERTY command: Changes an attribute of an existent property in the target class.
@@ -64,29 +61,12 @@ public class OCommandAlterClass extends OCommandAbstract implements OCommandDist
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    //ANTLR parsing
-    final String sql = ((OCommandRequestText) iRequest).getText();
-    final ParseTree tree = OSQL.compileExpression(sql);
-    if(!(tree instanceof OSQLParser.CommandContext)){
-      throw new OException("Parse error, query is not a valid INSERT INTO.");
-    }
-    
-    final Object commandTree = ((OSQLParser.CommandContext)tree).getChild(0);
-    final OSQLParser.CommandAlterClassContext candidate;
-    if(commandTree instanceof OSQLParser.CommandAlterClassContext){
-      candidate = (OSQLParser.CommandAlterClassContext)commandTree;
-    }else{
-      throw new OException("Unknowned command " + tree.getClass()+" "+tree);
-    }
-    
+    final OSQLParser.CommandAlterClassContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandAlterClassContext.class);
     className = candidate.word(0).getText();
     final String attributeAsString = candidate.word(1).getText();
     attribute = OClass.ATTRIBUTES.valueOf(attributeAsString.toUpperCase(Locale.ENGLISH));
-    if(candidate.NULL() != null){
-      value = null;
-    }else{
-      value = candidate.cword().getText();
-    }
+    value = SQLGrammarUtils.visit(candidate.cword(), iRequest);
     
     return this;
   }

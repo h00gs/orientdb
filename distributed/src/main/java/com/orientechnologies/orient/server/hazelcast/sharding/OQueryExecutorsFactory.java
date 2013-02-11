@@ -23,6 +23,11 @@ import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.command.OCommandManager;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.sql.*;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
+import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
 import com.orientechnologies.orient.server.hazelcast.sharding.hazelcast.ServerInstance;
 
@@ -38,17 +43,17 @@ public class OQueryExecutorsFactory {
 
   private static final Set<Class>            ALWAYS_DISTRIBUTABLE = new HashSet<Class>(Arrays.<Class> asList(
           OCommandExecutorSQLCreateClass.class,// int
-          OCommandExecutorSQLAlterClass.class,// null
-          OCommandExecutorSQLTruncateClass.class,// long
+          OCommandAlterClass.class,// null
+          OCommandTruncateClass.class,// long
           OCommandExecutorSQLDropClass.class,// boolean
 
           OCommandExecutorSQLCreateCluster.class,// int
-          OCommandExecutorSQLAlterCluster.class,// null
-          OCommandExecutorSQLTruncateCluster.class,// long
+          OCommandAlterCluster.class,// null
+          OCommandTruncateCluster.class,// long
           OCommandExecutorSQLDropCluster.class,// boolean
 
           OCommandExecutorSQLCreateProperty.class,// int
-          OCommandExecutorSQLAlterProperty.class,// null
+          OCommandAlterProperty.class,// null
           OCommandExecutorSQLDropProperty.class,// null
 
           OCommandExecutorSQLCreateIndex.class,// long

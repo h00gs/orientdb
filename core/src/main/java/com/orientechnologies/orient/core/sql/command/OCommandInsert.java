@@ -32,12 +32,12 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSetAware;
 import com.orientechnologies.orient.core.sql.OCommandParameters;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import com.orientechnologies.orient.core.sql.parser.SyntaxException;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,13 +79,9 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     final String sql = ((OCommandRequestText) iRequest).getText();
     final ParseTree tree = OSQL.compileExpression(sql);
     if(tree instanceof OSQLParser.CommandContext){
-      try {
-        visit((OSQLParser.CommandContext)tree);
-      } catch (SyntaxException ex) {
-        throw new OException(ex.getMessage(), ex);
-      }
+      visit((OSQLParser.CommandContext)tree);
     }else{
-      throw new OException("Parse error, query is not a valid INSERT INTO.");
+      throw new OCommandSQLParsingException("Parse error, query is not a valid INSERT INTO.");
     }
     
     final ODatabaseRecord database = getDatabase();
@@ -239,22 +235,21 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   // GRAMMAR PARSING ///////////////////////////////////////////////////////////
   
   
-  private void visit(OSQLParser.CommandContext candidate) throws SyntaxException {
+  private void visit(OSQLParser.CommandContext candidate) throws OCommandSQLParsingException {
     final Object commandTree = candidate.getChild(0);
     if(commandTree instanceof OSQLParser.CommandInsertIntoByValuesContext){
       visit((OSQLParser.CommandInsertIntoByValuesContext)commandTree);
     }else if(commandTree instanceof OSQLParser.CommandInsertIntoBySetContext){
       visit((OSQLParser.CommandInsertIntoBySetContext)commandTree);
     }else{
-      throw new OException("Unknowned command " + candidate.getClass()+" "+candidate);
+      throw new OCommandSQLParsingException("Unknowned command " + candidate.getClass()+" "+candidate);
     }
   }
   
-  private void visit(OSQLParser.CommandInsertIntoByValuesContext candidate) throws SyntaxException{    
+  private void visit(OSQLParser.CommandInsertIntoByValuesContext candidate) throws OCommandSQLParsingException{    
     //variables
     String target;
     final List<String> fields = new ArrayList<String>();
-    final List<Object[]> entries = new ArrayList<Object[]>();
     
     //parsing
     target = candidate.word().getText();
@@ -267,26 +262,45 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     for(OSQLParser.WordContext wc : candidate.insertFields().word()){
       fields.add(wc.getText());
     }
-    for(OSQLParser.InsertEntryContext entry : candidate.insertEntry()){
-      final List<OSQLParser.ExpressionContext> exps = entry.expression();
-      final Object[] values = new Object[exps.size()];
-      for(int i=0;i<values.length;i++){
-        values[i] = SQLGrammarUtils.visit(exps.get(i));
-      }
-      entries.add(values);
-    }
+    
     String cluster = null;
     if(candidate.insertCluster() != null){
       cluster = candidate.insertCluster().word().getText();
     }
     
+    visit(candidate.insertSource());
+    
     this.target = target;
     this.clusterName = cluster;
     this.fields = fields.toArray(new String[0]);
+  }
+  
+  private void visit(OSQLParser.InsertSourceContext candidate) throws OCommandSQLParsingException{  
+    if(candidate.insertSource() != null){
+      visit(candidate.insertSource());
+      return;
+    }
+    
+    final List<Object[]> entries = new ArrayList<Object[]>();
+    if(candidate.commandSelect() != null){
+      final OCommandSelect sub = new OCommandSelect();
+      sub.parse(candidate.commandSelect());
+      //TODO
+    }else{
+      //entry serie
+      for(OSQLParser.InsertEntryContext entry : candidate.insertEntry()){
+        final List<OSQLParser.ExpressionContext> exps = entry.expression();
+        final Object[] values = new Object[exps.size()];
+        for(int i=0;i<values.length;i++){
+          values[i] = SQLGrammarUtils.visit(exps.get(i));
+        }
+        entries.add(values);
+      }
+    }
     this.newRecords = entries;
   }
   
-  private void visit(OSQLParser.CommandInsertIntoBySetContext candidate) throws SyntaxException{    
+  private void visit(OSQLParser.CommandInsertIntoBySetContext candidate) throws OCommandSQLParsingException{    
     //variables
     final String target;
     final List<String> fields = new ArrayList<String>();

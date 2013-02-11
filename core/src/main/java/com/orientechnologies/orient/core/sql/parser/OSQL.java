@@ -19,6 +19,7 @@ package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import java.math.BigDecimal;
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -37,7 +38,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  */
 public class OSQL {
   
-  public static OCommandExecutor parse(String osql) throws SyntaxException{
+  public static OCommandExecutor parse(String osql) throws OCommandSQLParsingException{
     final ParseTree tree = compileExpression(osql);
     return toOrient(tree);
   }
@@ -53,7 +54,7 @@ public class OSQL {
       return sentence;
   }
   
-  public static OCommandExecutor toOrient(ParseTree tree) throws SyntaxException{
+  public static OCommandExecutor toOrient(ParseTree tree) throws OCommandSQLParsingException{
     return SQLGrammarUtils.visit((OSQLParser.CommandContext)tree);
   }
   

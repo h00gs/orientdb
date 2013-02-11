@@ -23,8 +23,14 @@ import java.util.Set;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterDatabase;
+import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
+import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
+import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandTruncateRecord;
 
 /**
  * Default command operator executor factory.
@@ -40,21 +46,24 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     final Map<String, Class<? extends OCommandExecutor>> commands = new HashMap<String, Class<? extends OCommandExecutor>>();
     
     // NEW ANTLR COMMANDS
-    commands.put(OCommandAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,OCommandAlterClass.class);
+    commands.put(OCommandAlterClass.KEYWORD_ALTER + " " + OCommandAlterClass.KEYWORD_CLASS,OCommandAlterClass.class);
+    commands.put(OCommandAlterCluster.KEYWORD_ALTER + " " + OCommandAlterCluster.KEYWORD_CLUSTER,OCommandAlterCluster.class);
+    commands.put(OCommandAlterDatabase.KEYWORD_ALTER + " " + OCommandAlterDatabase.KEYWORD_DATABASE,OCommandAlterDatabase.class);
+    commands.put(OCommandAlterProperty.KEYWORD_ALTER + " " + OCommandAlterProperty.KEYWORD_PROPERTY,OCommandAlterProperty.class);
+    commands.put(OCommandTruncateClass.KEYWORD_TRUNCATE + " " + OCommandTruncateClass.KEYWORD_CLASS,OCommandTruncateClass.class);
+    commands.put(OCommandTruncateCluster.KEYWORD_TRUNCATE + " " + OCommandTruncateCluster.KEYWORD_CLUSTER,OCommandTruncateCluster.class);
+    commands.put(OCommandTruncateRecord.KEYWORD_TRUNCATE + " " + OCommandTruncateRecord.KEYWORD_RECORD,OCommandTruncateRecord.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
-    //commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
+    commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
     commands.put(OCommandSelect.KEYWORD_SELECT, OCommandSelect.class);
     
     
     // OLD REPLACED COMMANDS 
-    //commands.put(OCommandExecutorSQLAlterClass.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterClass.KEYWORD_CLASS,OCommandExecutorSQLAlterClass.class);
-    commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
+//    commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
     //commands.put(OCommandExecutorSQLSelect.KEYWORD_SELECT, OCommandExecutorSQLSelect.class);
     
     // OLD MANUAL PARSING COMMANDS
-    commands.put(OCommandExecutorSQLAlterDatabase.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterDatabase.KEYWORD_DATABASE,
-        OCommandExecutorSQLAlterDatabase.class);
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
     commands.put(OCommandExecutorSQLUpdate.KEYWORD_UPDATE, OCommandExecutorSQLUpdate.class);
     commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
@@ -79,8 +88,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         OCommandExecutorSQLCreateCluster.class);
     commands.put(OCommandExecutorSQLCreateProperty.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateProperty.KEYWORD_PROPERTY,
         OCommandExecutorSQLCreateProperty.class);
-    commands.put(OCommandExecutorSQLAlterProperty.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterProperty.KEYWORD_PROPERTY,
-        OCommandExecutorSQLAlterProperty.class);
     commands.put(OCommandExecutorSQLDropCluster.KEYWORD_DROP + " " + OCommandExecutorSQLDropCluster.KEYWORD_CLUSTER,
         OCommandExecutorSQLDropCluster.class);
     commands.put(OCommandExecutorSQLDropClass.KEYWORD_DROP + " " + OCommandExecutorSQLDropClass.KEYWORD_CLASS,
@@ -89,14 +96,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         OCommandExecutorSQLDropProperty.class);
     commands.put(OCommandExecutorSQLFindReferences.KEYWORD_FIND + " " + OCommandExecutorSQLFindReferences.KEYWORD_REFERENCES,
         OCommandExecutorSQLFindReferences.class);
-    commands.put(OCommandExecutorSQLTruncateClass.KEYWORD_TRUNCATE + " " + OCommandExecutorSQLTruncateClass.KEYWORD_CLASS,
-        OCommandExecutorSQLTruncateClass.class);
-    commands.put(OCommandExecutorSQLTruncateCluster.KEYWORD_TRUNCATE + " " + OCommandExecutorSQLTruncateCluster.KEYWORD_CLUSTER,
-        OCommandExecutorSQLTruncateCluster.class);
-    commands.put(OCommandExecutorSQLTruncateRecord.KEYWORD_TRUNCATE + " " + OCommandExecutorSQLTruncateRecord.KEYWORD_RECORD,
-        OCommandExecutorSQLTruncateRecord.class);
-    commands.put(OCommandExecutorSQLAlterCluster.KEYWORD_ALTER + " " + OCommandExecutorSQLAlterCluster.KEYWORD_CLUSTER,
-        OCommandExecutorSQLAlterCluster.class);
     commands.put(OCommandExecutorSQLExplain.KEYWORD_EXPLAIN, OCommandExecutorSQLExplain.class);
 
     COMMANDS = Collections.unmodifiableMap(commands);

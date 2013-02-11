@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,64 +14,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
-import java.io.IOException;
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import java.io.IOException;
 
 /**
  * SQL TRUNCATE CLASS command: Truncates an entire class deleting all configured clusters where the class relies on.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-public class OCommandExecutorSQLTruncateClass extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
+public class OCommandTruncateClass extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
   public static final String KEYWORD_TRUNCATE = "TRUNCATE";
-  public static final String KEYWORD_CLASS    = "CLASS";
-  private OClass             schemaClass;
+  public static final String KEYWORD_CLASS = "CLASS";
+  private OClass schemaClass;
+  
+  public OCommandTruncateClass() {
+  }
 
-  @SuppressWarnings("unchecked")
-  public OCommandExecutorSQLTruncateClass parse(final OCommandRequest iRequest) {
+  public OCommandTruncateClass parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_TRUNCATE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_TRUNCATE + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_CLASS))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_CLASS + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserText, oldPos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected class name. Use " + getSyntax(), parserText, oldPos);
-
-    final String className = word.toString();
-
+    final OSQLParser.CommandTruncateClassContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandTruncateClassContext.class);
+    
+    final String className = candidate.word().getText();
     schemaClass = database.getMetadata().getSchema().getClass(className);
 
-    if (schemaClass == null)
-      throw new OCommandSQLParsingException("Class '" + className + "' not found", parserText, oldPos);
+    if (schemaClass == null){
+      throw new OCommandSQLParsingException("Class '" + className + "' not found");
+    }
     return this;
   }
-
+  
   /**
    * Execute the command.
    */
@@ -93,4 +84,5 @@ public class OCommandExecutorSQLTruncateClass extends OCommandExecutorSQLAbstrac
   public String getSyntax() {
     return "TRUNCATE CLASS <class-name>";
   }
+  
 }
