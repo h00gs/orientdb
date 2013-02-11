@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,81 +14,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.orientechnologies.common.util.OCaseIncentiveComparator;
 import com.orientechnologies.common.util.OCollections;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL CREATE PROPERTY command: Creates a new property in the target class.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLDropProperty extends OCommandExecutorSQLAbstract  implements OCommandDistributedReplicateRequest {
-  public static final String KEYWORD_DROP     = "DROP";
+public class OCommandDropProperty extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
+  public static final String KEYWORD_DROP = "DROP";
   public static final String KEYWORD_PROPERTY = "PROPERTY";
 
-  private String             className;
-  private String             fieldName;
-  private boolean            force            = false;
-
-  public OCommandExecutorSQLDropProperty parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-
-    init(((OCommandRequestText) iRequest).getText());
-
-    final StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_DROP))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_DROP + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_PROPERTY))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_PROPERTY + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, false);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected <class>.<property>. Use " + getSyntax(), parserText, pos);
-
-    String[] parts = word.toString().split("\\.");
-    if (parts.length != 2)
-      throw new OCommandSQLParsingException("Expected <class>.<property>. Use " + getSyntax(), parserText, pos);
-
-    className = parts[0];
-    if (className == null)
-      throw new OCommandSQLParsingException("Class not found", parserText, pos);
-    fieldName = parts[1];
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, false);
-    if (pos != -1) {
-      final String forceParameter = word.toString();
-      if ("FORCE".equals(forceParameter)) {
-        force = true;
-      } else {
-        throw new OCommandSQLParsingException("Wrong query parameter", parserText, pos);
-      }
-    }
-
-    return this;
+  private String className;
+  private String fieldName;
+  private boolean force = false;
+  
+  public OCommandDropProperty() {
   }
 
+  public OCommandDropProperty parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+
+    final OSQLParser.CommandDropPropertyContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandDropPropertyContext.class);
+    
+    className = candidate.word(0).getText();
+    fieldName = candidate.word(1).getText();
+    force = (candidate.FORCE() != null);
+    
+    return this;
+  }
+    
+  
   /**
    * Execute the CREATE PROPERTY.
    */

@@ -26,6 +26,10 @@ import com.orientechnologies.orient.core.sql.*;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
+import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
+import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
@@ -45,20 +49,20 @@ public class OQueryExecutorsFactory {
           OCommandExecutorSQLCreateClass.class,// int
           OCommandAlterClass.class,// null
           OCommandTruncateClass.class,// long
-          OCommandExecutorSQLDropClass.class,// boolean
+          OCommandDropClass.class,// boolean
 
           OCommandExecutorSQLCreateCluster.class,// int
           OCommandAlterCluster.class,// null
           OCommandTruncateCluster.class,// long
-          OCommandExecutorSQLDropCluster.class,// boolean
+          OCommandDropCluster.class,// boolean
 
           OCommandExecutorSQLCreateProperty.class,// int
           OCommandAlterProperty.class,// null
-          OCommandExecutorSQLDropProperty.class,// null
+          OCommandDropProperty.class,// null
 
           OCommandExecutorSQLCreateIndex.class,// long
           OCommandExecutorSQLRebuildIndex.class,// long
-          OCommandExecutorSQLDropIndex.class// null
+          OCommandDropIndex.class// null
   ));
 
   private OQueryExecutorsFactory() {

@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,57 +14,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
+import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL REMOVE INDEX command: Remove an index
  * 
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
+ * @author Johann Sorel (Geomatys)
  * 
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLDropIndex extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest  {
-  public static final String KEYWORD_DROP  = "DROP";
+public class OCommandDropIndex extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
+  public static final String KEYWORD_DROP = "DROP";
   public static final String KEYWORD_INDEX = "INDEX";
-
-  private String             name;
-
-  public OCommandExecutorSQLDropIndex parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-
-    init(((OCommandRequestText) iRequest).getText());
-
-    final StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_DROP))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_DROP + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_INDEX))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_INDEX + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, false);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected index name. Use " + getSyntax(), parserText, oldPos);
-
-    name = word.toString();
-
-    return this;
+  private String name;
+  
+  public OCommandDropIndex() {
   }
 
+  public OCommandDropIndex parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+
+    final OSQLParser.CommandDropIndexContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandDropIndexContext.class);
+    
+    name = candidate.word().getText();
+    return this;
+  }
+  
   /**
    * Execute the REMOVE INDEX.
    */
@@ -79,4 +70,5 @@ public class OCommandExecutorSQLDropIndex extends OCommandExecutorSQLAbstract im
   public String getSyntax() {
     return "DROP INDEX <index-name>|<class>.<property>";
   }
+  
 }

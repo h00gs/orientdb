@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
 
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.index.OIndex;
@@ -28,6 +28,9 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.storage.OCluster;
 
 /**
@@ -35,42 +38,34 @@ import com.orientechnologies.orient.core.storage.OCluster;
  * deleting class.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLDropClass extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
-  public static final String KEYWORD_DROP  = "DROP";
+public class OCommandDropClass extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
+  public static final String KEYWORD_DROP = "DROP";
   public static final String KEYWORD_CLASS = "CLASS";
-
-  private String             className;
-
-  public OCommandExecutorSQLDropClass parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-
-    init(((OCommandRequestText) iRequest).getText());
-
-    final StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_DROP))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_DROP + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_CLASS))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_CLASS + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, false);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected <class>. Use " + getSyntax(), parserText, pos);
-
-    className = word.toString();
-    if (className == null)
-      throw new OCommandSQLParsingException("Class is null. Use " + getSyntax(), parserText, pos);
-
-    return this;
+  private String className;
+  
+  public OCommandDropClass() {
   }
 
+  public OCommandDropClass parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+
+    final OSQLParser.CommandDropClassContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandDropClassContext.class);
+    
+    className = candidate.word().getText();
+    final OClass schemaClass = database.getMetadata().getSchema().getClass(className);
+    if (schemaClass == null){
+      throw new OCommandSQLParsingException("Class '" + className + "' not found");
+    }
+    return this;
+  }
+  
+  
   /**
    * Execute the DROP CLASS.
    */
@@ -142,4 +137,5 @@ public class OCommandExecutorSQLDropClass extends OCommandExecutorSQLAbstract im
   public String getSyntax() {
     return "DROP CLASS <class>";
   }
+  
 }

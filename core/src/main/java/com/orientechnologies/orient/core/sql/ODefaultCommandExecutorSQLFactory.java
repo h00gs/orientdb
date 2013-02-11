@@ -26,6 +26,10 @@ import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterDatabase;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
+import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
+import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
@@ -53,6 +57,10 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandTruncateClass.KEYWORD_TRUNCATE + " " + OCommandTruncateClass.KEYWORD_CLASS,OCommandTruncateClass.class);
     commands.put(OCommandTruncateCluster.KEYWORD_TRUNCATE + " " + OCommandTruncateCluster.KEYWORD_CLUSTER,OCommandTruncateCluster.class);
     commands.put(OCommandTruncateRecord.KEYWORD_TRUNCATE + " " + OCommandTruncateRecord.KEYWORD_RECORD,OCommandTruncateRecord.class);
+    commands.put(OCommandDropIndex.KEYWORD_DROP + " " + OCommandDropIndex.KEYWORD_INDEX,OCommandDropIndex.class);
+    commands.put(OCommandDropCluster.KEYWORD_DROP + " " + OCommandDropCluster.KEYWORD_CLUSTER,OCommandDropCluster.class);
+    commands.put(OCommandDropClass.KEYWORD_DROP + " " + OCommandDropClass.KEYWORD_CLASS, OCommandDropClass.class);
+    commands.put(OCommandDropProperty.KEYWORD_DROP + " " + OCommandDropProperty.KEYWORD_PROPERTY,OCommandDropProperty.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
@@ -78,8 +86,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         OCommandExecutorSQLCreateLink.class);
     commands.put(OCommandExecutorSQLCreateIndex.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateIndex.KEYWORD_INDEX,
         OCommandExecutorSQLCreateIndex.class);
-    commands.put(OCommandExecutorSQLDropIndex.KEYWORD_DROP + " " + OCommandExecutorSQLDropIndex.KEYWORD_INDEX,
-        OCommandExecutorSQLDropIndex.class);
     commands.put(OCommandExecutorSQLRebuildIndex.KEYWORD_REBUILD + " " + OCommandExecutorSQLRebuildIndex.KEYWORD_INDEX,
         OCommandExecutorSQLRebuildIndex.class);
     commands.put(OCommandExecutorSQLCreateClass.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateClass.KEYWORD_CLASS,
@@ -88,12 +94,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         OCommandExecutorSQLCreateCluster.class);
     commands.put(OCommandExecutorSQLCreateProperty.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateProperty.KEYWORD_PROPERTY,
         OCommandExecutorSQLCreateProperty.class);
-    commands.put(OCommandExecutorSQLDropCluster.KEYWORD_DROP + " " + OCommandExecutorSQLDropCluster.KEYWORD_CLUSTER,
-        OCommandExecutorSQLDropCluster.class);
-    commands.put(OCommandExecutorSQLDropClass.KEYWORD_DROP + " " + OCommandExecutorSQLDropClass.KEYWORD_CLASS,
-        OCommandExecutorSQLDropClass.class);
-    commands.put(OCommandExecutorSQLDropProperty.KEYWORD_DROP + " " + OCommandExecutorSQLDropProperty.KEYWORD_PROPERTY,
-        OCommandExecutorSQLDropProperty.class);
     commands.put(OCommandExecutorSQLFindReferences.KEYWORD_FIND + " " + OCommandExecutorSQLFindReferences.KEYWORD_REFERENCES,
         OCommandExecutorSQLFindReferences.class);
     commands.put(OCommandExecutorSQLExplain.KEYWORD_EXPLAIN, OCommandExecutorSQLExplain.class);

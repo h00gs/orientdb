@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,59 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL DROP CLUSTER command: Drop a cluster from the database
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLDropCluster extends OCommandExecutorSQLAbstract  implements OCommandDistributedReplicateRequest {
-  public static final String KEYWORD_DROP    = "DROP";
+public class OCommandDropCluster extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
+  public static final String KEYWORD_DROP = "DROP";
   public static final String KEYWORD_CLUSTER = "CLUSTER";
-
-  private String             clusterName;
-
-  public OCommandExecutorSQLDropCluster parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-
-    init(((OCommandRequestText) iRequest).getText());
-
-    final StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_DROP))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_DROP + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_CLUSTER))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_CLUSTER + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, false);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected <cluster>. Use " + getSyntax(), parserText, pos);
-
-    clusterName = word.toString();
-    if (clusterName == null)
-      throw new OCommandSQLParsingException("Cluster is null. Use " + getSyntax(), parserText, pos);
-
-    return this;
+  private String clusterName;
+  
+  public OCommandDropCluster() {
   }
 
+  public OCommandDropCluster parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+
+    final OSQLParser.CommandDropClusterContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandDropClusterContext.class);
+    
+    clusterName = candidate.word().getText();
+    return this;
+  }
+  
   /**
    * Execute the DROP CLUSTER.
    */
@@ -104,4 +94,5 @@ public class OCommandExecutorSQLDropCluster extends OCommandExecutorSQLAbstract 
   public String getSyntax() {
     return "DROP CLUSTER <cluster>";
   }
+  
 }

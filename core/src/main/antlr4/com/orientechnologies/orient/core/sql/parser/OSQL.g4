@@ -17,6 +17,8 @@ DELETE : D E L E T E ;
 FROM : F R O M ;
 WHERE : W H E R E ;
 INTO : I N T O ;
+DROP : D R O P ;
+FORCE : F O R C E ;
 VALUES : V A L U E S ;
 SET : S E T ;
 ADD : A D D ;
@@ -269,6 +271,11 @@ orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 
+commandDropClass : DROP CLASS word ;
+commandDropCluster : DROP CLUSTER word ;
+commandDropIndex : DROP INDEX word ;
+commandDropProperty : DROP PROPERTY word DOT word FORCE ;
+
 commandTruncateClass : TRUNCATE CLASS word ;
 commandTruncateCluster : TRUNCATE CLUSTER word ;
 commandTruncateRecord : TRUNCATE RECORD (identifier|collection) ;
@@ -279,6 +286,10 @@ command
   | commandAlterCluster
   | commandAlterDatabase
   | commandAlterProperty
+  | commandDropClass
+  | commandDropCluster
+  | commandDropIndex
+  | commandDropProperty
   | commandInsertIntoByValues
   | commandInsertIntoBySet
   | commandSelect
