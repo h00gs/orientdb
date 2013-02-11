@@ -55,6 +55,7 @@ import com.orientechnologies.orient.core.sql.model.OLike;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ErrorNode;
 
 /**
  *
@@ -73,6 +74,7 @@ public final class SQLGrammarUtils {
     final String sql = ((OCommandRequestText) iRequest).getText();
     System.err.println("|||||||||||||||||||| "+ sql);
     final ParseTree tree = OSQL.compileExpression(sql);
+    checkErrorNodes(tree);
     if(!(tree instanceof OSQLParser.CommandContext)){
       throw new OCommandSQLParsingException("Parse error, query is not a valid command.");
     }
@@ -82,6 +84,15 @@ public final class SQLGrammarUtils {
       return (T) commandTree;
     }else{
       throw new OCommandSQLParsingException("Unexpected command : "+c.getClass() +" was expecting a "+c.getSimpleName());
+    }
+  }
+  
+  private static void checkErrorNodes(ParseTree tree) throws OCommandSQLParsingException {
+    if(tree instanceof ErrorNode){
+      throw new OCommandSQLParsingException("Malformed command at : "+tree.getText());
+    }
+    for(int i=0,n=tree.getChildCount();i<n;i++){
+      checkErrorNodes(tree.getChild(i));
     }
   }
   

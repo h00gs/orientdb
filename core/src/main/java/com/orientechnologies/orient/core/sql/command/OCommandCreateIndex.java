@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.index.OIndex;
@@ -35,6 +35,9 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL CREATE INDEX command: Create a new index against a property.
@@ -46,9 +49,11 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
  * </p>
  * 
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
+ * @author Johann Sorel (Geomatys)
+ * 
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLCreateIndex extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
+public class OCommandCreateIndex extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
   public static final String KEYWORD_CREATE = "CREATE";
   public static final String KEYWORD_INDEX  = "INDEX";
   public static final String KEYWORD_ON     = "ON";
@@ -59,116 +64,48 @@ public class OCommandExecutorSQLCreateIndex extends OCommandExecutorSQLAbstract 
   private OClass.INDEX_TYPE  indexType;
   private OType[]            keyTypes;
   private byte               serializerKeyId;
+  
+  public OCommandCreateIndex() {
+  }
 
-  public OCommandExecutorSQLCreateIndex parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+  public OCommandCreateIndex parse(final OCommandRequest iRequest) {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    final StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_CREATE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_CREATE + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_INDEX))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_INDEX + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, false);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected index name. Use " + getSyntax(), parserText, oldPos);
-
-    indexName = word.toString();
-
-    final int namePos = oldPos;
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Index type requested. Use " + getSyntax(), parserText, oldPos + 1);
-
-    if (word.toString().equals(KEYWORD_ON)) {
-      if (indexName.contains(".")) {
-        throw new OCommandSQLParsingException("Index name cannot contain '.' character. Use " + getSyntax(), parserText, namePos);
-      }
-
-      oldPos = pos;
-      pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-      if (pos == -1)
-        throw new OCommandSQLParsingException("Expected class name. Use " + getSyntax(), parserText, oldPos);
-      oldPos = pos;
-      oClass = findClass(word.toString());
-
-      if (oClass == null)
-        throw new OCommandExecutionException("Class " + word + " not found");
-
-      pos = parserTextUpperCase.indexOf(")");
-      if (pos == -1) {
-        throw new OCommandSQLParsingException("No right bracket found. Use " + getSyntax(), parserText, oldPos);
-      }
-
-      final String props = parserText.substring(oldPos, pos).trim().substring(1);
-
-      List<String> propList = new ArrayList<String>();
-      for (String propToIndex : props.trim().split("\\s*,\\s*")) {
-        checkMapIndexSpecifier(propToIndex, parserText, oldPos);
-
-        propList.add(propToIndex);
-      }
-
-      fields = new String[propList.size()];
-      propList.toArray(fields);
-
-      oldPos = pos + 1;
-      pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-      if (pos == -1)
-        throw new OCommandSQLParsingException("Index type requested. Use " + getSyntax(), parserText, oldPos + 1);
-    } else {
-      if (indexName.indexOf('.') > 0) {
-        final String[] parts = indexName.split("\\.");
-
-        oClass = findClass(parts[0]);
-        if (oClass == null)
-          throw new OCommandExecutionException("Class " + parts[0] + " not found");
-
-        fields = new String[] { parts[1] };
+    final OSQLParser.CommandCreateIndexContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandCreateIndexContext.class);
+    
+    int i=0;
+    indexName = candidate.word(i++).getText();
+    
+    if(candidate.indexOn()!= null){
+      final OSQLParser.IndexOnContext ctx = candidate.indexOn();
+      final List<OSQLParser.WordContext> words = ctx.word();
+      oClass = findClass(words.get(0).getText());
+      fields = new String[words.size()-1];
+      for(int k=1;k<fields.length;k++){
+        fields[k-1] = words.get(k).getText();
       }
     }
-
-    indexType = OClass.INDEX_TYPE.valueOf(word.toString());
-
-    if (indexType == null)
-      throw new OCommandSQLParsingException("Index type is null", parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos != -1 && !word.toString().equalsIgnoreCase("NULL")) {
-      final String typesString = parserTextUpperCase.substring(oldPos).trim();
-
-      if (word.toString().equalsIgnoreCase("RUNTIME")) {
-        oldPos = pos;
-        pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-
-        serializerKeyId = Byte.parseByte(word.toString());
-      } else {
-        ArrayList<OType> keyTypeList = new ArrayList<OType>();
-        for (String typeName : typesString.split("\\s*,\\s*")) {
-          keyTypeList.add(OType.valueOf(typeName));
-        }
-
-        keyTypes = new OType[keyTypeList.size()];
-        keyTypeList.toArray(keyTypes);
-
-        if (fields != null && fields.length != 0 && fields.length != keyTypes.length) {
+    
+    indexType = OClass.INDEX_TYPE.valueOf(candidate.word(i++).getText());
+    
+    if(candidate.NULL() != null){
+      //do nothing
+    }else if(candidate.RUNTIME() != null){
+      serializerKeyId = Byte.parseByte(candidate.INT().getText());
+    }else{
+      final List<OType> keyTypes = new ArrayList<OType>();
+      for(;i<candidate.word().size();i++){
+        final String text = candidate.word(i).getText();
+        keyTypes.add(OType.valueOf(text));
+      }
+      this.keyTypes = keyTypes.toArray(new OType[0]);
+      if (this.fields.length != this.keyTypes.length) {
           throw new OCommandSQLParsingException("Count of fields doesn't match with count of property types. " + "Fields: "
-              + Arrays.toString(fields) + "; Types: " + Arrays.toString(keyTypes), parserText, oldPos);
+              + Arrays.toString(this.fields) + "; Types: " + Arrays.toString(this.keyTypes));
         }
-      }
     }
-
     return this;
   }
 
@@ -213,6 +150,7 @@ public class OCommandExecutorSQLCreateIndex extends OCommandExecutorSQLAbstract 
     return null;
   }
 
+  
   private void checkMapIndexSpecifier(final String fieldName, final String text, final int pos) {
     String[] fieldNameParts = fieldName.split("\\s+");
     if (fieldNameParts.length == 1)
@@ -235,9 +173,10 @@ public class OCommandExecutorSQLCreateIndex extends OCommandExecutorSQLAbstract 
     throw new OCommandSQLParsingException("Illegal field name format, should be '<property> [by key|value]' but was '" + fieldName
         + "'", text, pos);
   }
-
+  
   @Override
   public String getSyntax() {
     return "CREATE INDEX <name> [ON <class-name> (prop-names)] <type> [<key-type>]";
   }
+  
 }

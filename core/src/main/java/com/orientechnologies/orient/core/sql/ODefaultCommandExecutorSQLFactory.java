@@ -26,6 +26,10 @@ import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterDatabase;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateClass;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateIndex;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateProperty;
 import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
@@ -65,6 +69,10 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandDropProperty.KEYWORD_DROP + " " + OCommandDropProperty.KEYWORD_PROPERTY,OCommandDropProperty.class);
     commands.put(OCommandGrant.KEYWORD_GRANT, OCommandGrant.class);
     commands.put(OCommandRevoke.KEYWORD_REVOKE, OCommandRevoke.class);
+    commands.put(OCommandCreateClass.KEYWORD_CREATE + " " + OCommandCreateClass.KEYWORD_CLASS,OCommandCreateClass.class);
+    commands.put(OCommandCreateCluster.KEYWORD_CREATE + " " + OCommandCreateCluster.KEYWORD_CLUSTER,OCommandCreateCluster.class);
+    commands.put(OCommandCreateIndex.KEYWORD_CREATE + " " + OCommandCreateIndex.KEYWORD_INDEX,OCommandCreateIndex.class);
+    commands.put(OCommandCreateProperty.KEYWORD_CREATE + " " + OCommandCreateProperty.KEYWORD_PROPERTY,OCommandCreateProperty.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
@@ -86,16 +94,8 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandExecutorSQLCreateFunction.NAME, OCommandExecutorSQLCreateFunction.class);
     commands.put(OCommandExecutorSQLCreateLink.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateLink.KEYWORD_LINK,
         OCommandExecutorSQLCreateLink.class);
-    commands.put(OCommandExecutorSQLCreateIndex.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateIndex.KEYWORD_INDEX,
-        OCommandExecutorSQLCreateIndex.class);
     commands.put(OCommandExecutorSQLRebuildIndex.KEYWORD_REBUILD + " " + OCommandExecutorSQLRebuildIndex.KEYWORD_INDEX,
         OCommandExecutorSQLRebuildIndex.class);
-    commands.put(OCommandExecutorSQLCreateClass.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateClass.KEYWORD_CLASS,
-        OCommandExecutorSQLCreateClass.class);
-    commands.put(OCommandExecutorSQLCreateCluster.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateCluster.KEYWORD_CLUSTER,
-        OCommandExecutorSQLCreateCluster.class);
-    commands.put(OCommandExecutorSQLCreateProperty.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateProperty.KEYWORD_PROPERTY,
-        OCommandExecutorSQLCreateProperty.class);
     commands.put(OCommandExecutorSQLFindReferences.KEYWORD_FIND + " " + OCommandExecutorSQLFindReferences.KEYWORD_REFERENCES,
         OCommandExecutorSQLFindReferences.class);
     commands.put(OCommandExecutorSQLExplain.KEYWORD_EXPLAIN, OCommandExecutorSQLExplain.class);

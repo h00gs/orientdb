@@ -13,6 +13,7 @@ options {
 SELECT : S E L E C T ;
 INSERT : I N S E R T ;
 UPDATE : U P D A T E ;
+CREATE : C R E A T E ;
 DELETE : D E L E T E ;
 FROM : F R O M ;
 WHERE : W H E R E ;
@@ -43,6 +44,8 @@ CLUSTER : C L U S T E R ;
 DATABASE : D A T A B A S E ;
 PROPERTY : P R O P E R T Y ;
 TRUNCATE : T R U N C A T E ;
+EXTENDS : E X T E N D S ;
+ABSTRACT : A B S T R A C T ;
 RECORD : R E C O R D ;
 INDEX : I N D E X ;
 DICTIONARY : D I C T I O N A R Y ;
@@ -57,6 +60,10 @@ TO : T O ;
 IS : I S ;
 NOT : N O T ;
 GROUP : G R O U P ;
+DATASEGMENT : D A T A S E G M E N T ;
+LOCATION : L O C A T I O N ;
+POSITION : P O S I T I O N ;
+RUNTIME : R U N T I M E ;
 
 
 // GLOBAL STUFF ---------------------------------------
@@ -268,6 +275,12 @@ orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 
+commandCreateClass : CREATE CLASS word (EXTENDS word)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
+numberOrWord : number | word ;
+commandCreateCluster : CREATE CLUSTER word word (DATASEGMENT word)? (LOCATION word)? (POSITION word)? ;
+commandCreateIndex : CREATE INDEX word (indexOn)? word (NULL | RUNTIME INT | (word (COMMA word)*))?;
+indexOn : ON word LPAREN word (COMMA word)* RPAREN ;
+commandCreateProperty : CREATE PROPERTY word DOT word word word?;
 
 commandAlterClass : ALTER CLASS word word cword ;
 commandAlterCluster : ALTER CLUSTER (word|number) word cword;
@@ -287,7 +300,11 @@ commandGrant : GRANT word ON word TO word ;
 commandRevoke : REVOKE word ON word FROM word ;
 
 command
-	: commandUnknowned
+	: (commandUnknowned
+  | commandCreateClass
+  | commandCreateCluster
+  | commandCreateIndex
+  | commandCreateProperty
   | commandAlterClass
   | commandAlterCluster
   | commandAlterDatabase
@@ -303,5 +320,6 @@ command
   | commandTruncateCluster
   | commandTruncateRecord
   | commandGrant
-  | commandRevoke
+  | commandRevoke)
+    EOF
   ;

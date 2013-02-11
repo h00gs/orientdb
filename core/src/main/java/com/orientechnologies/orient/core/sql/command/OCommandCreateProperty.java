@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
-import java.util.Locale;
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -29,68 +28,45 @@ import com.orientechnologies.orient.core.metadata.schema.OPropertyImpl;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import java.util.Locale;
 
 /**
  * SQL CREATE PROPERTY command: Creates a new property in the target class.
  * 
  * @author Luca Garulli
- * 
+ * @author Johann Sorel (Geomatys)
  */
-@SuppressWarnings("unchecked")
-public class OCommandExecutorSQLCreateProperty extends OCommandExecutorSQLAbstract implements OCommandDistributedReplicateRequest {
+public class OCommandCreateProperty extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  
   public static final String KEYWORD_CREATE   = "CREATE";
   public static final String KEYWORD_PROPERTY = "PROPERTY";
 
-  private String             className;
-  private String             fieldName;
-  private OType              type;
-  private String             linked;
+  private String className;
+  private String fieldName;
+  private OType type;
+  private String linked;
+  
+  public OCommandCreateProperty() {
+  }
 
-  public OCommandExecutorSQLCreateProperty parse(final OCommandRequest iRequest) {
-    getDatabase().checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+  public OCommandCreateProperty parse(final OCommandRequest iRequest) {    
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_CREATE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_CREATE + " not found", parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_PROPERTY))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_PROPERTY + " not found", parserText, oldPos);
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, false);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Expected <class>.<property>", parserText, oldPos);
-
-    String[] parts = word.toString().split("\\.");
-    if (parts.length != 2)
-      throw new OCommandSQLParsingException("Expected <class>.<property>", parserText, oldPos);
-
-    className = parts[0];
-    if (className == null)
-      throw new OCommandSQLParsingException("Class not found", parserText, oldPos);
-    fieldName = parts[1];
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Missed property type", parserText, oldPos);
-
-    type = OType.valueOf(word.toString());
-
-    oldPos = pos;
-    pos = nextWord(parserText, parserTextUpperCase, oldPos, word, false);
-    if (pos == -1)
-      return this;
-
-    linked = word.toString();
-
+    final OSQLParser.CommandCreatePropertyContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandCreatePropertyContext.class);
+    
+    int i= 0;
+    className = candidate.word(i++).getText();
+    fieldName = candidate.word(i++).getText();    
+    type = OType.valueOf(candidate.word(i++).getText().toUpperCase());
+    
+    if(candidate.word().size()>3){
+      linked = candidate.word(i++).getText().toUpperCase();
+    }
+    
     return this;
   }
 
@@ -134,4 +110,5 @@ public class OCommandExecutorSQLCreateProperty extends OCommandExecutorSQLAbstra
   public String getSyntax() {
     return "CREATE PROPERTY <class>.<property> <type> [<linked-type>|<linked-class>]";
   }
+  
 }
