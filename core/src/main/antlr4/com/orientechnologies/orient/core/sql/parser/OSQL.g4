@@ -48,8 +48,12 @@ INDEX : I N D E X ;
 DICTIONARY : D I C T I O N A R Y ;
 ALTER : A L T E R ;
 CLASS : C L A S S ;
-SKIP : S K I P;
+SKIP : S K I P ;
+GRANT : G R A N T ;
+REVOKE : R E V O K E ;
 IN : I N ;
+ON : O N ;
+TO : T O ;
 IS : I S ;
 NOT : N O T ;
 GROUP : G R O U P ;
@@ -214,6 +218,9 @@ filter
 
 // COMMANDS
 
+cword : anything | NULL ;
+anything : .*? ;
+
 commandUnknowned : expression (expression)* ;
 
 commandInsertIntoByValues
@@ -231,16 +238,6 @@ insertCluster : CLUSTER word ;
 insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
 insertSet     : word COMPARE_EQL expression ;
 insertFields  : LPAREN word(COMMA word)* RPAREN ;
-
-commandAlterClass : ALTER CLASS word word cword ;
-cword             : anything | NULL ;
-anything : .*? ;
-
-commandAlterCluster : ALTER CLUSTER (word|number) word cword;
-
-commandAlterDatabase : ALTER DATABASE word cword;
-
-commandAlterProperty : ALTER PROPERTY word DOT word word cword ;
 
 commandSelect
   : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit?
@@ -271,6 +268,12 @@ orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 
+
+commandAlterClass : ALTER CLASS word word cword ;
+commandAlterCluster : ALTER CLUSTER (word|number) word cword;
+commandAlterDatabase : ALTER DATABASE word cword;
+commandAlterProperty : ALTER PROPERTY word DOT word word cword ;
+
 commandDropClass : DROP CLASS word ;
 commandDropCluster : DROP CLUSTER word ;
 commandDropIndex : DROP INDEX word ;
@@ -279,6 +282,9 @@ commandDropProperty : DROP PROPERTY word DOT word FORCE ;
 commandTruncateClass : TRUNCATE CLASS word ;
 commandTruncateCluster : TRUNCATE CLUSTER word ;
 commandTruncateRecord : TRUNCATE RECORD (identifier|collection) ;
+
+commandGrant : GRANT word ON word TO word ;
+commandRevoke : REVOKE word ON word FROM word ;
 
 command
 	: commandUnknowned
@@ -296,4 +302,6 @@ command
   | commandTruncateClass
   | commandTruncateCluster
   | commandTruncateRecord
+  | commandGrant
+  | commandRevoke
   ;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,73 +14,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 
 /**
  * SQL REVOKE command: Revoke a privilege to a database role.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  * 
  */
-public class OCommandExecutorSQLRevoke extends OCommandExecutorSQLPermissionAbstract {
+public class OCommandRevoke extends OCommandPermissionAbstract{
   public static final String  KEYWORD_REVOKE = "REVOKE";
   private static final String KEYWORD_FROM   = "FROM";
 
-  @SuppressWarnings("unchecked")
-  public OCommandExecutorSQLRevoke parse(final OCommandRequest iRequest) {
+  
+  public OCommandRevoke() {
+  }
+
+  public OCommandRevoke parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
+    final OSQLParser.CommandRevokeContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandRevokeContext.class);
+    
     privilege = ORole.PERMISSION_NONE;
     resource = null;
     role = null;
-
-    StringBuilder word = new StringBuilder();
-
-    int oldPos = 0;
-    int pos = nextWord(parserText, parserTextUpperCase, oldPos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_REVOKE))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_REVOKE + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Invalid privilege", parserText, oldPos);
-
-    parsePrivilege(word, oldPos);
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_ON))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_ON + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserText, pos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Invalid resource", parserText, oldPos);
-
-    resource = word.toString();
-
-    pos = nextWord(parserText, parserTextUpperCase, pos, word, true);
-    if (pos == -1 || !word.toString().equals(KEYWORD_FROM))
-      throw new OCommandSQLParsingException("Keyword " + KEYWORD_FROM + " not found. Use " + getSyntax(), parserText, oldPos);
-
-    pos = nextWord(parserText, parserText, pos, word, true);
-    if (pos == -1)
-      throw new OCommandSQLParsingException("Invalid role", parserText, oldPos);
-
-    final String roleName = word.toString();
-    role = database.getMetadata().getSecurity().getRole(roleName);
-    if (role == null)
+    
+    parsePrivilege(candidate.word(0).getText());
+    
+    resource = candidate.word(1).getText();
+    
+    final String roleName = candidate.word(2).toString();
+    role = getDatabase().getMetadata().getSecurity().getRole(roleName);
+    if (role == null){
       throw new OCommandSQLParsingException("Invalid role: " + roleName);
+    }
+    
     return this;
   }
 
@@ -99,4 +82,5 @@ public class OCommandExecutorSQLRevoke extends OCommandExecutorSQLPermissionAbst
   public String getSyntax() {
     return "REVOKE <permission> ON <resource> FROM <role>";
   }
+  
 }

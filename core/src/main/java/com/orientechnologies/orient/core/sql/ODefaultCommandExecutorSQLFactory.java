@@ -30,7 +30,9 @@ import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandGrant;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.command.OCommandRevoke;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
@@ -61,6 +63,8 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandDropCluster.KEYWORD_DROP + " " + OCommandDropCluster.KEYWORD_CLUSTER,OCommandDropCluster.class);
     commands.put(OCommandDropClass.KEYWORD_DROP + " " + OCommandDropClass.KEYWORD_CLASS, OCommandDropClass.class);
     commands.put(OCommandDropProperty.KEYWORD_DROP + " " + OCommandDropProperty.KEYWORD_PROPERTY,OCommandDropProperty.class);
+    commands.put(OCommandGrant.KEYWORD_GRANT, OCommandGrant.class);
+    commands.put(OCommandRevoke.KEYWORD_REVOKE, OCommandRevoke.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
@@ -80,8 +84,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandExecutorSQLCreateVertex.NAME, OCommandExecutorSQLCreateVertex.class);
     commands.put(OCommandExecutorSQLDeleteVertex.NAME, OCommandExecutorSQLDeleteVertex.class);
     commands.put(OCommandExecutorSQLCreateFunction.NAME, OCommandExecutorSQLCreateFunction.class);
-    commands.put(OCommandExecutorSQLGrant.KEYWORD_GRANT, OCommandExecutorSQLGrant.class);
-    commands.put(OCommandExecutorSQLRevoke.KEYWORD_REVOKE, OCommandExecutorSQLRevoke.class);
     commands.put(OCommandExecutorSQLCreateLink.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateLink.KEYWORD_LINK,
         OCommandExecutorSQLCreateLink.class);
     commands.put(OCommandExecutorSQLCreateIndex.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateIndex.KEYWORD_INDEX,
