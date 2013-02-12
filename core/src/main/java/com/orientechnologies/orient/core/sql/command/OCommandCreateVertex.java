@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,75 +14,82 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 
+import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.OCommandParameters;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.OSQLHelper;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * SQL CREATE VERTEX command.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  */
-public class OCommandExecutorSQLCreateVertex extends OCommandExecutorSQLSetAware {
-  public static final String            NAME = "CREATE VERTEX";
-  private OClass                        clazz;
-  private String                        clusterName;
+public class OCommandCreateVertex extends OCommandAbstract implements OCommandDistributedReplicateRequest{
+  public static final String NAME = "CREATE VERTEX";
+  private OClass clazz;
+  private String clusterName;
   private LinkedHashMap<String, Object> fields;
+  
+  public OCommandCreateVertex() {
+  }
 
-  @SuppressWarnings("unchecked")
-  public OCommandExecutorSQLCreateVertex parse(final OCommandRequest iRequest) {
+  public OCommandCreateVertex parse(final OCommandRequest iRequest) {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    String className = null;
-
-    parserRequiredKeyword("CREATE");
-    parserRequiredKeyword("VERTEX");
-
-    String temp = parseOptionalWord(true);
-
-    while (temp != null) {
-      if (temp.equals("CLUSTER")) {
-        clusterName = parserRequiredWord(false);
-
-      } else if (temp.equals("SET")) {
-        fields = new LinkedHashMap<String, Object>();
-        parseSetFields(fields);
-
-      } else if (className == null && temp.length() > 0)
-        className = temp;
-
-      temp = parserOptionalWord(true);
-      if (parserIsEnded())
-        break;
+    final OSQLParser.CommandCreateVertexContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandCreateVertexContext.class);
+    
+    String className = "V";
+    final int nbword = candidate.word().size();
+    if(nbword == 1){
+      if(candidate.CLUSTER() == null){
+        className = candidate.word(0).getText();
+      }else{
+        clusterName = candidate.word(0).getText();
+      }
+    }else if(nbword == 2){
+      className = candidate.word(0).getText();
+      clusterName = candidate.word(1).getText();
     }
-
-    if (className == null)
-      // ASSIGN DEFAULT CLASS
-      className = "V";
-
+    
     // GET/CHECK CLASS NAME
     clazz = database.getMetadata().getSchema().getClass(className);
-    if (clazz == null)
+    if (clazz == null){
       throw new OCommandSQLParsingException("Class " + className + " was not found");
+    }
 
+    //fields
+    fields = new LinkedHashMap<String, Object>();
+    for(OSQLParser.InsertSetContext ctx : candidate.insertSet()){
+      final String propName = ctx.word().getText();
+      final OExpression exp = SQLGrammarUtils.visit(ctx.expression());
+      fields.put(propName, exp.evaluate(null, null));      
+    }
+    
     return this;
   }
 
+  
   /**
    * Execute the command and return the ODocument object created.
    */

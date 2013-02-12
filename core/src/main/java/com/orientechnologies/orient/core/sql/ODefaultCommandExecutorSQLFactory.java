@@ -28,8 +28,12 @@ import com.orientechnologies.orient.core.sql.command.OCommandAlterDatabase;
 import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateClass;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateCluster;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateEdge;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateFunction;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateIndex;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateLink;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandCreateVertex;
 import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
@@ -73,6 +77,10 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandCreateCluster.KEYWORD_CREATE + " " + OCommandCreateCluster.KEYWORD_CLUSTER,OCommandCreateCluster.class);
     commands.put(OCommandCreateIndex.KEYWORD_CREATE + " " + OCommandCreateIndex.KEYWORD_INDEX,OCommandCreateIndex.class);
     commands.put(OCommandCreateProperty.KEYWORD_CREATE + " " + OCommandCreateProperty.KEYWORD_PROPERTY,OCommandCreateProperty.class);
+    commands.put(OCommandCreateEdge.NAME, OCommandCreateEdge.class);
+    commands.put(OCommandCreateVertex.NAME, OCommandCreateVertex.class);
+    commands.put(OCommandCreateFunction.NAME, OCommandCreateFunction.class);
+    commands.put(OCommandCreateLink.KEYWORD_CREATE + " " + OCommandCreateLink.KEYWORD_LINK,OCommandCreateLink.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
@@ -87,13 +95,8 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
     commands.put(OCommandExecutorSQLUpdate.KEYWORD_UPDATE, OCommandExecutorSQLUpdate.class);
     commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
-    commands.put(OCommandExecutorSQLCreateEdge.NAME, OCommandExecutorSQLCreateEdge.class);
     commands.put(OCommandExecutorSQLDeleteEdge.NAME, OCommandExecutorSQLDeleteEdge.class);
-    commands.put(OCommandExecutorSQLCreateVertex.NAME, OCommandExecutorSQLCreateVertex.class);
     commands.put(OCommandExecutorSQLDeleteVertex.NAME, OCommandExecutorSQLDeleteVertex.class);
-    commands.put(OCommandExecutorSQLCreateFunction.NAME, OCommandExecutorSQLCreateFunction.class);
-    commands.put(OCommandExecutorSQLCreateLink.KEYWORD_CREATE + " " + OCommandExecutorSQLCreateLink.KEYWORD_LINK,
-        OCommandExecutorSQLCreateLink.class);
     commands.put(OCommandExecutorSQLRebuildIndex.KEYWORD_REBUILD + " " + OCommandExecutorSQLRebuildIndex.KEYWORD_INDEX,
         OCommandExecutorSQLRebuildIndex.class);
     commands.put(OCommandExecutorSQLFindReferences.KEYWORD_FIND + " " + OCommandExecutorSQLFindReferences.KEYWORD_REFERENCES,

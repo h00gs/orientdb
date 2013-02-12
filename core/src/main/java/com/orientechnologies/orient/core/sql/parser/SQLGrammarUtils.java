@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 /**
  *
@@ -231,8 +232,7 @@ public final class SQLGrammarUtils {
   
   public static OLiteral visit(LiteralContext candidate) throws OCommandSQLParsingException {
     if(candidate.TEXT() != null){
-      String txt =candidate.TEXT().getText();
-      txt = txt.substring(1,txt.length()-1);
+      final String txt = visitText(candidate.TEXT());
       return new OLiteral(txt);
       
     }else if(candidate.number()!= null){
@@ -246,6 +246,12 @@ public final class SQLGrammarUtils {
     }
   }
   
+  public static String visitText(TerminalNode candidate) {
+    String txt = candidate.getText();
+    txt = txt.substring(1, txt.length() - 1);
+    return txt;
+  }
+
   public static OSQLFunction visit(FunctionCallContext candidate) throws OCommandSQLParsingException {
     final String name = ((WordContext)candidate.getChild(0)).getText();
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );

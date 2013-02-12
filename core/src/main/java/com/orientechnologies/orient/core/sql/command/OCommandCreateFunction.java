@@ -1,5 +1,6 @@
 /*
  * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
+ * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,63 +14,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql;
+package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
 
+import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
+import com.orientechnologies.orient.core.metadata.schema.OPropertyImpl;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
-import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
+import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import java.util.Locale;
 
 /**
  * SQL CREATE FUNCTION command.
  * 
  * @author Luca Garulli
+ * @author Johann Sorel (Geomatys)
  */
-public class OCommandExecutorSQLCreateFunction extends OCommandExecutorSQLAbstract {
+public class OCommandCreateFunction extends OCommandAbstract implements OCommandDistributedReplicateRequest{
   public static final String NAME       = "CREATE FUNCTION";
   private String             name;
   private String             code;
   private String             language;
   private boolean            idempotent = false;
+  
+  public OCommandCreateFunction() {
+  }
 
-  @SuppressWarnings("unchecked")
-  public OCommandExecutorSQLCreateFunction parse(final OCommandRequest iRequest) {
+  public OCommandCreateFunction parse(final OCommandRequest iRequest) {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    init(((OCommandRequestText) iRequest).getText());
-
-    parserRequiredKeyword("CREATE");
-    parserRequiredKeyword("FUNCTION");
-
-    parserNextWord(false);
-    name = parserGetLastWord();
-    parserNextWord(false);
-    code = OStringSerializerHelper.getStringContent(parserGetLastWord());
-
-    String temp = parseOptionalWord(true);
-    while (temp != null) {
-      if (temp.equals("IDEMPOTENT")) {
-        parserNextWord(false);
-        idempotent = Boolean.parseBoolean(parserGetLastWord());
-      } else if (temp.equals("LANGUAGE")) {
-        parserNextWord(false);
-        language = parserGetLastWord();
-      }
-
-      temp = parserOptionalWord(true);
-      if (parserIsEnded())
-        break;
+    final OSQLParser.CommandCreateFunctionContext candidate = SQLGrammarUtils
+            .getCommand(iRequest, OSQLParser.CommandCreateFunctionContext.class);
+    
+    int i=0;
+    name = candidate.word(i++).getText();
+    code = SQLGrammarUtils.visitText(candidate.TEXT());
+    
+    if(candidate.IDEMPOTENT() != null){
+      idempotent = "TRUE".equalsIgnoreCase(candidate.word(i++).getText());
     }
+    
+    if(candidate.LANGUAGE() != null){
+      language = candidate.word(i++).getText();
+    }
+    
     return this;
   }
 
+  
   /**
    * Execute the command and return the ODocument object created.
    */

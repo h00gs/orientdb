@@ -64,7 +64,14 @@ DATASEGMENT : D A T A S E G M E N T ;
 LOCATION : L O C A T I O N ;
 POSITION : P O S I T I O N ;
 RUNTIME : R U N T I M E ;
-
+EDGE : E D G E ;
+FUNCTION : F U N C T I O N ;
+LINK : L I N K ;
+VERTEX : V E R T E X ;
+TYPE : T Y P E ;
+INVERSE : I N V E R S E ;
+IDEMPOTENT : I D E M P O T E N T ;
+LANGUAGE : L A N G U A G E ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -126,7 +133,7 @@ RACCOLADE : '}';
 
 UNSET : '?';
 NULL : N U L L ;
-IDENTIFIER : '#';
+ORID : '#';
 
 TEXT : ('\'' ( ESC_SEQ | '\'\'' | ~('\\'|'\'') )* '\'') 
      | ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' );
@@ -140,7 +147,6 @@ FLOAT
     ;
 
 WORD : LETTER (DIGIT|LETTER)* ;
-
 
 
 
@@ -176,7 +182,7 @@ UNICODE_ESC
 //-----------------------------------------------------------------//
     
 word        : WORD ;
-identifier  : IDENTIFIER INT ':' INT;
+identifier  : ORID INT ':' INT;
 unset       : UNSET | (DOUBLEDOT word);
 number    	: (UNARY^)? (INT|FLOAT)	;
 map         : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
@@ -275,29 +281,36 @@ orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 
-commandCreateClass : CREATE CLASS word (EXTENDS word)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
+commandCreateClass      : CREATE CLASS word (EXTENDS word)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
 numberOrWord : number | word ;
-commandCreateCluster : CREATE CLUSTER word word (DATASEGMENT word)? (LOCATION word)? (POSITION word)? ;
-commandCreateIndex : CREATE INDEX word (indexOn)? word (NULL | RUNTIME INT | (word (COMMA word)*))?;
+commandCreateCluster    : CREATE CLUSTER word word (DATASEGMENT word)? (LOCATION word)? (POSITION word)? ;
+commandCreateIndex      : CREATE INDEX word (indexOn)? word (NULL | RUNTIME INT | (word (COMMA word)*))?;
 indexOn : ON word LPAREN word (COMMA word)* RPAREN ;
-commandCreateProperty : CREATE PROPERTY word DOT word word word?;
+commandCreateProperty   : CREATE PROPERTY word DOT word word word?;
+commandCreateEdge       : CREATE EDGE word? (edgeCluster)? FROM edgeEnd TO edgeEnd (SET insertSet (COMMA insertSet)*)?;
+edgeCluster : CLUSTER word ;
+edgeEnd : identifier | collection | commandSelect ;
+commandCreateFunction   : CREATE FUNCTION word TEXT (IDEMPOTENT word)? (LANGUAGE word)? ;
+commandCreateLink       : CREATE LINK linkName? (TYPE word)? FROM word.word TO word.word INVERSE?;
+linkName : word ;
+commandCreateVertex     : CREATE VERTEX word (CLUSTER word)? (SET insertSet (COMMA insertSet)*)?;
 
-commandAlterClass : ALTER CLASS word word cword ;
-commandAlterCluster : ALTER CLUSTER (word|number) word cword;
-commandAlterDatabase : ALTER DATABASE word cword;
-commandAlterProperty : ALTER PROPERTY word DOT word word cword ;
+commandAlterClass       : ALTER CLASS word word cword ;
+commandAlterCluster     : ALTER CLUSTER (word|number) word cword;
+commandAlterDatabase    : ALTER DATABASE word cword;
+commandAlterProperty    : ALTER PROPERTY word DOT word word cword ;
 
-commandDropClass : DROP CLASS word ;
-commandDropCluster : DROP CLUSTER word ;
-commandDropIndex : DROP INDEX word ;
-commandDropProperty : DROP PROPERTY word DOT word FORCE ;
+commandDropClass        : DROP CLASS word ;
+commandDropCluster      : DROP CLUSTER word ;
+commandDropIndex        : DROP INDEX word ;
+commandDropProperty     : DROP PROPERTY word DOT word FORCE ;
 
-commandTruncateClass : TRUNCATE CLASS word ;
-commandTruncateCluster : TRUNCATE CLUSTER word ;
-commandTruncateRecord : TRUNCATE RECORD (identifier|collection) ;
+commandTruncateClass    : TRUNCATE CLASS word ;
+commandTruncateCluster  : TRUNCATE CLUSTER word ;
+commandTruncateRecord   : TRUNCATE RECORD (identifier|collection) ;
 
-commandGrant : GRANT word ON word TO word ;
-commandRevoke : REVOKE word ON word FROM word ;
+commandGrant            : GRANT word ON word TO word ;
+commandRevoke           : REVOKE word ON word FROM word ;
 
 command
 	: (commandUnknowned
@@ -305,6 +318,10 @@ command
   | commandCreateCluster
   | commandCreateIndex
   | commandCreateProperty
+  | commandCreateEdge
+  | commandCreateFunction
+  | commandCreateLink
+  | commandCreateVertex
   | commandAlterClass
   | commandAlterCluster
   | commandAlterDatabase
