@@ -38,8 +38,10 @@ import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandFindReferences;
 import com.orientechnologies.orient.core.sql.command.OCommandGrant;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
+import com.orientechnologies.orient.core.sql.command.OCommandRebuildIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandRevoke;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
@@ -81,6 +83,8 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandCreateVertex.NAME, OCommandCreateVertex.class);
     commands.put(OCommandCreateFunction.NAME, OCommandCreateFunction.class);
     commands.put(OCommandCreateLink.KEYWORD_CREATE + " " + OCommandCreateLink.KEYWORD_LINK,OCommandCreateLink.class);
+    commands.put(OCommandRebuildIndex.KEYWORD_REBUILD + " " + OCommandRebuildIndex.KEYWORD_INDEX, OCommandRebuildIndex.class);
+    commands.put(OCommandFindReferences.KEYWORD_FIND + " " + OCommandFindReferences.KEYWORD_REFERENCES, OCommandFindReferences.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
@@ -97,10 +101,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
     commands.put(OCommandExecutorSQLDeleteEdge.NAME, OCommandExecutorSQLDeleteEdge.class);
     commands.put(OCommandExecutorSQLDeleteVertex.NAME, OCommandExecutorSQLDeleteVertex.class);
-    commands.put(OCommandExecutorSQLRebuildIndex.KEYWORD_REBUILD + " " + OCommandExecutorSQLRebuildIndex.KEYWORD_INDEX,
-        OCommandExecutorSQLRebuildIndex.class);
-    commands.put(OCommandExecutorSQLFindReferences.KEYWORD_FIND + " " + OCommandExecutorSQLFindReferences.KEYWORD_REFERENCES,
-        OCommandExecutorSQLFindReferences.class);
     commands.put(OCommandExecutorSQLExplain.KEYWORD_EXPLAIN, OCommandExecutorSQLExplain.class);
 
     COMMANDS = Collections.unmodifiableMap(commands);

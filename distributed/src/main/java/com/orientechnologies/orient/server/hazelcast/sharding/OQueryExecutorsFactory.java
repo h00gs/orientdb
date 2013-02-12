@@ -34,6 +34,7 @@ import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandRebuildIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
@@ -65,7 +66,7 @@ public class OQueryExecutorsFactory {
           OCommandDropProperty.class,// null
 
           OCommandCreateIndex.class,// long
-          OCommandExecutorSQLRebuildIndex.class,// long
+          OCommandRebuildIndex.class,// long
           OCommandDropIndex.class// null
   ));
 

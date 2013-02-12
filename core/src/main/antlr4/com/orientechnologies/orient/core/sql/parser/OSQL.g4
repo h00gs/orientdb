@@ -72,6 +72,9 @@ TYPE : T Y P E ;
 INVERSE : I N V E R S E ;
 IDEMPOTENT : I D E M P O T E N T ;
 LANGUAGE : L A N G U A G E ;
+FIND : F I N D ;
+REFERENCES : R E F E R E N C E S ;
+REBUILD : R E B U I L D ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -182,68 +185,14 @@ UNICODE_ESC
 //-----------------------------------------------------------------//
     
 keywords    
-  : SELECT
-  | INSERT
-  | UPDATE
-  | CREATE
-  | DELETE
-  | FROM
-  | WHERE
-  | INTO
-  | DROP
-  | FORCE
-  | VALUES
-  | SET
-  | ADD
-  | REMOVE
-  | AND
-  | OR
-  | ORDER
-  | BY
-  | LIMIT
-  | LIKE
-  | RANGE
-  | ASC
-  | AS
-  | DESC
-  | OTHIS
-  | ORID_ATTR
-  | OCLASS_ATTR
-  | OVERSION_ATTR
-  | OSIZE_ATTR
-  | OTYPE_ATTR
-  | CLUSTER
-  | DATABASE
-  | PROPERTY
-  | TRUNCATE
-  | EXTENDS
-  | ABSTRACT
-  | RECORD
-  | INDEX
-  | DICTIONARY
-  | ALTER
-  | CLASS
-  | SKIP
-  | GRANT
-  | REVOKE
-  | IN
-  | ON
-  | TO
-  | IS
-  | NOT
-  | GROUP
-  | DATASEGMENT
-  | LOCATION
-  | POSITION
-  | RUNTIME
-  | EDGE
-  | FUNCTION
-  | LINK
-  | VERTEX
-  | TYPE
-  | INVERSE
-  | IDEMPOTENT
-  | LANGUAGE 
+  : SELECT | INSERT | UPDATE | CREATE | DELETE | FROM | WHERE | INTO | DROP
+  | FORCE | VALUES | SET | ADD | REMOVE | AND | OR | ORDER | BY | LIMIT | LIKE
+  | RANGE | ASC | AS | DESC | OTHIS | ORID_ATTR | OCLASS_ATTR | OVERSION_ATTR
+  | OSIZE_ATTR | OTYPE_ATTR | CLUSTER | DATABASE | PROPERTY | TRUNCATE
+  | EXTENDS | ABSTRACT | RECORD | INDEX | DICTIONARY | ALTER | CLASS | SKIP
+  | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
+  | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
+  | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD
   ;
 reference   : WORD | ESCWORD | keywords;
 orid        : ORID INT ':' INT;
@@ -344,6 +293,7 @@ orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;
 orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
+source         : orid | collection | commandSelect ;
 
 commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
 numberOrWord : number | reference ;
@@ -351,9 +301,8 @@ commandCreateCluster    : CREATE CLUSTER reference reference (DATASEGMENT refere
 commandCreateIndex      : CREATE INDEX reference (indexOn)? reference (NULL | RUNTIME INT | (reference (COMMA reference)*))?;
 indexOn : ON reference LPAREN reference (COMMA reference)* RPAREN ;
 commandCreateProperty   : CREATE PROPERTY reference DOT reference reference reference?;
-commandCreateEdge       : CREATE EDGE reference? (edgeCluster)? FROM edgeEnd TO edgeEnd (SET insertSet (COMMA insertSet)*)?;
+commandCreateEdge       : CREATE EDGE reference? (edgeCluster)? FROM source TO source (SET insertSet (COMMA insertSet)*)?;
 edgeCluster : CLUSTER reference ;
-edgeEnd : orid | collection | commandSelect ;
 commandCreateFunction   : CREATE FUNCTION reference TEXT (IDEMPOTENT reference)? (LANGUAGE reference)? ;
 commandCreateLink       : CREATE LINK linkName? (TYPE reference)? FROM reference DOT reference TO reference DOT reference INVERSE?;
 linkName : reference ;
@@ -375,6 +324,9 @@ commandTruncateRecord   : TRUNCATE RECORD (orid|collection) ;
 
 commandGrant            : GRANT reference ON reference TO reference ;
 commandRevoke           : REVOKE reference ON reference FROM reference ;
+
+commandFindReferences   : FIND REFERENCES source cword ;
+commandRebuildIndex     : REBUILD INDEX reference ;
 
 command
 	: (commandCreateClass
@@ -400,6 +352,8 @@ command
   | commandTruncateCluster
   | commandTruncateRecord
   | commandGrant
-  | commandRevoke)
+  | commandRevoke
+  | commandFindReferences
+  | commandRebuildIndex)
     EOF
   ;

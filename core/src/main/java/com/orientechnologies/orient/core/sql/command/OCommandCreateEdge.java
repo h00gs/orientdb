@@ -51,8 +51,8 @@ import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
  */
 public class OCommandCreateEdge extends OCommandAbstract implements OCommandDistributedReplicateRequest{
   public static final String NAME = "CREATE EDGE";
-  private OSQLParser.EdgeEndContext from;
-  private OSQLParser.EdgeEndContext to;
+  private OSQLParser.SourceContext from;
+  private OSQLParser.SourceContext to;
   private OClass clazz;
   private String clusterName;
   private LinkedHashMap<String, Object> fields;
@@ -77,8 +77,8 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
       clusterName = visitAsString(candidate.edgeCluster().reference());
     }
     
-    from = candidate.edgeEnd(0);
-    to = candidate.edgeEnd(1);
+    from = candidate.source(0);
+    to = candidate.source(1);
     
     // GET/CHECK CLASS NAME
     clazz = database.getMetadata().getSchema().getClass(className);
@@ -95,33 +95,6 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     
     return this;
   }
-
-  private List<ORID> parseEnd(OSQLParser.EdgeEndContext candidate){
-    List<ORID> ids = new ArrayList<ORID>();
-    if(candidate.orid() != null){
-      //single identifier
-      final OLiteral literal = visit(candidate.orid());
-      final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
-      ids.add(id.getIdentity());
-      
-    }else if(candidate.collection() != null){
-      //collection of identifier
-      final OCollection col = visit(candidate.collection());
-      List lst = col.evaluate(null, null);
-      for(Object obj : lst){
-        ids.add( ((ORecordId)obj).getIdentity() );
-      }
-      
-    }else if(candidate.commandSelect() != null){
-      //sub query
-      final OCommandSelect sub = new OCommandSelect();
-      sub.parse(candidate.commandSelect());
-      for(Object obj : sub){
-        ids.add( ((ORecordId)obj).getIdentity() );
-      }
-    }
-    return ids;
-  }
   
   /**
    * Execute the command and return the ODocument object created.
@@ -134,8 +107,8 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     if (!(database instanceof OGraphDatabase))
       database = new OGraphDatabase((ODatabaseRecordTx) database);
 
-    final List<ORID> fromIds = parseEnd(from);
-    final List<ORID> toIds = parseEnd(to);
+    final List<ORID> fromIds = visit(from);
+    final List<ORID> toIds = visit(to);
 
     // CREATE EDGES
     List<ODocument> edges = new ArrayList<ODocument>();

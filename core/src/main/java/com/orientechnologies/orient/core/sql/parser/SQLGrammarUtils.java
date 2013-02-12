@@ -48,7 +48,10 @@ import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
 import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionFactory;
 import com.orientechnologies.orient.core.sql.model.OLike;
@@ -396,6 +399,34 @@ public final class SQLGrammarUtils {
       elements.add((OExpression)visit(child));
     }
     return elements;
+  }
+  
+  
+  public static List<ORID> visit(OSQLParser.SourceContext candidate){
+    List<ORID> ids = new ArrayList<ORID>();
+    if(candidate.orid() != null){
+      //single identifier
+      final OLiteral literal = visit(candidate.orid());
+      final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
+      ids.add(id.getIdentity());
+      
+    }else if(candidate.collection() != null){
+      //collection of identifier
+      final OCollection col = visit(candidate.collection());
+      List lst = col.evaluate(null, null);
+      for(Object obj : lst){
+        ids.add( ((ORecordId)obj).getIdentity() );
+      }
+      
+    }else if(candidate.commandSelect() != null){
+      //sub query
+      final OCommandSelect sub = new OCommandSelect();
+      sub.parse(candidate.commandSelect());
+      for(Object obj : sub){
+        ids.add( ((ORecordId)obj).getIdentity() );
+      }
+    }
+    return ids;
   }
   
   public static OSQLMethod createMethod(String name) throws OCommandSQLParsingException{
