@@ -30,8 +30,8 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.storage.OCluster;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL DROP CLASS command: Drops a class from the database. Cluster associated are removed too if are used exclusively by the
@@ -54,10 +54,9 @@ public class OCommandDropClass extends OCommandAbstract implements OCommandDistr
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandDropClassContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandDropClassContext.class);
+    final OSQLParser.CommandDropClassContext candidate = getCommand(iRequest, OSQLParser.CommandDropClassContext.class);
     
-    className = candidate.word().getText();
+    className = visitAsString(candidate.reference());
     final OClass schemaClass = database.getMetadata().getSchema().getClass(className);
     if (schemaClass == null){
       throw new OCommandSQLParsingException("Class '" + className + "' not found");

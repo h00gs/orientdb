@@ -23,15 +23,10 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
-import com.orientechnologies.orient.core.metadata.schema.OPropertyImpl;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.util.Locale;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE FUNCTION command.
@@ -53,19 +48,18 @@ public class OCommandCreateFunction extends OCommandAbstract implements OCommand
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateFunctionContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateFunctionContext.class);
+    final OSQLParser.CommandCreateFunctionContext candidate = getCommand(iRequest, OSQLParser.CommandCreateFunctionContext.class);
     
     int i=0;
-    name = candidate.word(i++).getText();
-    code = SQLGrammarUtils.visitText(candidate.TEXT());
+    name = visitAsString(candidate.reference(i++));
+    code = visitText(candidate.TEXT());
     
     if(candidate.IDEMPOTENT() != null){
-      idempotent = "TRUE".equalsIgnoreCase(candidate.word(i++).getText());
+      idempotent = "TRUE".equalsIgnoreCase(visitAsString(candidate.reference(i++)));
     }
     
     if(candidate.LANGUAGE() != null){
-      language = candidate.word(i++).getText();
+      language = visitAsString(candidate.reference(i++));
     }
     
     return this;

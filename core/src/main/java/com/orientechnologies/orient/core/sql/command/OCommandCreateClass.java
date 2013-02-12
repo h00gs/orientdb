@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
+import java.util.List;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -29,8 +30,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.util.List;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE CLASS command: Creates a new property in the target class.
@@ -57,17 +57,16 @@ public class OCommandCreateClass extends OCommandAbstract implements OCommandDis
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateClassContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateClassContext.class);
+    final OSQLParser.CommandCreateClassContext candidate = getCommand(iRequest, OSQLParser.CommandCreateClassContext.class);
     
     int i=0;
-    className = candidate.word(i++).getText();
+    className = visitAsString(candidate.reference(i++));
     if (database.getMetadata().getSchema().existsClass(className)){
         throw new OCommandSQLParsingException("Class " + className + " already exist");
     }
     
     if(candidate.EXTENDS() != null){
-      final String superClassName = candidate.word(i++).getText();
+      final String superClassName = visitAsString(candidate.reference(i++));
       if (!database.getMetadata().getSchema().existsClass(superClassName)){
           throw new OCommandSQLParsingException("Super-class " + superClassName + " do not exist");
       }

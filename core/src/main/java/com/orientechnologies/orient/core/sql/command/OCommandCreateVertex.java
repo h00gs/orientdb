@@ -16,6 +16,8 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -33,9 +35,7 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.OSQLHelper;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE VERTEX command.
@@ -56,20 +56,19 @@ public class OCommandCreateVertex extends OCommandAbstract implements OCommandDi
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateVertexContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateVertexContext.class);
+    final OSQLParser.CommandCreateVertexContext candidate = getCommand(iRequest, OSQLParser.CommandCreateVertexContext.class);
     
     String className = "V";
-    final int nbword = candidate.word().size();
+    final int nbword = candidate.reference().size();
     if(nbword == 1){
       if(candidate.CLUSTER() == null){
-        className = candidate.word(0).getText();
+        className = visitAsString(candidate.reference(0));
       }else{
-        clusterName = candidate.word(0).getText();
+        clusterName = visitAsString(candidate.reference(0));
       }
     }else if(nbword == 2){
-      className = candidate.word(0).getText();
-      clusterName = candidate.word(1).getText();
+      className = visitAsString(candidate.reference(0));
+      clusterName = visitAsString(candidate.reference(1));
     }
     
     // GET/CHECK CLASS NAME
@@ -81,8 +80,8 @@ public class OCommandCreateVertex extends OCommandAbstract implements OCommandDi
     //fields
     fields = new LinkedHashMap<String, Object>();
     for(OSQLParser.InsertSetContext ctx : candidate.insertSet()){
-      final String propName = ctx.word().getText();
-      final OExpression exp = SQLGrammarUtils.visit(ctx.expression());
+      final String propName = visitAsString(ctx.reference());
+      final OExpression exp = visit(ctx.expression());
       fields.put(propName, exp.evaluate(null, null));      
     }
     

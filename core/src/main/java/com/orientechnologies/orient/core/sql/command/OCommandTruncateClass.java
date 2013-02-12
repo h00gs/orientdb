@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
+import java.io.IOException;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -27,8 +28,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.io.IOException;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL TRUNCATE CLASS command: Truncates an entire class deleting all configured clusters where the class relies on.
@@ -50,10 +50,9 @@ public class OCommandTruncateClass extends OCommandAbstract implements OCommandD
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandTruncateClassContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandTruncateClassContext.class);
+    final OSQLParser.CommandTruncateClassContext candidate = getCommand(iRequest, OSQLParser.CommandTruncateClassContext.class);
     
-    final String className = candidate.word().getText();
+    final String className = visitAsString(candidate.reference());
     schemaClass = database.getMetadata().getSchema().getClass(className);
 
     if (schemaClass == null){

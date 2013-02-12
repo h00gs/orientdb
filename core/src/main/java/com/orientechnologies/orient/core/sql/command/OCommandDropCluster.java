@@ -27,7 +27,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL DROP CLUSTER command: Drop a cluster from the database
@@ -49,10 +49,9 @@ public class OCommandDropCluster extends OCommandAbstract implements OCommandDis
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandDropClusterContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandDropClusterContext.class);
+    final OSQLParser.CommandDropClusterContext candidate = getCommand(iRequest, OSQLParser.CommandDropClusterContext.class);
     
-    clusterName = candidate.word().getText();
+    clusterName = visitAsString(candidate.reference());
     return this;
   }
   

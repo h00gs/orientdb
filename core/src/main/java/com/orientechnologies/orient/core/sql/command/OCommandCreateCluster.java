@@ -16,9 +16,9 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
-import com.orientechnologies.orient.core.Orient;
 import java.util.Map;
 
+import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
@@ -27,7 +27,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE CLUSTER command: Creates a new cluster.
@@ -57,21 +57,20 @@ public class OCommandCreateCluster extends OCommandAbstract implements OCommandD
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateClusterContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateClusterContext.class);
+    final OSQLParser.CommandCreateClusterContext candidate = getCommand(iRequest, OSQLParser.CommandCreateClusterContext.class);
     
     int i=0;
-    clusterName = candidate.word(i++).getText();
-    clusterType = candidate.word(i++).getText();
+    clusterName = visitAsString(candidate.reference(i++));
+    clusterType = visitAsString(candidate.reference(i++));
     
     if(candidate.DATASEGMENT() != null){
-      dataSegmentName = candidate.word(i++).getText();
+      dataSegmentName = visitAsString(candidate.reference(i++));
     }
     if(candidate.LOCATION() != null){
-      location = candidate.word(i++).getText();
+      location = visitAsString(candidate.reference(i++));
     }
     if(candidate.POSITION()!= null){
-      position = candidate.word(i++).getText();
+      position = visitAsString(candidate.reference(i++));
     }
     
     final int clusterId = database.getStorage().getClusterIdByName(clusterName);

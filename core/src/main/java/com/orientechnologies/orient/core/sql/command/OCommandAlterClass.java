@@ -31,7 +31,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL ALTER PROPERTY command: Changes an attribute of an existent property in the target class.
@@ -61,12 +61,11 @@ public class OCommandAlterClass extends OCommandAbstract implements OCommandDist
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandAlterClassContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandAlterClassContext.class);
-    className = candidate.word(0).getText();
-    final String attributeAsString = candidate.word(1).getText();
+    final OSQLParser.CommandAlterClassContext candidate = getCommand(iRequest, OSQLParser.CommandAlterClassContext.class);
+    className = visitAsString(candidate.reference(0));
+    final String attributeAsString = visitAsString(candidate.reference(1));
     attribute = OClass.ATTRIBUTES.valueOf(attributeAsString.toUpperCase(Locale.ENGLISH));
-    value = SQLGrammarUtils.visit(candidate.cword(), iRequest);
+    value = visit(candidate.cword(), iRequest);
     
     return this;
   }

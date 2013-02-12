@@ -135,8 +135,7 @@ UNSET : '?';
 NULL : N U L L ;
 ORID : '#';
 
-TEXT : ('\'' ( ESC_SEQ | '\'\'' | ~('\\'|'\'') )* '\'') 
-     | ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' );
+TEXT : ('\'' ( ESC_SEQ | '\'\'' | ~('\\'|'\'') )* '\'') ;
 
 INT : DIGIT+ ;
 FLOAT
@@ -147,6 +146,7 @@ FLOAT
     ;
 
 WORD : LETTER (DIGIT|LETTER)* ;
+ESCWORD : ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' ) ;
 
 
 
@@ -181,9 +181,73 @@ UNICODE_ESC
 // PARSER
 //-----------------------------------------------------------------//
     
-word        : WORD ;
-identifier  : ORID INT ':' INT;
-unset       : UNSET | (DOUBLEDOT word);
+keywords    
+  : SELECT
+  | INSERT
+  | UPDATE
+  | CREATE
+  | DELETE
+  | FROM
+  | WHERE
+  | INTO
+  | DROP
+  | FORCE
+  | VALUES
+  | SET
+  | ADD
+  | REMOVE
+  | AND
+  | OR
+  | ORDER
+  | BY
+  | LIMIT
+  | LIKE
+  | RANGE
+  | ASC
+  | AS
+  | DESC
+  | OTHIS
+  | ORID_ATTR
+  | OCLASS_ATTR
+  | OVERSION_ATTR
+  | OSIZE_ATTR
+  | OTYPE_ATTR
+  | CLUSTER
+  | DATABASE
+  | PROPERTY
+  | TRUNCATE
+  | EXTENDS
+  | ABSTRACT
+  | RECORD
+  | INDEX
+  | DICTIONARY
+  | ALTER
+  | CLASS
+  | SKIP
+  | GRANT
+  | REVOKE
+  | IN
+  | ON
+  | TO
+  | IS
+  | NOT
+  | GROUP
+  | DATASEGMENT
+  | LOCATION
+  | POSITION
+  | RUNTIME
+  | EDGE
+  | FUNCTION
+  | LINK
+  | VERTEX
+  | TYPE
+  | INVERSE
+  | IDEMPOTENT
+  | LANGUAGE 
+  ;
+reference   : WORD | ESCWORD | keywords;
+orid        : ORID INT ':' INT;
+unset       : UNSET | (DOUBLEDOT reference);
 number    	: (UNARY^)? (INT|FLOAT)	;
 map         : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
 collection  : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
@@ -194,16 +258,16 @@ literal
 	;
 
 arguments   : LPAREN (expression (COMMA expression)*)? RPAREN ;
-functionCall: word arguments ;
-methodCall  : DOT word arguments* ;
+functionCall: reference arguments ;
+methodCall  : DOT reference arguments* ;
 
 expression
   : literal
   | map
   | collection
-  | identifier
+  | orid
   | unset
-  | word
+  | reference
   | LPAREN expression RPAREN
   | functionCall
   | expression methodCall
@@ -216,7 +280,7 @@ filter
   : LPAREN filter RPAREN
   | filter filterAnd
   | filter filterOr
-  | filter filterIn
+  | expression filterIn
   | NOT filter
   | expression COMPARE_EQL     expression
   | expression COMPARE_INF     expression
@@ -237,20 +301,20 @@ anything : .*? ;
 commandUnknowned : expression (expression)* ;
 
 commandInsertIntoByValues
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? insertFields VALUES insertSource
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? reference insertCluster? insertFields VALUES insertSource
   ;
 commandInsertIntoBySet
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? word insertCluster? SET insertSet (COMMA insertSet)*
+  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? reference insertCluster? SET insertSet (COMMA insertSet)*
   ;
 insertSource 
   : commandSelect
   | LPAREN insertSource RPAREN
   | insertEntry (COMMA insertEntry)*
   ;
-insertCluster : CLUSTER word ;
+insertCluster : CLUSTER reference ;
 insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
-insertSet     : word COMPARE_EQL expression ;
-insertFields  : LPAREN word(COMMA word)* RPAREN ;
+insertSet     : reference COMPARE_EQL expression ;
+insertFields  : LPAREN reference(COMMA reference)* RPAREN ;
 
 commandSelect
   : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit?
@@ -266,11 +330,11 @@ projection
     | OTYPE_ATTR ) 
     (alias)?
   ;
-alias          : AS word ;
+alias          : AS reference ;
 from           
   : FROM 
-    ( ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? word
-    | identifier
+    ( ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? reference
+    | orid
     | collection
     | commandSelect
     | LPAREN commandSelect RPAREN ) 
@@ -281,40 +345,39 @@ orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
 
-commandCreateClass      : CREATE CLASS word (EXTENDS word)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
-numberOrWord : number | word ;
-commandCreateCluster    : CREATE CLUSTER word word (DATASEGMENT word)? (LOCATION word)? (POSITION word)? ;
-commandCreateIndex      : CREATE INDEX word (indexOn)? word (NULL | RUNTIME INT | (word (COMMA word)*))?;
-indexOn : ON word LPAREN word (COMMA word)* RPAREN ;
-commandCreateProperty   : CREATE PROPERTY word DOT word word word?;
-commandCreateEdge       : CREATE EDGE word? (edgeCluster)? FROM edgeEnd TO edgeEnd (SET insertSet (COMMA insertSet)*)?;
-edgeCluster : CLUSTER word ;
-edgeEnd : identifier | collection | commandSelect ;
-commandCreateFunction   : CREATE FUNCTION word TEXT (IDEMPOTENT word)? (LANGUAGE word)? ;
-commandCreateLink       : CREATE LINK linkName? (TYPE word)? FROM word.word TO word.word INVERSE?;
-linkName : word ;
-commandCreateVertex     : CREATE VERTEX word (CLUSTER word)? (SET insertSet (COMMA insertSet)*)?;
+commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
+numberOrWord : number | reference ;
+commandCreateCluster    : CREATE CLUSTER reference reference (DATASEGMENT reference)? (LOCATION reference)? (POSITION reference)? ;
+commandCreateIndex      : CREATE INDEX reference (indexOn)? reference (NULL | RUNTIME INT | (reference (COMMA reference)*))?;
+indexOn : ON reference LPAREN reference (COMMA reference)* RPAREN ;
+commandCreateProperty   : CREATE PROPERTY reference DOT reference reference reference?;
+commandCreateEdge       : CREATE EDGE reference? (edgeCluster)? FROM edgeEnd TO edgeEnd (SET insertSet (COMMA insertSet)*)?;
+edgeCluster : CLUSTER reference ;
+edgeEnd : orid | collection | commandSelect ;
+commandCreateFunction   : CREATE FUNCTION reference TEXT (IDEMPOTENT reference)? (LANGUAGE reference)? ;
+commandCreateLink       : CREATE LINK linkName? (TYPE reference)? FROM reference DOT reference TO reference DOT reference INVERSE?;
+linkName : reference ;
+commandCreateVertex     : CREATE VERTEX reference (CLUSTER reference)? (SET insertSet (COMMA insertSet)*)?;
 
-commandAlterClass       : ALTER CLASS word word cword ;
-commandAlterCluster     : ALTER CLUSTER (word|number) word cword;
-commandAlterDatabase    : ALTER DATABASE word cword;
-commandAlterProperty    : ALTER PROPERTY word DOT word word cword ;
+commandAlterClass       : ALTER CLASS reference reference cword ;
+commandAlterCluster     : ALTER CLUSTER (reference|number) reference cword;
+commandAlterDatabase    : ALTER DATABASE reference cword;
+commandAlterProperty    : ALTER PROPERTY reference DOT reference reference cword ;
 
-commandDropClass        : DROP CLASS word ;
-commandDropCluster      : DROP CLUSTER word ;
-commandDropIndex        : DROP INDEX word ;
-commandDropProperty     : DROP PROPERTY word DOT word FORCE ;
+commandDropClass        : DROP CLASS reference ;
+commandDropCluster      : DROP CLUSTER reference ;
+commandDropIndex        : DROP INDEX reference ;
+commandDropProperty     : DROP PROPERTY reference DOT reference FORCE ;
 
-commandTruncateClass    : TRUNCATE CLASS word ;
-commandTruncateCluster  : TRUNCATE CLUSTER word ;
-commandTruncateRecord   : TRUNCATE RECORD (identifier|collection) ;
+commandTruncateClass    : TRUNCATE CLASS reference ;
+commandTruncateCluster  : TRUNCATE CLUSTER reference ;
+commandTruncateRecord   : TRUNCATE RECORD (orid|collection) ;
 
-commandGrant            : GRANT word ON word TO word ;
-commandRevoke           : REVOKE word ON word FROM word ;
+commandGrant            : GRANT reference ON reference TO reference ;
+commandRevoke           : REVOKE reference ON reference FROM reference ;
 
 command
-	: (commandUnknowned
-  | commandCreateClass
+	: (commandCreateClass
   | commandCreateCluster
   | commandCreateIndex
   | commandCreateProperty

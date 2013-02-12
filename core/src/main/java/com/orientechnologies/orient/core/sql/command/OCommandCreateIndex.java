@@ -37,7 +37,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE INDEX command: Create a new index against a property.
@@ -72,23 +72,22 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateIndexContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateIndexContext.class);
+    final OSQLParser.CommandCreateIndexContext candidate = getCommand(iRequest, OSQLParser.CommandCreateIndexContext.class);
     
     int i=0;
-    indexName = candidate.word(i++).getText();
+    indexName = visitAsString(candidate.reference(i++));
     
     if(candidate.indexOn()!= null){
       final OSQLParser.IndexOnContext ctx = candidate.indexOn();
-      final List<OSQLParser.WordContext> words = ctx.word();
+      final List<OSQLParser.ReferenceContext> words = ctx.reference();
       oClass = findClass(words.get(0).getText());
       fields = new String[words.size()-1];
       for(int k=1;k<fields.length;k++){
-        fields[k-1] = words.get(k).getText();
+        fields[k-1] = visitAsString(words.get(k));
       }
     }
     
-    indexType = OClass.INDEX_TYPE.valueOf(candidate.word(i++).getText());
+    indexType = OClass.INDEX_TYPE.valueOf(visitAsString(candidate.reference(i++)));
     
     if(candidate.NULL() != null){
       //do nothing
@@ -96,8 +95,8 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
       serializerKeyId = Byte.parseByte(candidate.INT().getText());
     }else{
       final List<OType> keyTypes = new ArrayList<OType>();
-      for(;i<candidate.word().size();i++){
-        final String text = candidate.word(i).getText();
+      for(;i<candidate.reference().size();i++){
+        final String text = visitAsString(candidate.reference(i));
         keyTypes.add(OType.valueOf(text));
       }
       this.keyTypes = keyTypes.toArray(new OType[0]);

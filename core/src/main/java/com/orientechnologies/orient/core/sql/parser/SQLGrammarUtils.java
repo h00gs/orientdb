@@ -126,16 +126,18 @@ public final class SQLGrammarUtils {
   public static Object visit(ParseTree candidate) throws OCommandSQLParsingException {
     if(candidate instanceof ExpressionContext){
       return visit((ExpressionContext)candidate);
-    }else if(candidate instanceof WordContext){
-      return visit((WordContext)candidate);
+    }else if(candidate instanceof ReferenceContext){
+      return visitAsExpression((ReferenceContext)candidate);
+    }else if(candidate instanceof ExpressionContext){
+      return visit((ExpressionContext)candidate);
     }else if(candidate instanceof LiteralContext){
       return visit((LiteralContext)candidate);
     }else if(candidate instanceof FunctionCallContext){
       return visit((FunctionCallContext)candidate);
     }else if(candidate instanceof MethodCallContext){
       return visit((MethodCallContext)candidate);
-    }else if(candidate instanceof IdentifierContext){
-      return visit((IdentifierContext)candidate);
+    }else if(candidate instanceof OridContext){
+      return visit((OridContext)candidate);
     }else if(candidate instanceof MapContext){
       return visit((MapContext)candidate);
     }else if(candidate instanceof CollectionContext){
@@ -175,8 +177,21 @@ public final class SQLGrammarUtils {
     
   }
   
-  public static OName visit(WordContext candidate) throws OCommandSQLParsingException {
-    return new OName(candidate.WORD().getText());
+  public static OName visitAsExpression(ReferenceContext candidate) throws OCommandSQLParsingException {
+    return new OName(visitAsString(candidate));
+  }
+  
+  public static String visitAsString(ReferenceContext candidate) throws OCommandSQLParsingException {
+    if(candidate.WORD() != null){
+      return candidate.WORD().getText();
+    }else if(candidate.ESCWORD() != null){
+      String txt = candidate.ESCWORD().getText();
+      txt = txt.substring(1, txt.length() - 1);
+      return txt;
+    }else{
+      String txt = candidate.keywords().getText();
+      return txt;
+    }
   }
   
   public static Number visit(NumberContext candidate) throws OCommandSQLParsingException {
@@ -199,14 +214,14 @@ public final class SQLGrammarUtils {
   
   public static OUnset visit(UnsetContext candidate) throws OCommandSQLParsingException {
     if(candidate.UNSET() == null){
-      return new OUnset(candidate.word().getText());
+      return new OUnset(visitAsString(candidate.reference()));
     }else{
       return new OUnset();
     }
     
   }
   
-  public static OLiteral visit(IdentifierContext candidate) throws OCommandSQLParsingException {
+  public static OLiteral visit(OridContext candidate) throws OCommandSQLParsingException {
     final ORecordId oid = new ORecordId(candidate.getText());
     return new OLiteral(oid);
   } 
@@ -253,7 +268,7 @@ public final class SQLGrammarUtils {
   }
 
   public static OSQLFunction visit(FunctionCallContext candidate) throws OCommandSQLParsingException {
-    final String name = ((WordContext)candidate.getChild(0)).getText();
+    final String name = visitAsString((ReferenceContext)candidate.getChild(0));
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
     final OSQLFunction fct = createFunction(name);
     fct.getArguments().addAll(args);
@@ -261,14 +276,14 @@ public final class SQLGrammarUtils {
   }
   
   public static OSQLMethod visit(MethodCallContext candidate) throws OCommandSQLParsingException {
-    final String name = ((WordContext)candidate.getChild(1)).getText();
+    final String name = visitAsString((ReferenceContext)candidate.getChild(1));
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(2)) );
     final OSQLMethod method = createMethod(name);
     method.getArguments().addAll(args);
     return method;
   }
     
-  public static OExpression visit(OSQLParser.ProjectionContext candidate) throws OCommandSQLParsingException {
+  public static OExpression visit(ProjectionContext candidate) throws OCommandSQLParsingException {
     
     OExpression exp;
     if(candidate.filter() != null){
@@ -280,13 +295,13 @@ public final class SQLGrammarUtils {
     }
     
     if(candidate.alias() != null){
-      exp.setAlias(candidate.alias().word().getText());
+      exp.setAlias(visitAsString(candidate.alias().reference()));
     }
     
     return exp;
   }
   
-  public static OExpression visit(OSQLParser.FilterContext candidate) throws OCommandSQLParsingException {
+  public static OExpression visit(FilterContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
     if(nbChild == 1){
       //can be a word, literal, functionCall
@@ -295,7 +310,7 @@ public final class SQLGrammarUtils {
       //can be :
       //filter filterAnd
       //filter filterOr
-      //filter filterIn
+      //expression filterIn
       //NOT filter
       if(candidate.filterAnd() != null){
         return new OAnd(

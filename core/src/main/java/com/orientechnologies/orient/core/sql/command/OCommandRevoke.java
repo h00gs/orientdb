@@ -25,7 +25,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL REVOKE command: Revoke a privilege to a database role.
@@ -46,18 +46,17 @@ public class OCommandRevoke extends OCommandPermissionAbstract{
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandRevokeContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandRevokeContext.class);
+    final OSQLParser.CommandRevokeContext candidate = getCommand(iRequest, OSQLParser.CommandRevokeContext.class);
     
     privilege = ORole.PERMISSION_NONE;
     resource = null;
     role = null;
     
-    parsePrivilege(candidate.word(0).getText());
+    parsePrivilege(visitAsString(candidate.reference(0)));
     
-    resource = candidate.word(1).getText();
+    resource = visitAsString(candidate.reference(1));
     
-    final String roleName = candidate.word(2).toString();
+    final String roleName = visitAsString(candidate.reference(2));
     role = getDatabase().getMetadata().getSecurity().getRole(roleName);
     if (role == null){
       throw new OCommandSQLParsingException("Invalid role: " + roleName);

@@ -29,7 +29,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL ALTER DATABASE command: Changes an attribute of the current database.
@@ -53,16 +53,15 @@ public class OCommandAlterDatabase extends OCommandAbstract implements OCommandD
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandAlterDatabaseContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandAlterDatabaseContext.class);
+    final OSQLParser.CommandAlterDatabaseContext candidate = getCommand(iRequest, OSQLParser.CommandAlterDatabaseContext.class);
     
-    final String attributeAsString = candidate.word().getText();
+    final String attributeAsString = visitAsString(candidate.reference());
     try {
       attribute = ODatabase.ATTRIBUTES.valueOf(attributeAsString.toUpperCase(Locale.ENGLISH));
     } catch (IllegalArgumentException e) {
       throw new OCommandSQLParsingException("Unknown database attribute '" + attributeAsString);
     }
-    value = SQLGrammarUtils.visit(candidate.cword(), iRequest);
+    value = visit(candidate.cword(), iRequest);
     
     return this;
   }

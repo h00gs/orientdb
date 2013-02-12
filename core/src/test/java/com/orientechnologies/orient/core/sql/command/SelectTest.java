@@ -267,6 +267,25 @@ public class SelectTest {
   }
   
   @Test
+  public void selectWhereInOne(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name IN 'fiesta'");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+  }
+  
+  @Test
+  public void selectWhereInCollection(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name IN ['tempo','fiesta']");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 2);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "tempo");
+    assertEquals(docs.get(1).field("name"), "fiesta");
+  }
+  
+  @Test
   public void selectOrderBy(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size");
     final List<ODocument> docs = db.query(query);

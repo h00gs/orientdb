@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
+import java.util.Locale;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -29,8 +30,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.util.Locale;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE PROPERTY command: Creates a new property in the target class.
@@ -55,16 +55,15 @@ public class OCommandCreateProperty extends OCommandAbstract implements OCommand
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreatePropertyContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreatePropertyContext.class);
+    final OSQLParser.CommandCreatePropertyContext candidate = getCommand(iRequest, OSQLParser.CommandCreatePropertyContext.class);
     
     int i= 0;
-    className = candidate.word(i++).getText();
-    fieldName = candidate.word(i++).getText();    
-    type = OType.valueOf(candidate.word(i++).getText().toUpperCase());
+    className = visitAsString(candidate.reference(i++));
+    fieldName = visitAsString(candidate.reference(i++));    
+    type = OType.valueOf(visitAsString(candidate.reference(i++)).toUpperCase());
     
-    if(candidate.word().size()>3){
-      linked = candidate.word(i++).getText().toUpperCase();
+    if(candidate.reference().size()>3){
+      linked = visitAsString(candidate.reference(i++)).toUpperCase();
     }
     
     return this;

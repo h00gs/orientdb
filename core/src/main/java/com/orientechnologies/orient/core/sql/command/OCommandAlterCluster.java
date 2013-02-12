@@ -28,8 +28,8 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.storage.OCluster;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL ALTER PROPERTY command: Changes an attribute of an existent property in the target class.
@@ -55,17 +55,16 @@ public class OCommandAlterCluster extends OCommandAbstract implements OCommandDi
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandAlterClusterContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandAlterClusterContext.class);
+    final OSQLParser.CommandAlterClusterContext candidate = getCommand(iRequest, OSQLParser.CommandAlterClusterContext.class);
     
     if(candidate.number() != null){
-      clusterId = SQLGrammarUtils.visit(candidate.number()).intValue();
-      attribute = OCluster.ATTRIBUTES.valueOf(candidate.word(0).getText().toUpperCase(Locale.ENGLISH));
+      clusterId = visit(candidate.number()).intValue();
+      attribute = OCluster.ATTRIBUTES.valueOf(visitAsString(candidate.reference(0)).toUpperCase(Locale.ENGLISH));
     }else{
-      clusterName = candidate.word(0).getText();
-      attribute = OCluster.ATTRIBUTES.valueOf(candidate.word(1).getText().toUpperCase(Locale.ENGLISH));
+      clusterName = visitAsString(candidate.reference(0));
+      attribute = OCluster.ATTRIBUTES.valueOf(visitAsString(candidate.reference(1)).toUpperCase(Locale.ENGLISH));
     }    
-    value = SQLGrammarUtils.visit(candidate.cword(), iRequest);
+    value = visit(candidate.cword(), iRequest);
     
     return this;
   }

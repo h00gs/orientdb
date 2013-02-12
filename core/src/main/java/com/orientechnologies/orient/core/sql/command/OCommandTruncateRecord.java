@@ -30,8 +30,8 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.version.OVersionFactory;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL TRUNCATE RECORD command: Truncates a record without loading it. Useful when the record is dirty in any way and cannot be
@@ -54,13 +54,12 @@ public class OCommandTruncateRecord extends OCommandAbstract implements OCommand
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandTruncateRecordContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandTruncateRecordContext.class);
+    final OSQLParser.CommandTruncateRecordContext candidate = getCommand(iRequest, OSQLParser.CommandTruncateRecordContext.class);
     
-    if(candidate.identifier() != null){
-      records.add(candidate.identifier().getText());
+    if(candidate.orid() != null){
+      records.add(candidate.orid().getText());
     }else if(candidate.collection() != null){
-      final Collection col = SQLGrammarUtils.visit(candidate.collection()).evaluate(null, null);
+      final Collection col = visit(candidate.collection()).evaluate(null, null);
       records.addAll(col);
     }
     return this;

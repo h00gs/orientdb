@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
+import java.io.IOException;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -26,10 +27,9 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.storage.OCluster;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
-import java.io.IOException;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL TRUNCATE CLUSTER command: Truncates an entire record cluster.
@@ -51,10 +51,9 @@ public class OCommandTruncateCluster extends OCommandAbstract implements OComman
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandTruncateClusterContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandTruncateClusterContext.class);
+    final OSQLParser.CommandTruncateClusterContext candidate = getCommand(iRequest, OSQLParser.CommandTruncateClusterContext.class);
     
-    clusterName = candidate.word().getText();
+    clusterName = visitAsString(candidate.reference());
 
     if (database.getClusterIdByName(clusterName) == -1){
       throw new OCommandSQLParsingException("Cluster '" + clusterName + "' not found");

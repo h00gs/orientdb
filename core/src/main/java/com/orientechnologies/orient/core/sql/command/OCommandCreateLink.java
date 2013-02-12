@@ -16,6 +16,11 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -34,14 +39,9 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentHelper;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE LINK command: Transform a JOIN relationship to a physical LINK
@@ -71,8 +71,7 @@ public class OCommandCreateLink extends OCommandAbstract implements OCommandDist
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateLinkContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateLinkContext.class);
+    final OSQLParser.CommandCreateLinkContext candidate = getCommand(iRequest, OSQLParser.CommandCreateLinkContext.class);
     
     int i = 0;
     
@@ -80,13 +79,13 @@ public class OCommandCreateLink extends OCommandAbstract implements OCommandDist
       linkName = candidate.linkName().getText();
     }
     if(candidate.TYPE() != null){
-      linkType = OType.valueOf(candidate.word(i++).getText().toUpperCase(Locale.ENGLISH));
+      linkType = OType.valueOf(visitAsString(candidate.reference(i++)).toUpperCase(Locale.ENGLISH));
     }
     
-    sourceClassName = candidate.word(i++).getText();
-    sourceField = candidate.word(i++).getText();
-    destClassName = candidate.word(i++).getText();
-    destField = candidate.word(i++).getText();
+    sourceClassName = visitAsString(candidate.reference(i++));
+    sourceField = visitAsString(candidate.reference(i++));
+    destClassName = visitAsString(candidate.reference(i++));
+    destField = visitAsString(candidate.reference(i++));
     
     inverse = candidate.INVERSE() != null ;
     

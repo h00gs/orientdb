@@ -33,7 +33,7 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE PROPERTY command: Creates a new property in the target class.
@@ -58,11 +58,10 @@ public class OCommandDropProperty extends OCommandAbstract implements OCommandDi
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandDropPropertyContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandDropPropertyContext.class);
+    final OSQLParser.CommandDropPropertyContext candidate = getCommand(iRequest, OSQLParser.CommandDropPropertyContext.class);
     
-    className = candidate.word(0).getText();
-    fieldName = candidate.word(1).getText();
+    className = visitAsString(candidate.reference(0));
+    fieldName = visitAsString(candidate.reference(1));
     force = (candidate.FORCE() != null);
     
     return this;

@@ -16,6 +16,17 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -37,16 +48,7 @@ import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * Executes the SQL SELECT statement. the parse() method compiles the query and 
@@ -83,8 +85,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
         
-    final OSQLParser.CommandSelectContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandSelectContext.class);
+    final OSQLParser.CommandSelectContext candidate = getCommand(iRequest, OSQLParser.CommandSelectContext.class);
     visit(candidate);
       
     if (iRequest instanceof OSQLAsynchQuery) {

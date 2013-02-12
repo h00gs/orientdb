@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.command;
 
 import java.util.Map;
+import java.util.Locale;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -29,8 +30,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.util.Locale;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL ALTER PROPERTY command: Changes an attribute of an existent property in the target class.
@@ -56,19 +56,18 @@ public class OCommandAlterProperty extends OCommandAbstract implements OCommandD
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandAlterPropertyContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandAlterPropertyContext.class);
+    final OSQLParser.CommandAlterPropertyContext candidate = getCommand(iRequest, OSQLParser.CommandAlterPropertyContext.class);
     
-    className = candidate.word(0).getText();
-    fieldName = candidate.word(1).getText();
+    className = visitAsString(candidate.reference(0));
+    fieldName = visitAsString(candidate.reference(1));
     
-    final String attributeAsString = candidate.word(2).getText();
+    final String attributeAsString = visitAsString(candidate.reference(2));
     try {
       attribute = OProperty.ATTRIBUTES.valueOf(attributeAsString.toUpperCase(Locale.ENGLISH));
     } catch (IllegalArgumentException e) {
       throw new OCommandSQLParsingException("Unknown property attribute '" + attributeAsString);
     }
-    value = SQLGrammarUtils.visit(candidate.cword(), iRequest);
+    value = visit(candidate.cword(), iRequest);
     return this;
   }
 

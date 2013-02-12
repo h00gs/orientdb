@@ -16,6 +16,12 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.antlr.v4.runtime.tree.ParseTree;
+
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandDistributedConditionalReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
@@ -39,11 +45,7 @@ import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.antlr.v4.runtime.tree.ParseTree;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL INSERT command.
@@ -252,20 +254,20 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     final List<String> fields = new ArrayList<String>();
     
     //parsing
-    target = candidate.word().getText();
+    target = visitAsString(candidate.reference());
     if(candidate.CLUSTER() != null){
       target = "CLUSTER:"+target;
     }else  if(candidate.INDEX()!= null){
       target = "INDEX:"+target;
     }
     
-    for(OSQLParser.WordContext wc : candidate.insertFields().word()){
-      fields.add(wc.getText());
+    for(OSQLParser.ReferenceContext wc : candidate.insertFields().reference()){
+      fields.add(visitAsString(wc));
     }
     
     String cluster = null;
     if(candidate.insertCluster() != null){
-      cluster = candidate.insertCluster().word().getText();
+      cluster = visitAsString(candidate.insertCluster().reference());
     }
     
     visit(candidate.insertSource());
@@ -307,9 +309,9 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     final List<Object> values = new ArrayList<Object>();
     
     //parsing
-    target = candidate.word().getText();
+    target = visitAsString(candidate.reference());
     for(OSQLParser.InsertSetContext entry : candidate.insertSet()){
-      final String att = entry.word().getText();
+      final String att = visitAsString(entry.reference());
       fields.add(att);
       final OSQLParser.ExpressionContext exp = entry.expression();
       values.add(SQLGrammarUtils.visit(exp));
@@ -320,7 +322,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     
     String cluster = null;
     if(candidate.insertCluster()!= null){
-      cluster = candidate.insertCluster().word().getText();
+      cluster = visitAsString(candidate.insertCluster().reference());
     }
     
     this.target = target;

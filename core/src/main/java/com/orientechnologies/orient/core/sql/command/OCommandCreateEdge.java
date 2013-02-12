@@ -41,7 +41,7 @@ import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL CREATE EDGE command.
@@ -65,17 +65,16 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandCreateEdgeContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandCreateEdgeContext.class);
+    final OSQLParser.CommandCreateEdgeContext candidate = getCommand(iRequest, OSQLParser.CommandCreateEdgeContext.class);
     
     String className = "E";
     
-    if(candidate.word() != null){
-      className = candidate.word().getText();
+    if(candidate.reference() != null){
+      className = visitAsString(candidate.reference());
     }
     
     if(candidate.edgeCluster() != null){
-      clusterName = candidate.edgeCluster().word().getText();
+      clusterName = visitAsString(candidate.edgeCluster().reference());
     }
     
     from = candidate.edgeEnd(0);
@@ -89,8 +88,8 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     //fields
     fields = new LinkedHashMap<String, Object>();
     for(OSQLParser.InsertSetContext ctx : candidate.insertSet()){
-      final String propName = ctx.word().getText();
-      final OExpression exp = SQLGrammarUtils.visit(ctx.expression());
+      final String propName = visitAsString(ctx.reference());
+      final OExpression exp = visit(ctx.expression());
       fields.put(propName, exp.evaluate(null, null));      
     }
     
@@ -99,15 +98,15 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
 
   private List<ORID> parseEnd(OSQLParser.EdgeEndContext candidate){
     List<ORID> ids = new ArrayList<ORID>();
-    if(candidate.identifier() != null){
+    if(candidate.orid() != null){
       //single identifier
-      final OLiteral literal = SQLGrammarUtils.visit(candidate.identifier());
+      final OLiteral literal = visit(candidate.orid());
       final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
       ids.add(id.getIdentity());
       
     }else if(candidate.collection() != null){
       //collection of identifier
-      final OCollection col = SQLGrammarUtils.visit(candidate.collection());
+      final OCollection col = visit(candidate.collection());
       List lst = col.evaluate(null, null);
       for(Object obj : lst){
         ids.add( ((ORecordId)obj).getIdentity() );

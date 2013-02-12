@@ -26,7 +26,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
-import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  * SQL REMOVE INDEX command: Remove an index
@@ -48,10 +48,9 @@ public class OCommandDropIndex extends OCommandAbstract implements OCommandDistr
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandDropIndexContext candidate = SQLGrammarUtils
-            .getCommand(iRequest, OSQLParser.CommandDropIndexContext.class);
+    final OSQLParser.CommandDropIndexContext candidate = getCommand(iRequest, OSQLParser.CommandDropIndexContext.class);
     
-    name = candidate.word().getText();
+    name = visitAsString(candidate.reference());
     return this;
   }
   

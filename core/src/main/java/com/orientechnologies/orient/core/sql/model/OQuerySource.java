@@ -16,6 +16,10 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
@@ -30,9 +34,7 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
  *
@@ -87,9 +89,9 @@ public class OQuerySource {
   
   public void parse(OSQLParser.FromContext candidate) throws OCommandSQLParsingException {
 
-    if(candidate.identifier() != null){
+    if(candidate.orid() != null){
       //single identifier
-      final OLiteral literal = SQLGrammarUtils.visit(candidate.identifier());
+      final OLiteral literal = SQLGrammarUtils.visit(candidate.orid());
       final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
       targetRecords = Collections.singleton(id);
       
@@ -106,23 +108,23 @@ public class OQuerySource {
       
     }else if(candidate.CLUSTER() != null){
       //cluster
-      targetCluster = candidate.word().getText();
+      targetCluster = visitAsString(candidate.reference());
     }else if(candidate.INDEX()!= null){
       //index
-      targetIndex = candidate.word().getText();
+      targetIndex = visitAsString(candidate.reference());
       
     }else if(candidate.DICTIONARY()!= null){
       //dictionnay
-      final String key = candidate.word().getText();
+      final String key = visitAsString(candidate.reference());
       targetRecords = new ArrayList<OIdentifiable>();
       final OIdentifiable value = ODatabaseRecordThreadLocal.INSTANCE.get().getDictionary().get(key);
       if (value != null) {
         ((List<OIdentifiable>) targetRecords).add(value);
       }
 
-    }else if(candidate.word()!= null){
+    }else if(candidate.reference()!= null){
       //class
-      targetClasse = candidate.word().getText();
+      targetClasse = visitAsString(candidate.reference());
     }else{
       throw new OCommandSQLParsingException("Unexpected source definition.");
     }
