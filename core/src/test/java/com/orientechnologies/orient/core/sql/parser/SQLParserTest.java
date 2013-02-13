@@ -48,7 +48,7 @@ public class SQLParserTest {
   @Test
   public void testWord() throws OCommandSQLParsingException{
     final String sql = "hello world";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0), new OName("hello"));
@@ -58,7 +58,7 @@ public class SQLParserTest {
   @Test
   public void testLiteralText1() throws OCommandSQLParsingException{
     final String sql = "hello \"world\"";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0),new OName("hello"));
@@ -68,7 +68,7 @@ public class SQLParserTest {
   @Test
   public void testLiteralText2() throws OCommandSQLParsingException{
     final String sql = "hello 'world'";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0),new OName("hello"));
@@ -78,7 +78,7 @@ public class SQLParserTest {
   @Test
   public void testLiteralText3() throws OCommandSQLParsingException{
     final String sql = "hello 'world'') test'";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0),new OName("hello"));
@@ -88,25 +88,25 @@ public class SQLParserTest {
   @Test
   public void testLiteralNumber() throws OCommandSQLParsingException{
     String sql = "2013";
-    OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
     assertEquals(objs.get(0), new OLiteral(2013));
     
     sql = "-2013";
-    command = (OCommandCustom) OSQL.parse(sql);
+    command = (OCommandCustom) SQLGrammarUtils.parse(sql);
      objs = command.getArguments();
     assertEquals(objs.size(),1);
     assertEquals(objs.get(0), new OLiteral(-2013));
     
     sql = "-2013e3";
-    command = (OCommandCustom) OSQL.parse(sql);
+    command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     objs = command.getArguments();
     assertEquals(objs.size(),1);
     assertEquals(objs.get(0), new OLiteral(-2013e3d));
     
     sql = "-2013.456e-3";
-    command = (OCommandCustom) OSQL.parse(sql);
+    command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     objs = command.getArguments();
     assertEquals(objs.size(),1);
     assertEquals(objs.get(0), new OLiteral(-2013.456e-3d));
@@ -115,7 +115,7 @@ public class SQLParserTest {
   @Test
   public void testLiteralNull() throws OCommandSQLParsingException{
     final String sql = "hello null";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0),new OName("hello"));
@@ -125,7 +125,7 @@ public class SQLParserTest {
   @Test
   public void testUnset() throws OCommandSQLParsingException{
     final String sql = "hello ?";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),2);
     assertEquals(objs.get(0),new OName("hello"));
@@ -135,7 +135,7 @@ public class SQLParserTest {
   @Test
   public void testCollection() throws OCommandSQLParsingException{
     final String sql = "[123,'abc',\"def\"]";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
     final OCollection lit = (OCollection) objs.get(0);
@@ -148,7 +148,7 @@ public class SQLParserTest {
   @Test
   public void testMap() throws OCommandSQLParsingException{
     final String sql = "{'att1':123,'att2':{'satt1':456}}";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
     final OMap lit = (OMap) objs.get(0);
@@ -166,26 +166,11 @@ public class SQLParserTest {
     assertEquals(sentry1.getKey(),new OLiteral("satt1"));
     assertEquals(sentry1.getValue(),new OLiteral(456));
   }
-  
-//  @Test
-//  public void testFunction() throws SyntaxException{
-//    final String sql = "max( 4 , 36 , 21 )";
-//    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
-//    final List<Object> objs = command.getArguments();
-//    assertEquals(objs.size(),1);
-//    
-//    final OSQLFunction fct = SQLGrammarUtils.createFunction("max");
-//    fct.getArguments().add(new OLiteral(4));
-//    fct.getArguments().add(new OLiteral(36));
-//    fct.getArguments().add(new OLiteral(21));
-//    
-//    assertEquals(objs.get(0),fct);
-//  }
-  
+    
   @Test
   public void testMethodCall() throws OCommandSQLParsingException{
     final String sql = "'text'.charAt(2)";
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
     final OSQLMethod m = SQLGrammarUtils.createMethod("charAt");
@@ -202,7 +187,7 @@ public class SQLParserTest {
   @Test
   public void testMethodStackCall() throws OCommandSQLParsingException{
     final String sql = "'t213t'.substring(1,4).asInteger()";    
-    final OCommandCustom command = (OCommandCustom) OSQL.parse(sql);
+    final OCommandCustom command = (OCommandCustom) SQLGrammarUtils.parse(sql);
     final List<Object> objs = command.getArguments();
     assertEquals(objs.size(),1);
     

@@ -20,10 +20,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandDistributedConditionalReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
+import com.orientechnologies.orient.core.command.OCommandListener;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -39,7 +42,6 @@ import com.orientechnologies.orient.core.sql.OCommandParameters;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.model.OUnset;
-import com.orientechnologies.orient.core.sql.parser.OSQL;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
@@ -52,14 +54,16 @@ import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
  * @author Johann Sorel (Geomatys)
  */
 public class OCommandInsert extends OCommandExecutorSQLSetAware implements
-    OCommandDistributedConditionalReplicateRequest {
+    OCommandDistributedConditionalReplicateRequest, OCommandListener {
   
   public static final String KEYWORD_INSERT = "INSERT";
 
   private String target;
   private String[] fields;
   private OProperty[] fieldProperties;
-  private List<Object[]> newRecords;
+  private List<Map<String,Object>> newRecords;
+  private OSQLParser.CommandSelectContext source;
+  private final List<ODocument> results = new ArrayList<ODocument>();
   
   private String className = null;
   private String clusterName = null;
@@ -67,7 +71,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
 
   public OCommandInsert(){}
   
-  public OCommandInsert(String target, String cluster, List<String> fields, List<Object[]> records) {
+  public OCommandInsert(String target, String cluster, List<String> fields, List<Map<String,Object>> records) {
     this.target = target;
     this.fields = fields.toArray(new String[fields.size()]);
     this.newRecords = records;
@@ -78,6 +82,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   public <RET extends OCommandExecutor> RET parse(OCommandRequest iRequest) {
     
     final OSQLParser.CommandInsertContext candidate = getCommand(iRequest, OSQLParser.CommandInsertContext.class);
+    visit(candidate);
     
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
@@ -120,7 +125,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     return fields;
   }
 
-  public List<Object[]> getRecords() {
+  public List<Map<String,Object>> getRecords() {
     return newRecords;
   }
   
@@ -129,15 +134,21 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     if(iArgs != null && !iArgs.isEmpty()){
       //we need to set value where we have OUnknowned
       final UnknownResolverVisitor visitor = new UnknownResolverVisitor(iArgs);
-      for(Object[] newRecord : newRecords){
-        for(int i=0;i<newRecord.length;i++){
-          if(newRecord[i] instanceof OUnset){
-            newRecord[i] = visitor.visit(((OUnset)newRecord[i]), null);
+      for(Map<String,Object> newRecord : newRecords){
+        for(Entry<String,Object> entry : newRecord.entrySet()){
+          if(entry.getValue() instanceof OUnset){
+            newRecord.put(entry.getKey(), visitor.visit((OUnset)entry.getValue(), null));
           }
         }
       }
     }
       
+    if(source != null){
+      final OCommandSelect select = new OCommandSelect();
+      select.parse(source);
+      select.addListener(this);
+      select.execute(iArgs);
+    }
     
     final OCommandParameters commandParameters = new OCommandParameters(iArgs);
     if (indexName != null) {
@@ -148,11 +159,10 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       // BIND VALUES
       Map<String,Object> record = new HashMap<String, Object>();
       Map<String, Object> result = null;
-      for (Object[] candidate : newRecords) {
-        
-        for(int i=0;i<candidate.length;i++){
-          Object value = OSQL.evaluate(candidate[i]);
-          record.put(fields[i], value );
+      for (Map<String,Object> newRecord : newRecords) {        
+        for(Entry<String,Object> entry : newRecord.entrySet()){
+          Object value = evaluate(entry.getValue());
+          record.put(entry.getKey(), value );
         }
         index.put(getIndexKeyValue(commandParameters, record), getIndexValue(commandParameters, record));
         result = record;
@@ -163,15 +173,17 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     } else {
 
       // CREATE NEW DOCUMENTS
-      final List<ODocument> docs = new ArrayList<ODocument>();
-      for (Object[] candidate : newRecords) {
+      for (Map<String,Object> newRecord : newRecords) {
         final ODocument doc = className != null ? new ODocument(className) : new ODocument();
-        for(int i=0;i<candidate.length;i++){
+        int i=0;
+        for(Entry<String,Object> entry : newRecord.entrySet()){
+          Object value = evaluate(entry.getValue());
           if(fieldProperties!=null && fieldProperties[i]!=null){
-            doc.field(fields[i], OSQL.evaluate(candidate[i]), fieldProperties[i].getType());
+            doc.field(entry.getKey(), value, fieldProperties[i].getType());
           }else{
-            doc.field(fields[i], OSQL.evaluate(candidate[i]));
+            doc.field(entry.getKey(), value);
           }
+          i++;
         }
 
         if (clusterName != null) {
@@ -179,13 +191,13 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
         } else {
           doc.save();
         }
-        docs.add(doc);
+        results.add(doc);
       }
 
-      if (docs.size() == 1) {
-        return docs.get(0);
+      if (results.size() == 1) {
+        return results.get(0);
       } else {
-        return docs;
+        return results;
       }
     }
   }
@@ -256,15 +268,15 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       visit(candidate.insertSource());
     }else{
       //SET operations
-      final List<Object> values = new ArrayList<Object>();
+      final Map<String,Object> values = new HashMap<String,Object>();
       for(OSQLParser.InsertSetContext entry : candidate.insertSet()){
         final String att = visitAsString(entry.reference());
         fields.add(att);
         final OSQLParser.ExpressionContext exp = entry.expression();
-        values.add(SQLGrammarUtils.visit(exp));
+        values.put(att,SQLGrammarUtils.visit(exp));
       }
-      final List<Object[]> entries = new ArrayList<Object[]>();
-      entries.add(values.toArray());
+      final List<Map<String,Object>> entries = new ArrayList<Map<String,Object>>();
+      entries.add(values);
       this.newRecords = entries;
     }
     
@@ -281,23 +293,63 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       return;
     }
     
-    final List<Object[]> entries = new ArrayList<Object[]>();
+    final List<Map<String,Object>> entries = new ArrayList<Map<String,Object>>();
     if(candidate.commandSelect() != null){
-      final OCommandSelect sub = new OCommandSelect();
-      sub.parse(candidate.commandSelect());
-      //TODO
+      this.source = candidate.commandSelect();
+      //executed later
     }else{
       //entry serie
       for(OSQLParser.InsertEntryContext entry : candidate.insertEntry()){
         final List<OSQLParser.ExpressionContext> exps = entry.expression();
-        final Object[] values = new Object[exps.size()];
-        for(int i=0;i<values.length;i++){
-          values[i] = SQLGrammarUtils.visit(exps.get(i));
+        final Map<String,Object> values = new HashMap<String, Object>();
+        for(int i=0;i<exps.size();i++){
+          values.put(fields[i], SQLGrammarUtils.visit(exps.get(i)));
         }
         entries.add(values);
       }
     }
     this.newRecords = entries;
+  }
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  //Sub select events //////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  @Override
+  public boolean result(Object iRecord) {
+    final ODocument record = (ODocument) ((OIdentifiable) iRecord).getRecord();
+    final OCommandContext ctx = getContext();
+    
+    final ODocument doc = className != null ? new ODocument(className) : new ODocument();
+    for(String str : record.fieldNames()){
+      doc.field(str, doc.field(str));
+    }
+    
+    if (clusterName != null) {
+      doc.save(clusterName);
+    } else {
+      doc.save();
+    }
+    results.add(doc);
+    return true;
+  }
+
+  @Override
+  public void end() {
+  }
+
+  @Override
+  public void onBegin(Object iTask, long iTotal) {
+  }
+
+  @Override
+  public boolean onProgress(Object iTask, long iCounter, float iPercent) {
+    return true;
+  }
+
+  @Override
+  public void onCompletition(Object iTask, boolean iSucceed) {
   }
   
 }

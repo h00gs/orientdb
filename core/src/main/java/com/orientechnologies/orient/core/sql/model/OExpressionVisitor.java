@@ -26,15 +26,55 @@ import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
  */
 public interface OExpressionVisitor {
 
-  Object visit(OLiteral candidate, Object data);
+  Object visit(OAnd candidate, Object data);
   
   Object visit(OCollection candidate, Object data);
   
+  Object visit(OContextVariable candidate, Object data);
+  
+  Object visit(OEquals candidate, Object data);
+  
+  Object visit(OExpression candidate, Object data);
+  
+  Object visit(OIn candidate, Object data);
+  
+  Object visit(OInferior candidate, Object data);
+  
+  Object visit(OInferiorEquals candidate, Object data);
+  
+  Object visit(OIsNotNull candidate, Object data);
+  
+  Object visit(OIsNull candidate, Object data);
+  
+  Object visit(OLike candidate, Object data);
+    
+  Object visit(OLiteral candidate, Object data);
+    
   Object visit(OMap candidate, Object data);
   
   Object visit(OName candidate, Object data);
   
-  Object visit(OContextVariable candidate, Object data);
+  Object visit(ONot candidate, Object data);
+  
+  Object visit(ONotEquals candidate, Object data);
+  
+  Object visit(OOperatorDivide candidate, Object data);
+  
+  Object visit(OOperatorMinus candidate, Object data);
+  
+  Object visit(OOperatorModulo candidate, Object data);
+  
+  Object visit(OOperatorMultiply candidate, Object data);
+  
+  Object visit(OOperatorPlus candidate, Object data);
+  
+  Object visit(OOperatorPower candidate, Object data);
+  
+  Object visit(OOr candidate, Object data);
+  
+  Object visit(OSuperior candidate, Object data);
+  
+  Object visit(OSuperiorEquals candidate, Object data);
   
   Object visit(OUnset candidate, Object data);
   
@@ -43,20 +83,6 @@ public interface OExpressionVisitor {
   Object visit(OSQLMethod candidate, Object data);
           
   Object visit(OQueryOperator candidate, Object data);
-  
-  Object visit(OAnd candidate, Object data);
-  
-  Object visit(OOr candidate, Object data);
-  
-  Object visit(ONot candidate, Object data);
-  
-  Object visit(OEquals candidate, Object data);
-  
-  Object visit(OIsNull candidate, Object data);
-  
-  Object visit(OIsNotNull candidate, Object data);
-  
-  Object visit(OExpression candidate, Object data);
   
   Object visitInclude(OExpression candidate, Object data);
   

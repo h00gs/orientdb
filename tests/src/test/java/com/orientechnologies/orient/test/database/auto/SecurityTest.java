@@ -86,7 +86,7 @@ public class SecurityTest {
 	public void testEncryptPassword() throws IOException {
 		database.open("admin", "admin");
 
-		Integer updated = database.command(new OCommandSQL("update ouser set password = 'test' where name = 'reader'")).execute();
+		Number updated = database.command(new OCommandSQL("update ouser set password = 'test' where name = 'reader'")).execute();
 		Assert.assertEquals(updated.intValue(), 1);
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<Object>("select from ouser where name = 'reader'"));

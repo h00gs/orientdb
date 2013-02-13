@@ -24,13 +24,26 @@ import com.orientechnologies.orient.core.sql.model.OContextVariable;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
+import com.orientechnologies.orient.core.sql.model.OIn;
+import com.orientechnologies.orient.core.sql.model.OInferior;
+import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
 import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OIsNotNull;
 import com.orientechnologies.orient.core.sql.model.OIsNull;
+import com.orientechnologies.orient.core.sql.model.OLike;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OMap;
 import com.orientechnologies.orient.core.sql.model.ONot;
+import com.orientechnologies.orient.core.sql.model.ONotEquals;
+import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
+import com.orientechnologies.orient.core.sql.model.OOperatorMinus;
+import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
+import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
+import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
+import com.orientechnologies.orient.core.sql.model.OOperatorPower;
 import com.orientechnologies.orient.core.sql.model.OOr;
+import com.orientechnologies.orient.core.sql.model.OSuperior;
+import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
 import java.util.ArrayList;
@@ -178,6 +191,97 @@ public class CopyVisitor implements OExpressionVisitor {
   public Object visitExclude(OExpression candidate, Object data) {
     //inmutable
     return candidate;
+  }
+
+  @Override
+  public Object visit(OIn candidate, Object data) {
+    return new OIn(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OInferior candidate, Object data) {
+    return new OInferior(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OInferiorEquals candidate, Object data) {
+    return new OInferiorEquals(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OLike candidate, Object data) {
+    return new OLike(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(ONotEquals candidate, Object data) {
+    return new ONotEquals(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOperatorDivide candidate, Object data) {
+    return new OOperatorDivide(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOperatorMinus candidate, Object data) {
+    return new OOperatorMinus(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOperatorModulo candidate, Object data) {
+    return new OOperatorModulo(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOperatorMultiply candidate, Object data) {
+    return new OOperatorMultiply(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOperatorPlus candidate, Object data) {
+    return new OOperatorPlus(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OOperatorPower candidate, Object data) {
+    return new OOperatorPower(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OSuperior candidate, Object data) {
+    return new OSuperior(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OSuperiorEquals candidate, Object data) {
+    return new OSuperiorEquals(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
   }
 
 }
