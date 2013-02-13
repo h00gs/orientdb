@@ -207,6 +207,32 @@ public class SelectTest {
   }
   
   @Test
+  public void selectOperator(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT size+5, size-5, 2*size, size/2, size%15, size^2 FROM car WHERE name = 'fiesta' ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 6);
+    assertEquals(docs.get(0).field("0"), 165d);
+    assertEquals(docs.get(0).field("1"), 155d);
+    assertEquals(docs.get(0).field("2"), 320d);
+    assertEquals(docs.get(0).field("3"), 80d);
+    assertEquals(docs.get(0).field("4"), 10d);
+    assertEquals(docs.get(0).field("5"), 25600d);
+  }
+  
+  @Test
+  public void selectOperatorPrecedence(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT size+5*4, size*2-5, 2*size+10, size/2*4 FROM car WHERE name = 'fiesta' ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 4);
+    assertEquals(docs.get(0).field("0"), 180d);
+    assertEquals(docs.get(0).field("1"), 315d);
+    assertEquals(docs.get(0).field("2"), 330d);
+    assertEquals(docs.get(0).field("3"), 320d);
+  }
+  
+  @Test
   public void selectFromSubQuery(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM (SELECT FROM car SKIP 1 LIMIT 1)");
     final List<ODocument> docs = db.query(query);

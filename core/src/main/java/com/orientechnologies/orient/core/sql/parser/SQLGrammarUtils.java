@@ -16,7 +16,15 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
-import com.orientechnologies.common.exception.OException;
+import java.util.ArrayList;
+import java.util.List;
+import org.antlr.v4.runtime.tree.ParseTree;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.sql.model.OExpression;
@@ -40,12 +48,6 @@ import com.orientechnologies.orient.core.sql.model.OOr;
 import com.orientechnologies.orient.core.sql.model.OSuperior;
 import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
-import java.util.ArrayList;
-import java.util.List;
-import org.antlr.v4.runtime.tree.ParseTree;
-
-import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
-import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -55,11 +57,15 @@ import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionFactory;
 import com.orientechnologies.orient.core.sql.model.OLike;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
+
+import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
+import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
+import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
+import com.orientechnologies.orient.core.sql.model.OOperatorMinus;
+import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
+import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
+import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
+import com.orientechnologies.orient.core.sql.model.OOperatorPower;
 
 /**
  *
@@ -156,24 +162,47 @@ public final class SQLGrammarUtils {
   
   public static OExpression visit(ExpressionContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
-    final List<OExpression> elements = new ArrayList<OExpression>(nbChild);
-    for(int i=0;i<nbChild;i++){
-      final ParseTree child = candidate.getChild(i);
-      elements.add((OExpression)visit(child));
-    }
     
     if(nbChild == 1){
       //can be a word, literal, functionCall
-      return elements.get(0);
+      return (OExpression)visit(candidate.getChild(0));
     }else if(nbChild == 2){
       //can be a method call
-      final OExpression source = (OExpression) elements.get(0);
-      final OSQLMethod method = (OSQLMethod) elements.get(1);
+      final OExpression source = (OExpression)visit(candidate.getChild(0));
+      final OSQLMethod method = (OSQLMethod)visit(candidate.getChild(1));
       method.getArguments().add(0, source); //add the source as first argument.
       return method;
     }else if(nbChild == 3){
       //can be '(' exp ')'
-      return elements.get(1);
+      //can be exp (+|-|/|*) exp
+      final ParseTree left = candidate.getChild(0);
+      final ParseTree center = candidate.getChild(1);
+      final ParseTree right = candidate.getChild(2);
+      if(center instanceof TerminalNode){
+        //(+|-|/|*) exp
+        final String operator = center.getText();
+        final OExpression leftExp = (OExpression)visit(left);
+        final OExpression rightExp = (OExpression)visit(right);
+        if("+".equals(operator)){
+          return new OOperatorPlus(leftExp, rightExp);
+        }else if("-".equals(operator)){
+          return new OOperatorMinus(leftExp, rightExp);
+        }else if("/".equals(operator)){
+          return new OOperatorDivide(leftExp, rightExp);
+        }else if("*".equals(operator)){
+          return new OOperatorMultiply(leftExp, rightExp);
+        }else if("%".equals(operator)){
+          return new OOperatorModulo(leftExp, rightExp);
+        }else if("^".equals(operator)){
+          return new OOperatorPower(leftExp, rightExp);
+        }else{
+          throw new OCommandSQLParsingException("Unexpected operator "+operator);
+        }
+        
+      }else{
+        // '(' exp ')'
+        return (OExpression)visit(center);
+      }
     }else{
       throw new OCommandSQLParsingException("Unexpected number of arguments");
     }
@@ -400,8 +429,7 @@ public final class SQLGrammarUtils {
     }
     return elements;
   }
-  
-  
+    
   public static List<ORID> visit(OSQLParser.SourceContext candidate) throws OCommandSQLParsingException {
     List<ORID> ids = new ArrayList<ORID>();
     if(candidate.orid() != null){

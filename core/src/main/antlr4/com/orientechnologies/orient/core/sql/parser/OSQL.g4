@@ -90,6 +90,8 @@ WS  :   ( ' ' | '\t' | '\r'| '\n' ) -> skip ;
 UNARY : '+' | '-' ;
 MULT : '*';
 DIV : '/';
+MOD : '%';
+POWER : '^';
 COMPARE_EQL     : '='  ;
 COMPARE_INF     : '<'  ;
 COMPARE_SUP     : '>'  ;
@@ -126,7 +128,7 @@ fragment X: ('x'|'X');
 fragment Y: ('y'|'Y');
 fragment Z: ('z'|'Z');
 fragment DIGIT : '0'..'9' ;
-fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '{' | '}' | '[' | ']'| '=' | '.'| ':' | '#');
+fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '{' | '}' | '[' | ']'| '=' | '.'| ':' | '#' | '%' | '^');
 
 LPAREN : '(';
 RPAREN : ')';
@@ -220,6 +222,11 @@ expression
   | unset
   | reference
   | LPAREN expression RPAREN
+  | expression DIV<assoc=left>    expression
+  | expression MULT<assoc=left>   expression
+  | expression MOD<assoc=left>    expression
+  | expression POWER<assoc=left>  expression
+  | expression UNARY<assoc=right> expression
   | functionCall
   | expression methodCall
   ;

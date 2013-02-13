@@ -37,9 +37,7 @@ import com.orientechnologies.orient.core.id.OClusterPositionLong;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecord;
-import com.orientechnologies.orient.core.record.ORecordSchemaAware;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.model.OSortBy;
@@ -83,7 +81,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
         
     final OSQLParser.CommandSelectContext candidate = getCommand(iRequest, OSQLParser.CommandSelectContext.class);
-    visit(candidate);
+    parse(candidate);
       
     if (iRequest instanceof OSQLAsynchQuery) {
       final OSQLAsynchQuery request = (OSQLAsynchQuery)iRequest;
