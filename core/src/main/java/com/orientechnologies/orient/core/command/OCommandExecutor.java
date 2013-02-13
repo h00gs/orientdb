@@ -28,7 +28,7 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
  * @param <T>
  */
 public interface OCommandExecutor {
-
+  
   /**
    * Parse the request. Once parsed the command can be executed multiple times by using the execute() method.
    * 
@@ -77,5 +77,17 @@ public interface OCommandExecutor {
    * @return String description of the command syntax.
    */
   public String getSyntax();
+  
+  /**
+   * Attach a listener to this command.
+   * @param listener 
+   */
+  void addListener(OCommandListener listener);
+  
+  /**
+   * Remove aan attached  listener from this command.
+   * @param listener 
+   */
+  void removeListener(OCommandListener listener);
   
 }

@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecordAbstract;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClusters;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
@@ -55,14 +56,26 @@ public class OQuerySource {
     return targetClasse;
   }
 
+  public void setTargetClasse(String targetClasse) {
+    this.targetClasse = targetClasse;
+  }
+  
   public String getTargetCluster() {
     return targetCluster;
   }
 
+  public void setTargetCluster(String targetCluster) {
+    this.targetCluster = targetCluster;
+  }
+  
   public String getTargetIndex() {
     return targetIndex;
   }
 
+  public void setTargetIndex(String targetIndex) {
+    this.targetIndex = targetIndex;
+  }
+  
   public Iterable<? extends OIdentifiable> getTargetRecords() {
     return targetRecords;
   }
@@ -87,11 +100,15 @@ public class OQuerySource {
     }
   }
   
-  public void parse(OSQLParser.FromContext candidate) throws OCommandSQLParsingException {
-
+  public void parse(OSQLParser.FromContext from) throws OCommandSQLParsingException {
+    parse(from.source());
+  }
+  
+  public void parse(OSQLParser.SourceContext candidate) throws OCommandSQLParsingException {
+    
     if(candidate.orid() != null){
       //single identifier
-      final OLiteral literal = SQLGrammarUtils.visit(candidate.orid());
+      final OLiteral literal = visit(candidate.orid());
       final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
       targetRecords = Collections.singleton(id);
       

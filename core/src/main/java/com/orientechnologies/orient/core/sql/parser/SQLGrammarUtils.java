@@ -402,7 +402,7 @@ public final class SQLGrammarUtils {
   }
   
   
-  public static List<ORID> visit(OSQLParser.SourceContext candidate){
+  public static List<ORID> visit(OSQLParser.SourceContext candidate) throws OCommandSQLParsingException {
     List<ORID> ids = new ArrayList<ORID>();
     if(candidate.orid() != null){
       //single identifier

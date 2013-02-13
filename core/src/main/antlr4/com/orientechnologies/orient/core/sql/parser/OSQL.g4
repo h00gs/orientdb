@@ -75,6 +75,10 @@ LANGUAGE : L A N G U A G E ;
 FIND : F I N D ;
 REFERENCES : R E F E R E N C E S ;
 REBUILD : R E B U I L D ;
+TRAVERSE : T R A V E R S E ;
+PUT : P U T ;
+INCREMENT : I N C R E M E N T ;
+WHILE : W H I L E ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -177,9 +181,7 @@ UNICODE_ESC
     :   '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
     ;
     
- 
-    
-    
+      
 //-----------------------------------------------------------------//
 // PARSER
 //-----------------------------------------------------------------//
@@ -192,23 +194,23 @@ keywords
   | EXTENDS | ABSTRACT | RECORD | INDEX | DICTIONARY | ALTER | CLASS | SKIP
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
-  | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD
+  | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
+  | INCREMENT | WHILE
   ;
-reference   : WORD | ESCWORD | keywords;
-orid        : ORID INT ':' INT;
-unset       : UNSET | (DOUBLEDOT reference);
-number    	: (UNARY^)? (INT|FLOAT)	;
-map         : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
-collection  : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
-literal	
-  : NULL
-  | TEXT
-	| number
-	;
 
-arguments   : LPAREN (expression (COMMA expression)*)? RPAREN ;
-functionCall: reference arguments ;
-methodCall  : DOT reference arguments* ;
+anything        : .*? ;
+number          : (UNARY^)? (INT|FLOAT)	;
+cword           : anything | NULL ;
+numberOrWord    : number | reference ;
+reference       : WORD | ESCWORD | keywords;
+literal         : NULL | TEXT | number ;
+orid            : ORID INT ':' INT;
+unset           : UNSET | (DOUBLEDOT reference);
+map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
+collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
+arguments       : LPAREN (expression (COMMA expression)*)? RPAREN ;
+functionCall    : reference arguments ;
+methodCall      : DOT reference arguments* ;
 
 expression
   : literal
@@ -222,9 +224,9 @@ expression
   | expression methodCall
   ;
 
-filterAnd : AND filter ;
-filterOr : OR filter ;
-filterIn : IN (literal|collection|commandSelect) ;
+filterAnd   : AND filter ;
+filterOr    : OR filter ;
+filterIn    : IN (literal|collection|commandSelect) ;
 filter
   : LPAREN filter RPAREN
   | filter filterAnd
@@ -244,89 +246,84 @@ filter
 
 // COMMANDS
 
-cword : anything | NULL ;
-anything : .*? ;
 
 commandUnknowned : expression (expression)* ;
 
-commandInsertIntoByValues
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? reference insertCluster? insertFields VALUES insertSource
-  ;
-commandInsertIntoBySet
-  : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? reference insertCluster? SET insertSet (COMMA insertSet)*
-  ;
-insertSource 
-  : commandSelect
-  | LPAREN insertSource RPAREN
-  | insertEntry (COMMA insertEntry)*
-  ;
+commandInsert : INSERT INTO ((CLUSTER|INDEX) DOUBLEDOT)? reference insertCluster? 
+                ((insertFields VALUES insertSource) | (SET insertSet (COMMA insertSet)*)) ;
+insertSource  : commandSelect
+              | LPAREN insertSource RPAREN
+              | insertEntry (COMMA insertEntry)*
+              ;
 insertCluster : CLUSTER reference ;
 insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
 insertSet     : reference COMPARE_EQL expression ;
 insertFields  : LPAREN reference(COMMA reference)* RPAREN ;
 
-commandSelect
-  : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit?
-  ;
-projection
-  : ( MULT
-    | expression
-    | filter
-    | ORID_ATTR
-    | OCLASS_ATTR
-    | OVERSION_ATTR
-    | OSIZE_ATTR
-    | OTYPE_ATTR ) 
-    (alias)?
-  ;
+commandSelect : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit? ;
+projection    : (MULT
+              | expression
+              | filter
+              | ORID_ATTR
+              | OCLASS_ATTR
+              | OVERSION_ATTR
+              | OSIZE_ATTR
+              | OTYPE_ATTR ) 
+              (alias)?
+              ;
+source        : ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? reference
+              | orid 
+              | collection 
+              | commandSelect 
+              | LPAREN commandSelect RPAREN
+              ;
 alias          : AS reference ;
-from           
-  : FROM 
-    ( ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? reference
-    | orid
-    | collection
-    | commandSelect
-    | LPAREN commandSelect RPAREN ) 
-  ;
+from           : FROM source ; 
 groupBy        : GROUP BY expression (COMMA expression)* ;
 orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;
 orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT ;
-source         : orid | collection | commandSelect ;
+
 
 commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
-numberOrWord : number | reference ;
 commandCreateCluster    : CREATE CLUSTER reference reference (DATASEGMENT reference)? (LOCATION reference)? (POSITION reference)? ;
 commandCreateIndex      : CREATE INDEX reference (indexOn)? reference (NULL | RUNTIME INT | (reference (COMMA reference)*))?;
-indexOn : ON reference LPAREN reference (COMMA reference)* RPAREN ;
+indexOn                 : ON reference LPAREN reference (COMMA reference)* RPAREN ;
 commandCreateProperty   : CREATE PROPERTY reference DOT reference reference reference?;
 commandCreateEdge       : CREATE EDGE reference? (edgeCluster)? FROM source TO source (SET insertSet (COMMA insertSet)*)?;
-edgeCluster : CLUSTER reference ;
+edgeCluster             : CLUSTER reference ;
 commandCreateFunction   : CREATE FUNCTION reference TEXT (IDEMPOTENT reference)? (LANGUAGE reference)? ;
 commandCreateLink       : CREATE LINK linkName? (TYPE reference)? FROM reference DOT reference TO reference DOT reference INVERSE?;
-linkName : reference ;
+linkName                : reference ;
 commandCreateVertex     : CREATE VERTEX reference (CLUSTER reference)? (SET insertSet (COMMA insertSet)*)?;
-
 commandAlterClass       : ALTER CLASS reference reference cword ;
 commandAlterCluster     : ALTER CLUSTER (reference|number) reference cword;
 commandAlterDatabase    : ALTER DATABASE reference cword;
 commandAlterProperty    : ALTER PROPERTY reference DOT reference reference cword ;
-
 commandDropClass        : DROP CLASS reference ;
 commandDropCluster      : DROP CLUSTER reference ;
 commandDropIndex        : DROP INDEX reference ;
 commandDropProperty     : DROP PROPERTY reference DOT reference FORCE ;
-
 commandTruncateClass    : TRUNCATE CLASS reference ;
 commandTruncateCluster  : TRUNCATE CLUSTER reference ;
 commandTruncateRecord   : TRUNCATE RECORD (orid|collection) ;
-
 commandGrant            : GRANT reference ON reference TO reference ;
 commandRevoke           : REVOKE reference ON reference FROM reference ;
-
 commandFindReferences   : FIND REFERENCES source cword ;
 commandRebuildIndex     : REBUILD INDEX reference ;
+commandDelete           : DELETE from (WHERE filter)? ;
+commandDeleteEdge       : DELETE EDGE ((deleteEdgeFrom)? (deleteEdgeTo)? | source (WHERE filter)?);
+deleteEdgeFrom          : FROM orid;
+deleteEdgeTo            : TO orid;
+commandDeleteVertex     : DELETE VERTEX (source (WHERE filter)?)? ;
+commandTraverse         : TRAVERSE source reference(COMMA reference)* (WHILE filter)? limit?;
+commandUpdate           : UPDATE source (updateGroup)* (WHERE filter)?;
+updateGroup             : updateSimpleGroup | updatePutGroup ;
+updateSimpleGroup       : (SET|ADD|REMOVE|INCREMENT) updateEntry (COMMA updateEntry)*;
+updatePutGroup          : PUT updatePutEntry (COMMA updatePutEntry)*;
+updateEntry             : reference (COMPARE_EQL expression)? ;
+updatePutEntry          : reference COMPARE_EQL reference expression ;
 
 command
 	: (commandCreateClass
@@ -345,8 +342,7 @@ command
   | commandDropCluster
   | commandDropIndex
   | commandDropProperty
-  | commandInsertIntoByValues
-  | commandInsertIntoBySet
+  | commandInsert
   | commandSelect
   | commandTruncateClass
   | commandTruncateCluster
@@ -354,6 +350,11 @@ command
   | commandGrant
   | commandRevoke
   | commandFindReferences
-  | commandRebuildIndex)
+  | commandRebuildIndex
+  | commandDelete
+  | commandDeleteEdge
+  | commandDeleteVertex
+  | commandTraverse
+  | commandUpdate)
     EOF
   ;

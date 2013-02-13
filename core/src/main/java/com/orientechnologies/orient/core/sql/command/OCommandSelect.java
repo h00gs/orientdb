@@ -69,9 +69,6 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   private final List<OSortBy> sortBys = new ArrayList<OSortBy>();
   private long skip;
   
-  //keep the base request to notify result changes.
-  private OSQLAsynchQuery<ORecordSchemaAware<?>> request;
-
   //result list
   private final List<ODocument> result = new ArrayList<ODocument>();
   
@@ -89,18 +86,124 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     visit(candidate);
       
     if (iRequest instanceof OSQLAsynchQuery) {
-      request = (OSQLAsynchQuery)iRequest;
+      final OSQLAsynchQuery request = (OSQLAsynchQuery)iRequest;
+      final OCommandResultListener res = request.getResultListener();
+      addListener(new ResultListenerWrap(res));
     }
     
     return (RET)this;
   }
 
-  public <RET extends OCommandExecutor> RET parse(OSQLParser.CommandSelectContext ast) {
+  public <RET extends OCommandExecutor> RET parse(OSQLParser.CommandSelectContext candidate) {
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
-    visit(ast);
+    
+    //variables
+    projections.clear();
+    setLimit(-1);
+    skip = -1;
+    sortBys.clear();
+    groupBys.clear();
+    
+    //parse projections
+    for(OSQLParser.ProjectionContext proj : candidate.projection()){
+      if(proj.MULT() != null){
+        //all values requested
+        projections.clear();
+        break;
+      }
+      projections.add(SQLGrammarUtils.visit(proj));
+    }
+    
+    //parse source
+    final OSQLParser.FromContext from = candidate.from();
+    source = new OQuerySource();
+    source.parse(from);
+    
+    //parse filter
+    if(candidate.filter()!= null){
+      filter = SQLGrammarUtils.visit(candidate.filter());
+    }else{
+      filter = OExpression.INCLUDE;
+    }
+    
+    //parse group by
+    if(candidate.groupBy() != null){
+      for(OSQLParser.ExpressionContext ele : candidate.groupBy().expression()){
+        groupBys.add(SQLGrammarUtils.visit(ele));
+      }
+    }
+    
+    //parse sortBy
+    if(candidate.orderBy() != null){
+      for(OSQLParser.OrderByElementContext ele : candidate.orderBy().orderByElement()){
+        final OSortBy.Direction dir = (ele.DESC() == null)? OSortBy.Direction.ASC : OSortBy.Direction.DESC;
+        sortBys.add(new OSortBy(SQLGrammarUtils.visit(ele.expression()), dir));
+      }
+    }
+        
+    //parse skip
+    if(candidate.skip() != null){
+      skip = Integer.valueOf(candidate.skip().INT().getText());
+    }
+    
+    //parse limit
+    if(candidate.limit() != null){
+      setLimit(Integer.valueOf(candidate.limit().INT().getText()));
+    }
+    
+    
     return (RET)this;
   }
+  
+  public <RET extends OCommandExecutor> RET parse(OSQLParser.SourceContext src, OSQLParser.FilterContext filter) {
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+    
+    //variables
+    projections.clear();
+    setLimit(-1);
+    skip = -1;
+    sortBys.clear();
+    groupBys.clear();
+    
+    //parse source
+    source = new OQuerySource();
+    source.parse(src);
+    
+    //parse filter
+    if(filter != null){
+      this.filter = SQLGrammarUtils.visit(filter);
+    }else{
+      this.filter = OExpression.INCLUDE;
+    }
+    return (RET)this;
+  }
+  
+  public <RET extends OCommandExecutor> RET parse(String clazz, OSQLParser.FilterContext filter) {
+    final ODatabaseRecord database = getDatabase();
+    database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+    
+    //variables
+    projections.clear();
+    setLimit(-1);
+    skip = -1;
+    sortBys.clear();
+    groupBys.clear();
+    
+    //parse source
+    source = new OQuerySource();
+    source.setTargetClasse(clazz);
+    
+    //parse filter
+    if(filter != null){
+      this.filter = SQLGrammarUtils.visit(filter);
+    }else{
+      this.filter = OExpression.INCLUDE;
+    }
+    return (RET)this;
+  }
+  
   
   @Override
   public Collection execute(final Map<Object, Object> iArgs) {
@@ -119,33 +222,23 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     if(groupBys.isEmpty() && sortBys.isEmpty()){
       //normal query
-      OCommandResultListener listener = null;
-      if (request != null) {
-        listener = request.getResultListener();
-      }
-      search(projections, skip, limit, listener);
+      search(projections, skip, limit, true);
     }else{
       //groupby or sort by search, we must collect all results first
-      search(null, skip, skip, null);
+      search(null, skip, skip, false);
       applyGroups();
       applySort();
       
       //notify listeners
-      if (request != null) {
-        final OCommandResultListener listener = request.getResultListener();
-        if(listener != null){
-          for(OIdentifiable r : result){
-            listener.result(r);
-          }
-        }
+      for(OIdentifiable r : result){
+        fireResult(r);
       }
-      
     }
     
     return result;
   }
   
-  private void search(final List<OExpression> projections, final long skip, final long limit, final OCommandResultListener listener){
+  private void search(final List<OExpression> projections, final long skip, final long limit, boolean notifyListeners){
     
     final OCommandContext context = getContext();
     final Iterable<? extends OIdentifiable> target = source.createIterator();
@@ -183,9 +276,9 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
 
       result.add(record);
 
-      //notify listener if needed
-      if (listener != null) {
-        if (!listener.result(record)) {
+      //notify listener
+      if(notifyListeners){
+        if (!fireResult(record)){
           //stop search requested
           break;
         }
@@ -279,63 +372,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   
   
   // GRAMMAR PARSING ///////////////////////////////////////////////////////////
-    
-  private void visit(OSQLParser.CommandSelectContext candidate) throws OCommandSQLParsingException{    
-    //variables
-    projections.clear();
-    setLimit(-1);
-    skip = -1;
-    sortBys.clear();
-    groupBys.clear();
-    
-    //parse projections
-    for(OSQLParser.ProjectionContext proj : candidate.projection()){
-      if(proj.MULT() != null){
-        //all values requested
-        projections.clear();
-        break;
-      }
-      projections.add(SQLGrammarUtils.visit(proj));
-    }
-    
-    //parse source
-    final OSQLParser.FromContext from = candidate.from();
-    source = new OQuerySource();
-    source.parse(from);
-    
-    //parse filter
-    if(candidate.filter()!= null){
-      filter = SQLGrammarUtils.visit(candidate.filter());
-    }else{
-      filter = OExpression.INCLUDE;
-    }
-    
-    //parse group by
-    if(candidate.groupBy() != null){
-      for(OSQLParser.ExpressionContext ele : candidate.groupBy().expression()){
-        groupBys.add(SQLGrammarUtils.visit(ele));
-      }
-    }
-    
-    //parse sortBy
-    if(candidate.orderBy() != null){
-      for(OSQLParser.OrderByElementContext ele : candidate.orderBy().orderByElement()){
-        final OSortBy.Direction dir = (ele.DESC() == null)? OSortBy.Direction.ASC : OSortBy.Direction.DESC;
-        sortBys.add(new OSortBy(SQLGrammarUtils.visit(ele.expression()), dir));
-      }
-    }
-        
-    //parse skip
-    if(candidate.skip() != null){
-      skip = Integer.valueOf(candidate.skip().INT().getText());
-    }
-    
-    //parse limit
-    if(candidate.limit() != null){
-      setLimit(Integer.valueOf(candidate.limit().INT().getText()));
-    }
-    
-  }
+  
 
   @Override
   public Iterator iterator() {

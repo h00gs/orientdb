@@ -21,6 +21,7 @@ import com.orientechnologies.common.listener.OProgressListener;
 import com.orientechnologies.common.parser.OBaseParser;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import javax.swing.event.EventListenerList;
 
 /**
  * Abstract implementation of Executor Command interface.
@@ -30,6 +31,9 @@ import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
  */
 @SuppressWarnings("unchecked")
 public abstract class OCommandExecutorAbstract extends OBaseParser implements OCommandExecutor {
+  
+  private final EventListenerList listeners = new EventListenerList();
+  
   protected OProgressListener   progressListener;
   protected int                 limit = -1;
   protected Map<Object, Object> parameters;
@@ -75,5 +79,15 @@ public abstract class OCommandExecutorAbstract extends OBaseParser implements OC
 
   public static ODatabaseRecord getDatabase() {
     return ODatabaseRecordThreadLocal.INSTANCE.get();
+  }
+    
+  @Override
+  public void addListener(OCommandListener listener) {
+    listeners.add(OCommandListener.class, listener);
+  }
+
+  @Override
+  public void removeListener(OCommandListener listener) {
+    listeners.remove(OCommandListener.class, listener);
   }
 }

@@ -34,6 +34,9 @@ import com.orientechnologies.orient.core.sql.command.OCommandCreateIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateLink;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateProperty;
 import com.orientechnologies.orient.core.sql.command.OCommandCreateVertex;
+import com.orientechnologies.orient.core.sql.command.OCommandDelete;
+import com.orientechnologies.orient.core.sql.command.OCommandDeleteEdge;
+import com.orientechnologies.orient.core.sql.command.OCommandDeleteVertex;
 import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
@@ -47,6 +50,7 @@ import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandTruncateRecord;
+import com.orientechnologies.orient.core.sql.command.OCommandUpdate;
 
 /**
  * Default command operator executor factory.
@@ -85,22 +89,17 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandCreateLink.KEYWORD_CREATE + " " + OCommandCreateLink.KEYWORD_LINK,OCommandCreateLink.class);
     commands.put(OCommandRebuildIndex.KEYWORD_REBUILD + " " + OCommandRebuildIndex.KEYWORD_INDEX, OCommandRebuildIndex.class);
     commands.put(OCommandFindReferences.KEYWORD_FIND + " " + OCommandFindReferences.KEYWORD_REFERENCES, OCommandFindReferences.class);
+    commands.put(OCommandUpdate.KEYWORD_UPDATE, OCommandUpdate.class);
+    commands.put(OCommandDelete.NAME, OCommandDelete.class);
+    commands.put(OCommandDeleteEdge.NAME, OCommandDeleteEdge.class);
+    commands.put(OCommandDeleteVertex.NAME, OCommandDeleteVertex.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
     commands.put(OCommandSelect.KEYWORD_SELECT, OCommandSelect.class);
-    
-    
-    // OLD REPLACED COMMANDS 
-//    commands.put(OCommandExecutorSQLInsert.KEYWORD_INSERT, OCommandExecutorSQLInsert.class);
-    //commands.put(OCommandExecutorSQLSelect.KEYWORD_SELECT, OCommandExecutorSQLSelect.class);
-    
+        
     // OLD MANUAL PARSING COMMANDS
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
-    commands.put(OCommandExecutorSQLUpdate.KEYWORD_UPDATE, OCommandExecutorSQLUpdate.class);
-    commands.put(OCommandExecutorSQLDelete.NAME, OCommandExecutorSQLDelete.class);
-    commands.put(OCommandExecutorSQLDeleteEdge.NAME, OCommandExecutorSQLDeleteEdge.class);
-    commands.put(OCommandExecutorSQLDeleteVertex.NAME, OCommandExecutorSQLDeleteVertex.class);
     commands.put(OCommandExecutorSQLExplain.KEYWORD_EXPLAIN, OCommandExecutorSQLExplain.class);
 
     COMMANDS = Collections.unmodifiableMap(commands);

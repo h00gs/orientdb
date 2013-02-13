@@ -26,7 +26,7 @@ import com.orientechnologies.orient.core.command.OCommandExecutorAbstract;
  * 
  */
 public abstract class OCommandExecutorSQLAbstract extends OCommandExecutorAbstract {
-
+  
   public static final String KEYWORD_FROM      = "FROM";
   public static final String KEYWORD_LET       = "LET";
   public static final String KEYWORD_WHERE     = "WHERE";
@@ -38,7 +38,7 @@ public abstract class OCommandExecutorSQLAbstract extends OCommandExecutorAbstra
   public static final String CLASS_PREFIX      = "CLASS:";
   public static final String INDEX_PREFIX      = "INDEX:";
   public static final String DICTIONARY_PREFIX = "DICTIONARY:";
-
+  
   protected void throwSyntaxErrorException(final String iText) {
     throw new OCommandSQLParsingException(iText + ". Use " + getSyntax(), parserText, parserGetPreviousPosition());
   }
@@ -56,5 +56,5 @@ public abstract class OCommandExecutorSQLAbstract extends OCommandExecutorAbstra
 
   public boolean isIdempotent() {
     return false;
-  }
+  }  
 }

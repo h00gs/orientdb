@@ -141,8 +141,7 @@ public class OCommandCreateLink extends OCommandAbstract implements OCommandDist
     long totRecords = db.countClass(sourceClass.getName());
     long currRecord = 0;
 
-    if (progressListener != null)
-      progressListener.onBegin(this, totRecords);
+    fireBegin(this, totRecords);
 
     database.declareIntent(new OIntentMassiveInsert());
     try {
@@ -227,8 +226,7 @@ public class OCommandCreateLink extends OCommandAbstract implements OCommandDist
           }
         }
 
-        if (progressListener != null)
-          progressListener.onProgress(this, currRecord, currRecord * 100f / totRecords);
+        fireProgress(this, currRecord,  currRecord * 100f / totRecords);
       }
 
       if (total > 0) {
@@ -256,12 +254,10 @@ public class OCommandCreateLink extends OCommandAbstract implements OCommandDist
         }
       }
 
-      if (progressListener != null)
-        progressListener.onCompletition(this, true);
+      fireCompletition(this, true);
 
     } catch (Exception e) {
-      if (progressListener != null)
-        progressListener.onCompletition(this, false);
+      fireCompletition(this, false);
 
       throw new OCommandExecutionException("Error on creation of links", e);
 
