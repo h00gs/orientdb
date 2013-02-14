@@ -128,6 +128,26 @@ public class SelectTest {
     person5.field("points",80);
     person5.save();
     
+    //complex test type
+    final OClass fishClass = schema.createClass("fish");
+    fishClass.createProperty("name", OType.STRING);
+    final OClass boatClass = schema.createClass("boat");
+    boatClass.createProperty("name", OType.STRING);
+    boatClass.createProperty("freight", OType.EMBEDDED,fishClass);
+    final OClass seaClass = schema.createClass("sea");
+    seaClass.createProperty("name", OType.STRING);
+    seaClass.createProperty("navigator", OType.EMBEDDED,boatClass);
+    
+    final ODocument fish = db.newInstance(fishClass.getName());
+    fish.field("name","thon");
+    final ODocument boat = db.newInstance(boatClass.getName());
+    boat.field("name","kiki");
+    boat.field("freight",fish);
+    final ODocument sea = db.newInstance(seaClass.getName());
+    sea.field("name","atlantic");
+    sea.field("navigator",boat);
+    sea.save();
+    
     db.close();
   }
   
@@ -204,6 +224,17 @@ public class SelectTest {
     assertEquals(docs.get(1).field("0"), "160 length");
     assertEquals(docs.get(2).field("0"), "260 length");
     assertEquals(docs.get(3).field("0"), "310 length");
+  }
+  
+  
+  @Test
+  public void selectPath(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT navigator.name AS boatname, navigator.freight.name AS freighttype FROM sea");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("boatname"), "kiki");
+    assertEquals(docs.get(0).field("freighttype"), "thon");
   }
   
   @Test

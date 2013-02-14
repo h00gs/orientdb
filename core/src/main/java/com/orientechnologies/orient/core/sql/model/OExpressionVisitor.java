@@ -72,6 +72,8 @@ public interface OExpressionVisitor {
   
   Object visit(OOr candidate, Object data);
   
+  Object visit(OPath candidate, Object data);
+  
   Object visit(OSuperior candidate, Object data);
   
   Object visit(OSuperiorEquals candidate, Object data);

@@ -212,7 +212,7 @@ map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLED
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (expression (COMMA expression)*)? RPAREN ;
 functionCall    : reference arguments ;
-methodCall      : DOT reference arguments* ;
+methodOrPathCall: DOT reference arguments? ;
 
 expression
   : literal
@@ -228,7 +228,7 @@ expression
   | expression POWER<assoc=left>  expression
   | expression UNARY<assoc=right> expression
   | functionCall
-  | expression methodCall
+  | expression methodOrPathCall
   ;
 
 filterAnd   : AND filter ;

@@ -68,6 +68,7 @@ import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
 import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
 import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
 import com.orientechnologies.orient.core.sql.model.OOperatorPower;
+import com.orientechnologies.orient.core.sql.model.OPath;
 import java.math.BigDecimal;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CharStream;
@@ -260,6 +261,7 @@ public final class SQLGrammarUtils {
     final String sql = ((OCommandRequestText) iRequest).getText();
     System.err.println("|||||||||||||||||||| "+ sql);
     final ParseTree tree = compileExpression(sql);
+    //System.err.println(toString(tree));
     checkErrorNodes(tree);
     if(!(tree instanceof OSQLParser.CommandContext)){
       throw new OCommandSQLParsingException("Parse error, query is not a valid command.");
@@ -319,8 +321,8 @@ public final class SQLGrammarUtils {
       return visit((LiteralContext)candidate);
     }else if(candidate instanceof FunctionCallContext){
       return visit((FunctionCallContext)candidate);
-    }else if(candidate instanceof MethodCallContext){
-      return visit((MethodCallContext)candidate);
+    }else if(candidate instanceof MethodOrPathCallContext){
+      return visit((MethodOrPathCallContext)candidate);
     }else if(candidate instanceof OridContext){
       return visit((OridContext)candidate);
     }else if(candidate instanceof MapContext){
@@ -343,11 +345,15 @@ public final class SQLGrammarUtils {
       //can be a word, literal, functionCall
       return (OExpression)visit(candidate.getChild(0));
     }else if(nbChild == 2){
-      //can be a method call
+      //can be a method call, pathcall
       final OExpression source = (OExpression)visit(candidate.getChild(0));
-      final OSQLMethod method = (OSQLMethod)visit(candidate.getChild(1));
-      method.getArguments().add(0, source); //add the source as first argument.
-      return method;
+      final OExpression right = (OExpression)visit(candidate.getChild(1));
+      if(right instanceof OSQLMethod){
+        ((OSQLMethod)right).getArguments().add(0, source); //add the source as first argument.
+      }else if(right instanceof OPath){
+        ((OPath)right).getChildren().add(0, source); //add the source as first argument.
+      }
+      return right;
     }else if(nbChild == 3){
       //can be '(' exp ')'
       //can be exp (+|-|/|*) exp
@@ -355,7 +361,7 @@ public final class SQLGrammarUtils {
       final ParseTree center = candidate.getChild(1);
       final ParseTree right = candidate.getChild(2);
       if(center instanceof TerminalNode){
-        //(+|-|/|*) exp
+        //(+|-|/|*|.) exp
         final String operator = center.getText();
         final OExpression leftExp = (OExpression)visit(left);
         final OExpression rightExp = (OExpression)visit(right);
@@ -483,12 +489,21 @@ public final class SQLGrammarUtils {
     return fct;
   }
   
-  public static OSQLMethod visit(MethodCallContext candidate) throws OCommandSQLParsingException {
-    final String name = visitAsString((ReferenceContext)candidate.getChild(1));
-    final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(2)) );
-    final OSQLMethod method = createMethod(name);
-    method.getArguments().addAll(args);
-    return method;
+  public static OExpression visit(MethodOrPathCallContext candidate) throws OCommandSQLParsingException {
+    if(candidate.arguments() != null){
+      final String name = visitAsString(candidate.reference());
+      final List<OExpression> args = visit(candidate.arguments());
+      final OSQLMethod method = createMethod(name);
+      method.getArguments().addAll(args);
+      return method;
+    }else{
+      final OName name = visitAsExpression(candidate.reference());
+      final OPath path = new OPath(null,null,null);
+      path.getChildren().clear();
+      path.getChildren().add(name);
+      return path;
+    }
+    
   }
     
   public static OExpression visit(ProjectionContext candidate) throws OCommandSQLParsingException {

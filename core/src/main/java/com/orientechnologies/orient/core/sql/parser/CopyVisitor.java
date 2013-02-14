@@ -42,6 +42,7 @@ import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
 import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
 import com.orientechnologies.orient.core.sql.model.OOperatorPower;
 import com.orientechnologies.orient.core.sql.model.OOr;
+import com.orientechnologies.orient.core.sql.model.OPath;
 import com.orientechnologies.orient.core.sql.model.OSuperior;
 import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
@@ -156,6 +157,13 @@ public class CopyVisitor implements OExpressionVisitor {
             (OExpression)candidate.getRight().accept(this,data));
   }
 
+  @Override
+  public Object visit(OPath candidate, Object data) {
+    return new OPath(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
+  
   @Override
   public Object visit(ONot candidate, Object data) {
     return new ONot(candidate.getAlias(), 
