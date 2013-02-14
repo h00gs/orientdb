@@ -19,9 +19,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -33,22 +30,21 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
   public static final String NAME    = "distinct";
 
-  private Set<Object>        context = new LinkedHashSet<Object>();
+  private Set<Object> set = new LinkedHashSet<Object>();
 
   public OSQLFunctionDistinct() {
     super(NAME, 1, 1);
   }
 
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-      OCommandContext iContext) {
-    final Object value = iParameters[0];
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    final Object value = children.get(0).evaluate(context, candidate);
 
-    if (value != null && !context.contains(value)) {
-      context.add(value);
-      return value;
+    if (value != null && !set.contains(value)) {
+      set.add(value);
     }
 
-    return null;
+    return set;
   }
 
   public boolean filterResult() {
@@ -60,12 +56,11 @@ public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
   }
 
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionDistinct copy() {
+    final OSQLFunctionDistinct fct = new OSQLFunctionDistinct();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

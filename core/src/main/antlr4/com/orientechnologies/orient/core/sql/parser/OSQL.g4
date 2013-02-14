@@ -231,6 +231,7 @@ expression
   | expression WORD               expression // custom operators
   | functionCall
   | expression methodOrPathCall
+  | expression LBRACKET filter RBRACKET
   ;
 
 filterAnd     : AND filter ;
@@ -316,7 +317,7 @@ commandAlterProperty    : ALTER PROPERTY reference DOT reference reference cword
 commandDropClass        : DROP CLASS reference ;
 commandDropCluster      : DROP CLUSTER reference ;
 commandDropIndex        : DROP INDEX reference ;
-commandDropProperty     : DROP PROPERTY reference DOT reference FORCE ;
+commandDropProperty     : DROP PROPERTY reference DOT reference FORCE? ;
 commandTruncateClass    : TRUNCATE CLASS reference ;
 commandTruncateCluster  : TRUNCATE CLUSTER reference ;
 commandTruncateRecord   : TRUNCATE RECORD (orid|collection) ;

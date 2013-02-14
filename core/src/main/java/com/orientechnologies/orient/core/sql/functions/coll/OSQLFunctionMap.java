@@ -15,15 +15,11 @@
  */
 package com.orientechnologies.orient.core.sql.functions.coll;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
  * This operator add an entry in a map. The entry is composed by a key and a value.
@@ -31,93 +27,59 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionMap extends OSQLFunctionMultiValueAbstract<Map<Object, Object>> {
+public class OSQLFunctionMap extends OSQLFunctionAbstract {
   public static final String NAME = "map";
 
+  private final Map result = new HashMap();
+  
   public OSQLFunctionMap() {
     super(NAME, 1, -1);
   }
 
-//  @SuppressWarnings("unchecked")
-//  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-//      OCommandContext iContext) {
-//
-//    if (iParameters.length > 2)
-//      // IN LINE MODE
-//      context = new HashMap<Object, Object>();
-//
-//    if (iParameters.length == 1) {
-//      if (iParameters[0] instanceof Map<?, ?>)
-//        // INSERT EVERY SINGLE COLLECTION ITEM
-//        context.putAll((Map<Object, Object>) iParameters[0]);
-//      else
-//        throw new IllegalArgumentException("Map function: expected a map or pairs of parameters as key, value");
-//    } else if (iParameters.length % 2 != 0)
-//      throw new IllegalArgumentException("Map function: expected a map or pairs of parameters as key, value");
-//    else
-//      for (int i = 0; i < iParameters.length; i += 2) {
-//        final Object key = iParameters[i];
-//        final Object value = iParameters[i + 1];
-//
-//        if (value != null) {
-//          if (iParameters.length <= 2 && context == null)
-//            // AGGREGATION MODE (STATEFULL)
-//            context = new HashMap<Object, Object>();
-//
-//          context.put(key, value);
-//        }
-//      }
-//
-//    return prepareResult(context);
-//  }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+
+    final Map result;
+    if(children.size()>2){
+      // IN LINE MODE
+      result = new HashMap();
+    }else{
+      // AGGREGATION MODE (STATEFULL)
+      result = this.result;
+    }
+    
+    if(children.size() == 1){
+      final Object val = children.get(0).evaluate(context, candidate);
+      if(val instanceof Map){
+        result.putAll((Map)val);
+      }else{
+        throw new IllegalArgumentException("Map function: expected a map or pairs of parameters as key, value");
+      }
+    } else if (children.size() % 2 != 0){
+      throw new IllegalArgumentException("Map function: expected a map or pairs of parameters as key, value");
+    } else {
+      for (int i=0,n=children.size(); i<n; i += 2) {
+        final Object key = children.get(i).evaluate(context, candidate);
+        final Object value = children.get(i+1).evaluate(context, candidate);
+        if (value != null) {
+          result.put(key, value);
+        }
+      }
+    }
+    
+    return result;
+  }
 
   public String getSyntax() {
     return "Syntax error: map(<map>|[<key>,<value>]*)";
   }
 
-  public boolean aggregateResults(final Object[] configuredParameters) {
-    return configuredParameters.length <= 2;
-  }
-
-//  @Override
-//  public Map<Object, Object> getResult() {
-//    final Map<Object, Object> res = context;
-//    context = null;
-//    return prepareResult(res);
-//  }
-//
-//  protected Map<Object, Object> prepareResult(Map<Object, Object> res) {
-//    if (returnDistributedResult()) {
-//      final Map<String, Object> doc = new HashMap<String, Object>();
-//      doc.put("node", getDistributedStorageId());
-//      doc.put("context", res);
-//      return Collections.<Object, Object> singletonMap("doc", doc);
-//    } else {
-//      return res;
-//    }
-//  }
-
-  @SuppressWarnings("unchecked")
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    final Map<Long, Map<Object, Object>> chunks = new HashMap<Long, Map<Object, Object>>();
-    for (Object iParameter : resultsToMerge) {
-      final Map<String, Object> container = (Map<String, Object>) ((Map<Object, Object>) iParameter).get("doc");
-      chunks.put((Long) container.get("node"), (Map<Object, Object>) container.get("context"));
-    }
-    final Map<Object, Object> result = new HashMap<Object, Object>();
-    for (Map<Object, Object> chunk : chunks.values()) {
-      result.putAll(chunk);
-    }
-    return result;
-  }
-
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionMap copy() {
+    final OSQLFunctionMap fct = new OSQLFunctionMap();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

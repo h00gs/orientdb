@@ -16,17 +16,12 @@
 package com.orientechnologies.orient.core.sql.functions.coll;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
  * This operator add an item in a set. The set doesn't accept duplicates, so adding multiple times the same value has no effect: the
@@ -35,84 +30,52 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionSet extends OSQLFunctionMultiValueAbstract<Set<Object>> {
+public class OSQLFunctionSet extends OSQLFunctionAbstract {
   public static final String NAME = "set";
 
+  private final Set<Object> result = new HashSet<Object>();
+  
   public OSQLFunctionSet() {
     super(NAME, 1, -1);
   }
 
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-      OCommandContext iContext) {
-    if (iParameters.length > 1)
-      // IN LINE MODE
-      context = new HashSet<Object>();
-
-    for (Object value : iParameters) {
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    
+    final Set<Object> result;
+    if(children.size() == 1){
+      // AGGREGATION MODE (STATEFULL)
+      result = this.result;
+    }else{
+      // IN-LINE MODE (STATELESS)
+      result = new HashSet<Object>();
+    }
+    
+    for (OExpression exp : children) {
+      final Object value = exp.evaluate(context, candidate);
       if (value != null) {
-        if (iParameters.length == 1 && context == null)
-          // AGGREGATION MODE (STATEFULL)
-          context = new HashSet<Object>();
-
-        if (value instanceof Collection<?>)
+        if (value instanceof Collection<?>){
           // INSERT EVERY SINGLE COLLECTION ITEM
-          context.addAll((Collection<?>) value);
-        else
-          context.add(value);
+          result.addAll((Collection<?>) value);
+        }else{
+          result.add(value);
+        }
       }
     }
 
-    return prepareResult(context);
+    return result;
   }
 
   public String getSyntax() {
     return "Syntax error: set(<value>*)";
   }
 
-  public boolean aggregateResults(final Object[] configuredParameters) {
-    return configuredParameters.length == 1;
-  }
-
-//  @Override
-//  public Set<Object> getResult() {
-//    final Set<Object> res = context;
-//    context = null;
-//    return prepareResult(res);
-//  }
-
-//  protected Set<Object> prepareResult(Set<Object> res) {
-//    if (returnDistributedResult()) {
-//      final Map<String, Object> doc = new HashMap<String, Object>();
-//      doc.put("node", getDistributedStorageId());
-//      doc.put("context", context);
-//      return Collections.<Object> singleton(doc);
-//    } else {
-//      return res;
-//    }
-//  }
-
-  @SuppressWarnings("unchecked")
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    final Map<Long, Collection<Object>> chunks = new HashMap<Long, Collection<Object>>();
-    for (Object iParameter : resultsToMerge) {
-      final Map<String, Object> container = (Map<String, Object>) ((Collection<?>) iParameter).iterator().next();
-      chunks.put((Long) container.get("node"), (Collection<Object>) container.get("context"));
-    }
-    final Collection<Object> result = new HashSet<Object>();
-    for (Collection<Object> chunk : chunks.values()) {
-      result.addAll(chunk);
-    }
-    return result;
-  }
-
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionSet copy() {
+    final OSQLFunctionSet fct = new OSQLFunctionSet();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
 }

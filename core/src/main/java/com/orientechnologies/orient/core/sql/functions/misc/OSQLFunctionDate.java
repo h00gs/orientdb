@@ -35,7 +35,7 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 public class OSQLFunctionDate extends OSQLFunctionAbstract {
   public static final String NAME = "date";
 
-  private SimpleDateFormat   format;
+  private SimpleDateFormat format;
 
   /**
    * Get the date at construction to have the same date for all the iteration.
@@ -50,11 +50,6 @@ public class OSQLFunctionDate extends OSQLFunctionAbstract {
 
   public String getSyntax() {
     return "Syntax error: date([<date-as-string>] [,<format>] [,<timezone>])";
-  }
-
-  public Object getResult() {
-    format = null;
-    return null;
   }
   
   @Override

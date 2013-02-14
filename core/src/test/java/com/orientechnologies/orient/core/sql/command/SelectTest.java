@@ -23,6 +23,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,18 +135,33 @@ public class SelectTest {
     final OClass boatClass = schema.createClass("boat");
     boatClass.createProperty("name", OType.STRING);
     boatClass.createProperty("freight", OType.EMBEDDED,fishClass);
+    final OClass dockClass = schema.createClass("dock");
+    dockClass.createProperty("name", OType.STRING);
+    dockClass.createProperty("capacity", OType.DOUBLE);
     final OClass seaClass = schema.createClass("sea");
     seaClass.createProperty("name", OType.STRING);
     seaClass.createProperty("navigator", OType.EMBEDDED,boatClass);
+    seaClass.createProperty("docks", OType.EMBEDDEDLIST,dockClass);
     
     final ODocument fish = db.newInstance(fishClass.getName());
     fish.field("name","thon");
     final ODocument boat = db.newInstance(boatClass.getName());
     boat.field("name","kiki");
     boat.field("freight",fish);
+    final ODocument dock1 = db.newInstance(dockClass.getName());
+    dock1.field("name","brest");
+    dock1.field("capacity",120);
+    final ODocument dock2 = db.newInstance(dockClass.getName());
+    dock2.field("name","alger");
+    dock2.field("capacity",90);
+    final ODocument dock3 = db.newInstance(dockClass.getName());
+    dock3.field("name","palerme");
+    dock3.field("capacity",140);
+    
     final ODocument sea = db.newInstance(seaClass.getName());
     sea.field("name","atlantic");
     sea.field("navigator",boat);
+    sea.field("docks", Arrays.asList(dock1,dock2,dock3));
     sea.save();
     
     db.close();
@@ -226,7 +242,14 @@ public class SelectTest {
     assertEquals(docs.get(3).field("0"), "310 length");
   }
   
-  
+  @Test
+  public void selectSubFilter(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT docks[name='alger'].capacity as capa from sea");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("capa"), 90d);
+    
+  }
   @Test
   public void selectPath(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT navigator.name AS boatname, navigator.freight.name AS freighttype FROM sea");

@@ -26,8 +26,6 @@ import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.OSQLHelper;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 
 /**
  * Dijkstra's algorithm describes how to find the cheapest path from one node to another node in a directed weighted graph.
@@ -45,22 +43,22 @@ public class OSQLFunctionDijkstra extends OSQLFunctionPathFinder<Float> {
     super(NAME, 3, 4);
   }
 
-  public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
     final ODatabaseRecord currentDatabase = ODatabaseRecordThreadLocal.INSTANCE.get();
     db = (OGraphDatabase) (currentDatabase instanceof OGraphDatabase ? currentDatabase : new OGraphDatabase(
         (ODatabaseRecordTx) currentDatabase));
 
-    final ORecordInternal<?> record = (ORecordInternal<?>) (iCurrentRecord != null ? iCurrentRecord.getRecord() : null);
+    paramSourceVertex = (OIdentifiable) children.get(0).evaluate(context, candidate);
+    paramDestinationVertex = (OIdentifiable) children.get(1).evaluate(context, candidate);
+    paramWeightFieldName = (String) children.get(2).evaluate(context, candidate);
+    if (children.size() > 3){
+      paramDirection = DIRECTION.valueOf(children.get(3).evaluate(context, candidate).toString().toUpperCase());
+    }
 
-    paramSourceVertex = (OIdentifiable) OSQLHelper.getValue(iParameters[0], record, iContext);
-    paramDestinationVertex = (OIdentifiable) OSQLHelper.getValue(iParameters[1], record, iContext);
-    paramWeightFieldName = (String) OSQLHelper.getValue(iParameters[2], record, iContext);
-    if (iParameters.length > 3)
-      paramDirection = DIRECTION.valueOf(iParameters[3].toString().toUpperCase());
-
-    return super.execute(iParameters, iContext);
+    return super.evaluate(context, candidate);
   }
-
+  
   public String getSyntax() {
     return "Syntax error: dijkstra(<sourceVertex>, <destinationVertex>, <weightEdgeFieldName>, [<direction>])";
   }
@@ -101,12 +99,11 @@ public class OSQLFunctionDijkstra extends OSQLFunctionPathFinder<Float> {
   }
 
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionDijkstra copy() {
+    final OSQLFunctionDijkstra fct = new OSQLFunctionDijkstra();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

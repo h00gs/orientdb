@@ -71,8 +71,11 @@ public class OSQLFunctionLast extends OSQLFunctionAbstract {
   }
 
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionLast copy() {
+    final OSQLFunctionLast fct = new OSQLFunctionLast();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
   @Override

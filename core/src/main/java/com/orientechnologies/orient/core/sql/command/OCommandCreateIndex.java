@@ -87,7 +87,8 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
       }
     }
     
-    indexType = OClass.INDEX_TYPE.valueOf(visitAsString(candidate.reference(i++)));
+    final String indexTypeName = visitAsString(candidate.reference(i++));
+    indexType = OClass.INDEX_TYPE.valueOf(indexTypeName.toUpperCase());
     
     if(candidate.NULL() != null){
       //do nothing

@@ -29,7 +29,7 @@ import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase.DIRECTION;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.functions.math.OSQLFunctionMathAbstract;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
  * Abstract class to find paths between nodes.
@@ -37,7 +37,7 @@ import com.orientechnologies.orient.core.sql.functions.math.OSQLFunctionMathAbst
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public abstract class OSQLFunctionPathFinder<T extends Comparable<T>> extends OSQLFunctionMathAbstract {
+public abstract class OSQLFunctionPathFinder<T extends Comparable<T>> extends OSQLFunctionAbstract {
   protected OGraphDatabase                    db;
   protected Set<OIdentifiable>                settledNodes;
   protected Set<OIdentifiable>                unSettledNodes;
@@ -60,7 +60,7 @@ public abstract class OSQLFunctionPathFinder<T extends Comparable<T>> extends OS
 
   protected abstract T sumDistances(T iDistance1, T iDistance2);
 
-  public Object execute(final Object[] iParameters, final OCommandContext iContext) {
+  public Object evaluate(OCommandContext context, Object candidate) {
     settledNodes = new HashSet<OIdentifiable>();
     unSettledNodes = new HashSet<OIdentifiable>();
     distance = new HashMap<OIdentifiable, T>();

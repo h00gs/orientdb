@@ -19,14 +19,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
  * This operator can work as aggregate or inline. If only one argument is passed than aggregates, otherwise executes, and returns,
@@ -35,52 +31,52 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionIntersect extends OSQLFunctionMultiValueAbstract<Set<Object>> {
+public class OSQLFunctionIntersect extends OSQLFunctionAbstract {
   public static final String NAME = "intersect";
 
+  private Set result;
+  
   public OSQLFunctionIntersect() {
     super(NAME, 1, -1);
   }
 
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-      OCommandContext iContext) {
-    Object value = iParameters[0];
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    
+    Object value = children.get(0).evaluate(context, candidate);
 
-    if (value instanceof OSQLFilterItemVariable)
-      value = ((OSQLFilterItemVariable) value).getValue(iCurrentRecord, iContext);
-
-    if (value == null)
+    if (value == null){
       return Collections.emptySet();
+    }
 
-    if (!(value instanceof Collection<?>))
+    if (!(value instanceof Collection<?>)){
       value = Arrays.asList(value);
+    }
 
     final Collection<?> coll = (Collection<?>) value;
 
-    if (iParameters.length == 1) {
+    if (children.size() == 1) {
       // AGGREGATION MODE (STATEFULL)
-      if (context == null) {
+      if (result == null) {
         // ADD ALL THE ITEMS OF THE FIRST COLLECTION
-        context = new HashSet<Object>(coll);
+        result = new HashSet<Object>(coll);
       } else {
         // INTERSECT IT AGAINST THE CURRENT COLLECTION
-        context.retainAll(coll);
+        result.retainAll(coll);
       }
-      return null;
+      return result;
     } else {
       // IN-LINE MODE (STATELESS)
       final HashSet<Object> result = new HashSet<Object>(coll);
 
-      for (int i = 1; i < iParameters.length; ++i) {
-        value = iParameters[i];
-
-        if (value instanceof OSQLFilterItemVariable)
-          value = ((OSQLFilterItemVariable) value).getValue(iCurrentRecord, iContext);
+      for (int i=1,n=children.size(); i<n; ++i) {
+        value = children.get(i).evaluate(context, candidate);
 
         if (value != null) {
-          if (!(value instanceof Collection<?>))
+          if (!(value instanceof Collection<?>)){
             // CONVERT IT INTO A COLLECTION
             value = Arrays.asList(value);
+          }
 
           result.retainAll((Collection<?>) value);
         } else
@@ -95,31 +91,12 @@ public class OSQLFunctionIntersect extends OSQLFunctionMultiValueAbstract<Set<Ob
     return "Syntax error: intersect(<field>*)";
   }
 
-  @SuppressWarnings("unchecked")
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    final Collection<Object> result = new HashSet<Object>();
-    if (!resultsToMerge.isEmpty()) {
-      final Collection<Object> items = (Collection<Object>) resultsToMerge.get(0);
-      if (items != null) {
-        result.addAll(items);
-      }
-    }
-    for (int i = 1; i < resultsToMerge.size(); i++) {
-      final Collection<Object> items = (Collection<Object>) resultsToMerge.get(i);
-      if (items != null) {
-        result.retainAll(items);
-      }
-    }
-    return result;
+  @Override
+  public OSQLFunctionIntersect copy() {
+    final OSQLFunctionIntersect fct = new OSQLFunctionIntersect();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
-  @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

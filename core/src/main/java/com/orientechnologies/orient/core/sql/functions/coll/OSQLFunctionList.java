@@ -17,15 +17,11 @@ package com.orientechnologies.orient.core.sql.functions.coll;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
  * This operator add an item in a list. The list accepts duplicates.
@@ -33,82 +29,52 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionList extends OSQLFunctionMultiValueAbstract<List<Object>> {
+public class OSQLFunctionList extends OSQLFunctionAbstract {
   public static final String NAME = "list";
 
+  private final List<Object> result = new ArrayList<Object>();
+  
   public OSQLFunctionList() {
     super(NAME, 1, -1);
   }
 
-//  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-//      OCommandContext iContext) {
-//    if (iParameters.length > 1)
-//      // IN LINE MODE
-//      context = new ArrayList<Object>();
-//
-//    for (Object value : iParameters) {
-//      if (value != null) {
-//        if (iParameters.length == 1 && context == null)
-//          // AGGREGATION MODE (STATEFULL)
-//          context = new ArrayList<Object>();
-//
-//        if (value instanceof Collection<?>)
-//          // INSERT EVERY SINGLE COLLECTION ITEM
-//          context.addAll((Collection<?>) value);
-//        else
-//          context.add(value);
-//      }
-//    }
-//    return prepareResult(context);
-//  }
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    
+    final List<Object> result;
+    if(children.size() == 1){
+      // AGGREGATION MODE (STATEFULL)
+      result = this.result;
+    }else{
+      // IN-LINE MODE (STATELESS)
+      result = new ArrayList<Object>();
+    }
+    
+    for (OExpression exp : children) {
+      final Object value = exp.evaluate(context, candidate);
+      if (value != null) {
+        if (value instanceof Collection<?>){
+          // INSERT EVERY SINGLE COLLECTION ITEM
+          result.addAll((Collection<?>) value);
+        }else{
+          result.add(value);
+        }
+      }
+    }
+
+    return result;
+  }
 
   public String getSyntax() {
     return "Syntax error: list(<value>*)";
   }
 
-  public boolean aggregateResults(final Object[] configuredParameters) {
-    return false;
-  }
-
-//  @Override
-//  public List<Object> getResult() {
-//    final List<Object> res = context;
-//    context = null;
-//    return prepareResult(res);
-//  }
-
-//  protected List<Object> prepareResult(List<Object> res) {
-//    if (returnDistributedResult()) {
-//      final Map<String, Object> doc = new HashMap<String, Object>();
-//      doc.put("node", getDistributedStorageId());
-//      doc.put("context", res);
-//      return Collections.<Object> singletonList(doc);
-//    } else {
-//      return res;
-//    }
-//  }
-//
-//  @SuppressWarnings("unchecked")
-//  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-//    final Map<Long, Collection<Object>> chunks = new HashMap<Long, Collection<Object>>();
-//    for (Object iParameter : resultsToMerge) {
-//      final Map<String, Object> container = (Map<String, Object>) ((Collection<?>) iParameter).iterator().next();
-//      chunks.put((Long) container.get("node"), (Collection<Object>) container.get("context"));
-//    }
-//    final Collection<Object> result = new ArrayList<Object>();
-//    for (Collection<Object> chunk : chunks.values()) {
-//      result.addAll(chunk);
-//    }
-//    return result;
-//  }
-
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionList copy() {
+    final OSQLFunctionList fct = new OSQLFunctionList();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

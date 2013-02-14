@@ -38,6 +38,8 @@ public interface OExpressionVisitor {
   
   Object visit(OExpression candidate, Object data);
   
+  Object visit(OFiltered candidate, Object data);
+  
   Object visit(OIn candidate, Object data);
   
   Object visit(OInferior candidate, Object data);

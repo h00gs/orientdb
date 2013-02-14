@@ -177,20 +177,20 @@ public class ODistributedSelectQueryExecutor extends OAbstractDistributedQueryEx
       }
 //      values.put(merger.getKey(), merger.getValue().mergeDistributedResult(dataToMerge));
     }
-    if (distinct != null) {
-      final List<OIdentifiable> resultToMerge = new ArrayList<OIdentifiable>(result);
-      result.clear();
-      for (OIdentifiable record : resultToMerge) {
-        Object ret = distinct.getValue()
-            .execute(record, null, new Object[] { ((ODocument) record).field(distinct.getKey()) }, null);
-        if (ret != null) {
-          final ODocument resultItem = new ODocument().setOrdered(true); // ASSIGN A TEMPORARY RID TO ALLOW PAGINATION IF ANY
-          ((ORecordId) resultItem.getIdentity()).clusterId = -2;
-          resultItem.field(distinct.getKey(), ret);
-          result.add(resultItem);
-        }
-      }
-    }
+//    if (distinct != null) {
+//      final List<OIdentifiable> resultToMerge = new ArrayList<OIdentifiable>(result);
+//      result.clear();
+//      for (OIdentifiable record : resultToMerge) {
+//        Object ret = distinct.getValue()
+//            .execute(record, null, new Object[] { ((ODocument) record).field(distinct.getKey()) }, null);
+//        if (ret != null) {
+//          final ODocument resultItem = new ODocument().setOrdered(true); // ASSIGN A TEMPORARY RID TO ALLOW PAGINATION IF ANY
+//          ((ORecordId) resultItem.getIdentity()).clusterId = -2;
+//          resultItem.field(distinct.getKey(), ret);
+//          result.add(resultItem);
+//        }
+//      }
+//    }
     if (anyFunctionAggregate && !result.isEmpty()) {
       // left only one result
       final OIdentifiable doc = result.get(0);

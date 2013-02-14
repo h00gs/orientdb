@@ -32,40 +32,19 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 public class OSQLFunctionFirst extends OSQLFunctionAbstract {
   public static final String NAME  = "first";
 
-  private Object             first = this;
-
   public OSQLFunctionFirst() {
     super(NAME, 1, 1);
   }
 
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-      final OCommandContext iContext) {
-    Object value = iParameters[0];
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = children.get(0).evaluate(context, candidate);
 
-    if (value instanceof OSQLFilterItem)
-      value = ((OSQLFilterItem) value).getValue(iCurrentRecord, iContext);
-
-    if (OMultiValue.isMultiValue(value))
+    if (OMultiValue.isMultiValue(value)){
       value = OMultiValue.getFirstValue(value);
-
-    if (first == this)
-      // ONLY THE FIRST TIME
-      first = value;
+    }
 
     return value;
-  }
-
-  public boolean aggregateResults() {
-    return false;
-    //return configuredParameters.length == 1;
-  }
-
-  public Object getResult() {
-    return first;
-  }
-
-  public boolean filterResult() {
-    return true;
   }
 
   public String getSyntax() {
@@ -73,12 +52,11 @@ public class OSQLFunctionFirst extends OSQLFunctionAbstract {
   }
 
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionFirst copy() {
+    final OSQLFunctionFirst fct = new OSQLFunctionFirst();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

@@ -16,17 +16,12 @@
 package com.orientechnologies.orient.core.sql.functions.coll;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
  * This operator can work as aggregate or inline. If only one argument is passed than aggregates, otherwise executes, and returns,
@@ -35,32 +30,34 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionDifference extends OSQLFunctionMultiValueAbstract<Set<Object>> {
+public class OSQLFunctionDifference extends OSQLFunctionAbstract {
   public static final String NAME = "difference";
 
-  private Set<Object>        rejected;
+  private Set<Object> result;
+  private Set<Object> rejected;
 
   public OSQLFunctionDifference() {
     super(NAME, 1, -1);
   }
 
-  @SuppressWarnings("unchecked")
-  public Object execute(OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters, OCommandContext iContext) {
-    if (iParameters[0] == null)
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    
+    Object value = children.get(0).evaluate(context, candidate);
+    if (value == null){
       return null;
+    }
 
-    Object value = iParameters[0];
-
-    if (iParameters.length == 1) {
+    if (children.size() == 1) {
       // AGGREGATION MODE (STATEFULL)
       if (context == null) {
-        context = new HashSet<Object>();
+        result = new HashSet<Object>();
         rejected = new HashSet<Object>();
       }
       if (value instanceof Collection<?>) {
-        addItemsToResult((Collection<Object>) value, context, rejected);
+        addItemsToResult((Collection<Object>) value, result, rejected);
       } else {
-        addItemToResult(value, context, rejected);
+        addItemToResult(value, result, rejected);
       }
 
       return null;
@@ -69,27 +66,16 @@ public class OSQLFunctionDifference extends OSQLFunctionMultiValueAbstract<Set<O
       final Set<Object> result = new HashSet<Object>((Collection<?>) value);
       final Set<Object> rejected = new HashSet<Object>();
 
-      for (Object iParameter : iParameters) {
+      for (OExpression exp : children) {
+        Object iParameter = children.get(0).evaluate(context, candidate);
         if (iParameter instanceof Collection<?>) {
-          addItemsToResult((Collection<Object>) value, context, rejected);
+          addItemsToResult((Collection<Object>) value, result, rejected);
         } else {
-          addItemToResult(value, context, rejected);
+          addItemToResult(value, result, rejected);
         }
       }
 
       return result;
-    }
-  }
-
-  @Override
-  public Set<Object> getResult() {
-    if (returnDistributedResult()) {
-      final Map<String, Object> doc = new HashMap<String, Object>();
-      doc.put("result", context);
-      doc.put("rejected", rejected);
-      return Collections.<Object> singleton(doc);
-    } else {
-      return super.getResult();
     }
   }
 
@@ -112,34 +98,12 @@ public class OSQLFunctionDifference extends OSQLFunctionMultiValueAbstract<Set<O
     return "Syntax error: difference(<field>*)";
   }
 
-  public Object mergeDistributedResult(List<Object> resultsToMerge) {
-    final Set<Object> result = new HashSet<Object>();
-    final Set<Object> rejected = new HashSet<Object>();
-    for (Object item : resultsToMerge) {
-      rejected.addAll(unwrap(item, "rejected"));
-    }
-    for (Object item : resultsToMerge) {
-      addItemsToResult(unwrap(item, "result"), result, rejected);
-    }
-    return result;
-  }
-
-  @SuppressWarnings("unchecked")
-  private Set<Object> unwrap(Object obj, String field) {
-    final Set<Object> objAsSet = (Set<Object>) obj;
-    final Map<String, Object> objAsMap = (Map<String, Object>) objAsSet.iterator().next();
-    final Set<Object> objAsField = (Set<Object>) objAsMap.get(field);
-    return objAsField;
-  }
-
   @Override
-  public OSQLFunction copy() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public OSQLFunctionDifference copy() {
+    final OSQLFunctionDifference fct = new OSQLFunctionDifference();
+    fct.setAlias(getAlias());
+    fct.getArguments().addAll(getArguments());
+    return fct;
   }
 
 }

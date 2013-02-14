@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.sql.model.OContextVariable;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
+import com.orientechnologies.orient.core.sql.model.OFiltered;
 import com.orientechnologies.orient.core.sql.model.OIn;
 import com.orientechnologies.orient.core.sql.model.OInferior;
 import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
@@ -299,5 +300,12 @@ public class CopyVisitor implements OExpressionVisitor {
             (OExpression)candidate.getTarget().accept(this,data),
             (OExpression)candidate.getLeft().accept(this,data),
             (OExpression)candidate.getRight().accept(this,data));
+  }
+  
+  @Override
+  public Object visit(OFiltered candidate, Object data) {
+    return new OFiltered(candidate.getAlias(), 
+            (OExpression)candidate.getSource().accept(this,data),
+            (OExpression)candidate.getFilter().accept(this,data));
   }
 }

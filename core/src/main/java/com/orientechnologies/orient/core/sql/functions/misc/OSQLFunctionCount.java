@@ -16,7 +16,7 @@
 package com.orientechnologies.orient.core.sql.functions.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.sql.functions.math.OSQLFunctionMathAbstract;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
  * Count the record that contains a field. Use * to indicate the record instead of the field. Uses the context to save the counter
@@ -25,7 +25,7 @@ import com.orientechnologies.orient.core.sql.functions.math.OSQLFunctionMathAbst
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionCount extends OSQLFunctionMathAbstract {
+public class OSQLFunctionCount extends OSQLFunctionAbstract {
   public static final String NAME  = "count";
 
   private long total = 0;

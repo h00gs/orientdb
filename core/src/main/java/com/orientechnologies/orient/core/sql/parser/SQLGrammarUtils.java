@@ -63,6 +63,7 @@ import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProvide
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.model.OBetween;
+import com.orientechnologies.orient.core.sql.model.OFiltered;
 import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
 import com.orientechnologies.orient.core.sql.model.OOperatorMinus;
 import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
@@ -285,7 +286,7 @@ public final class SQLGrammarUtils {
     }
   }
   
-  public static OCommandExecutor visit(OSQLParser.CommandContext candidate) throws OCommandSQLParsingException {
+  public static OCommandExecutor visit(CommandContext candidate) throws OCommandSQLParsingException {
     
     final OCommandExecutor command;
     final Object commandTree = candidate.getChild(0);
@@ -298,7 +299,7 @@ public final class SQLGrammarUtils {
     return command;
   }
     
-  private static OCommandCustom visit(OSQLParser.CommandUnknownedContext candidate) throws OCommandSQLParsingException {
+  private static OCommandCustom visit(CommandUnknownedContext candidate) throws OCommandSQLParsingException {
     //variables
     final List<Object> elements = new ArrayList<Object>();
     
@@ -386,6 +387,11 @@ public final class SQLGrammarUtils {
         // '(' exp ')'
         return (OExpression)visit(center);
       }
+    }else if(nbChild == 4){
+      // exp '[' filter ']'
+      final OExpression source = (OExpression)visit(candidate.getChild(0));
+      final OExpression filter = (OExpression)visit(candidate.getChild(2));
+      return new OFiltered(source, filter);
     }else{
       throw new OCommandSQLParsingException("Unexpected number of arguments");
     }
@@ -628,7 +634,7 @@ public final class SQLGrammarUtils {
     return elements;
   }
     
-  public static List<ORID> visit(OSQLParser.SourceContext candidate) throws OCommandSQLParsingException {
+  public static List<ORID> visit(SourceContext candidate) throws OCommandSQLParsingException {
     List<ORID> ids = new ArrayList<ORID>();
     if(candidate.orid() != null){
       //single identifier

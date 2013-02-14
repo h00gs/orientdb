@@ -16,6 +16,7 @@
 package com.orientechnologies.orient.core.sql.functions.math;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
@@ -25,7 +26,7 @@ import com.orientechnologies.orient.core.sql.model.OExpression;
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  * 
  */
-public class OSQLFunctionMin extends OSQLFunctionMathAbstract {
+public class OSQLFunctionMin extends OSQLFunctionAbstract {
   public static final String NAME = "min";
 
   private Comparable<Object> min;
