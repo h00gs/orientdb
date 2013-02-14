@@ -18,6 +18,7 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.query.OQueryHelper;
 
 /**
  *
@@ -25,8 +26,6 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
  */
 public class OLike extends OExpressionWithChildren{
   
-  private static final double EPS = 1E-12;
-
   public OLike(OExpression left, OExpression right) {
     this(null,left,right);
   }
@@ -57,50 +56,13 @@ public class OLike extends OExpressionWithChildren{
     final Object value1 = left.evaluate(context, candidate);
     final Object value2 = right.evaluate(context, candidate);
     
-    if (value1 == value2) {
-      // Includes the (value1 == null && value2 == null) case.
-      return true;
-    }
-    if (value1 == null || value2 == null) {
-      // No need to check for (value2 != null) or (value1 != null).
-      // If they were null, the previous check would have caugh them.
+    if(value1 == null || value2 == null){
       return false;
     }
-
-    //resolving for numbers
-    if (value1 instanceof Number && value2 instanceof Number) {
-      //test number case
-      return numberEqual((Number) value1, (Number) value2);
-    } else if (value1.equals(value2)) {
-      //test standard equal
-      //but classes are not the same, so will have to use the converters
-      //to ensure a proper compare
-      return true;
-    }
     
-    return false;
+    return OQueryHelper.like(String.valueOf(value1), String.valueOf(value2));    
   }
   
-  private static boolean numberEqual(final Number value1, final Number value2) {
-    final Number n1 = (Number) value1;
-    final Number n2 = (Number) value2;
-
-    if (   (n1 instanceof Float) || (n1 instanceof Double)
-        || (n2 instanceof Float) || (n2 instanceof Double)) {
-      final double d1 = n1.doubleValue();
-      final double d2 = n2.doubleValue();
-      if (Double.doubleToLongBits(d1) == Double.doubleToLongBits(d2)) {
-        return true;
-      }
-      if (Math.abs(d1 - d2) < EPS * Math.max(Math.abs(d1), Math.abs(d2))) {
-        return true;
-      }
-    } else {
-      return n1.longValue() == n2.longValue();
-    }
-    return false;
-  }
-
   @Override
   public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
     throw new UnsupportedOperationException("Not supported yet.");

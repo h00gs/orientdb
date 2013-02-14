@@ -25,30 +25,40 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterCondition;
+import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
- * EQUALS operator.
+ * INSTANCEOF operator.
  * 
  * @author Luca Garulli
  * 
  */
-public class OQueryOperatorInstanceof extends OQueryOperatorEqualityNotNulls {
+public class OSQLOperatorInstanceof extends OSQLOperator {
 
-	public OQueryOperatorInstanceof() {
-		super("INSTANCEOF", 5, false);
+  public static final String NAME = "INSTANCEOF";
+
+  public OSQLOperatorInstanceof() {
+    super(NAME);
+  }
+  
+  public OSQLOperatorInstanceof(OExpression left, OExpression right) {
+		super(NAME, left, right);
 	}
 
-	@Override
-	protected boolean evaluateExpression(final OIdentifiable iRecord, final OSQLFilterCondition iCondition, final Object iLeft,
-			final Object iRight, OCommandContext iContext) {
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
 
 		final OSchema schema = ODatabaseRecordThreadLocal.INSTANCE.get().getMetadata().getSchema();
 
-		final String baseClassName = iRight.toString();
+		final String baseClassName = String.valueOf(getRight().evaluate(context, candidate));
 		final OClass baseClass = schema.getClass(baseClassName);
-		if (baseClass == null)
+		if (baseClass == null){
 			throw new OCommandExecutionException("Class '" + baseClassName + "' is not defined in database schema");
-
+    }
+    
+    Object iLeft = getLeft().evaluate(context, candidate);
+    
 		OClass cls = null;
 		if (iLeft instanceof OIdentifiable) {
 			// GET THE RECORD'S CLASS
@@ -63,18 +73,11 @@ public class OQueryOperatorInstanceof extends OQueryOperatorEqualityNotNulls {
 		return cls != null ? cls.isSubClassOf(baseClass) : false;
 	}
 
-	@Override
-	public OIndexReuseType getIndexReuseType(final Object iLeft, final Object iRight) {
-		return OIndexReuseType.NO_INDEX;
-	}
-
-	@Override
-	public ORID getBeginRidRange(Object iLeft, Object iRight) {
-		return null;
-	}
-
-	@Override
-	public ORID getEndRidRange(Object iLeft, Object iRight) {
-		return null;
-	}
+  @Override
+  public OSQLOperatorInstanceof copy() {
+    final OSQLOperatorInstanceof cp = new OSQLOperatorInstanceof();
+    cp.getArguments().addAll(getArguments());
+    cp.setAlias(getAlias());
+    return cp;
+  }
 }

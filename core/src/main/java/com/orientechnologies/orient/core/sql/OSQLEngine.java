@@ -36,15 +36,13 @@ import com.orientechnologies.orient.core.sql.filter.OSQLFilter;
 import com.orientechnologies.orient.core.sql.filter.OSQLTarget;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionFactory;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorFactory;
+import com.orientechnologies.orient.core.sql.operator.OSQLOperatorFactory;
 
 public class OSQLEngine {
 
 	private static Set<OSQLFunctionFactory>					FUNCTION_FACTORIES	= null;
 	private static Set<OCommandExecutorSQLFactory>	EXECUTOR_FACTORIES	= null;
-	private static Set<OQueryOperatorFactory>				OPERATOR_FACTORIES	= null;
-	private static OQueryOperator[]									SORTED_OPERATORS		= null;
+	private static Set<OSQLOperatorFactory>				  OPERATOR_FACTORIES	= null;
 
 	protected static final OSQLEngine								INSTANCE						= new OSQLEngine();
 
@@ -53,75 +51,75 @@ public class OSQLEngine {
 	protected OSQLEngine() {
 	}
 
-	public synchronized OQueryOperator[] getRecordOperators() {
-		if (SORTED_OPERATORS != null) {
-			return SORTED_OPERATORS;
-		}
+//	public synchronized OQueryOperator[] getRecordOperators() {
+//		if (SORTED_OPERATORS != null) {
+//			return SORTED_OPERATORS;
+//		}
+//
+//		// sort operators, will happen only very few times since we cache the
+//		// result
+//		final Iterator<OQueryOperatorFactory> ite = getOperatorFactories();
+//		final List<OQueryOperator> operators = new ArrayList<OQueryOperator>();
+//		while (ite.hasNext()) {
+//			final OQueryOperatorFactory factory = ite.next();
+//			operators.addAll(factory.getOperators());
+//		}
+//
+//		final List<OQueryOperator> sorted = new ArrayList<OQueryOperator>();
+//		final Set<Pair> pairs = new LinkedHashSet<Pair>();
+//		for (final OQueryOperator ca : operators) {
+//			for (final OQueryOperator cb : operators) {
+//				if (ca != cb) {
+//					switch (ca.compare(cb)) {
+//					case BEFORE:
+//						pairs.add(new Pair(ca, cb));
+//						break;
+//					case AFTER:
+//						pairs.add(new Pair(cb, ca));
+//						break;
+//					}
+//					switch (cb.compare(ca)) {
+//					case BEFORE:
+//						pairs.add(new Pair(cb, ca));
+//						break;
+//					case AFTER:
+//						pairs.add(new Pair(ca, cb));
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		boolean added;
+//		do {
+//			added = false;
+//			scan: for (final Iterator<OQueryOperator> it = operators.iterator(); it.hasNext();) {
+//				final OQueryOperator candidate = it.next();
+//				for (final Pair pair : pairs) {
+//					if (pair.after == candidate) {
+//						continue scan;
+//					}
+//				}
+//				sorted.add(candidate);
+//				it.remove();
+//				for (final Iterator<Pair> itp = pairs.iterator(); itp.hasNext();) {
+//					if (itp.next().before == candidate) {
+//						itp.remove();
+//					}
+//				}
+//				added = true;
+//			}
+//		} while (added);
+//		if (!operators.isEmpty()) {
+//			throw new OException("Unvalid sorting. " + OCollections.toString(pairs));
+//		}
+//		SORTED_OPERATORS = sorted.toArray(new OQueryOperator[sorted.size()]);
+//		return SORTED_OPERATORS;
+//	}
 
-		// sort operators, will happen only very few times since we cache the
-		// result
-		final Iterator<OQueryOperatorFactory> ite = getOperatorFactories();
-		final List<OQueryOperator> operators = new ArrayList<OQueryOperator>();
-		while (ite.hasNext()) {
-			final OQueryOperatorFactory factory = ite.next();
-			operators.addAll(factory.getOperators());
-		}
-
-		final List<OQueryOperator> sorted = new ArrayList<OQueryOperator>();
-		final Set<Pair> pairs = new LinkedHashSet<Pair>();
-		for (final OQueryOperator ca : operators) {
-			for (final OQueryOperator cb : operators) {
-				if (ca != cb) {
-					switch (ca.compare(cb)) {
-					case BEFORE:
-						pairs.add(new Pair(ca, cb));
-						break;
-					case AFTER:
-						pairs.add(new Pair(cb, ca));
-						break;
-					}
-					switch (cb.compare(ca)) {
-					case BEFORE:
-						pairs.add(new Pair(cb, ca));
-						break;
-					case AFTER:
-						pairs.add(new Pair(ca, cb));
-						break;
-					}
-				}
-			}
-		}
-		boolean added;
-		do {
-			added = false;
-			scan: for (final Iterator<OQueryOperator> it = operators.iterator(); it.hasNext();) {
-				final OQueryOperator candidate = it.next();
-				for (final Pair pair : pairs) {
-					if (pair.after == candidate) {
-						continue scan;
-					}
-				}
-				sorted.add(candidate);
-				it.remove();
-				for (final Iterator<Pair> itp = pairs.iterator(); itp.hasNext();) {
-					if (itp.next().before == candidate) {
-						itp.remove();
-					}
-				}
-				added = true;
-			}
-		} while (added);
-		if (!operators.isEmpty()) {
-			throw new OException("Unvalid sorting. " + OCollections.toString(pairs));
-		}
-		SORTED_OPERATORS = sorted.toArray(new OQueryOperator[sorted.size()]);
-		return SORTED_OPERATORS;
-	}
-
-	public static void registerOperator(final OQueryOperator iOperator) {
-		ODynamicSQLElementFactory.OPERATORS.add(iOperator);
-		SORTED_OPERATORS = null; // clear cache
-	}
+//	public static void registerOperator(final OQueryOperator iOperator) {
+//		ODynamicSQLElementFactory.OPERATORS.add(iOperator);
+//		SORTED_OPERATORS = null; // clear cache
+//	}
 
 	public void registerFunction(final String iName, final OSQLFunction iFunction) {
 		ODynamicSQLElementFactory.FUNCTIONS.put(iName.toUpperCase(Locale.ENGLISH), iFunction);
@@ -168,23 +166,23 @@ public class OSQLEngine {
 		return FUNCTION_FACTORIES.iterator();
 	}
 
-	/**
-	 * @return Iterator of all operator factories
-	 */
-	public static synchronized Iterator<OQueryOperatorFactory> getOperatorFactories() {
-		if (OPERATOR_FACTORIES == null) {
-
-			final Iterator<OQueryOperatorFactory> ite = lookupProviderWithOrientClassLoader(OQueryOperatorFactory.class,
-					orientClassLoader);
-
-			final Set<OQueryOperatorFactory> factories = new HashSet<OQueryOperatorFactory>();
-			while (ite.hasNext()) {
-				factories.add(ite.next());
-			}
-			OPERATOR_FACTORIES = Collections.unmodifiableSet(factories);
-		}
-		return OPERATOR_FACTORIES.iterator();
-	}
+//	/**
+//	 * @return Iterator of all operator factories
+//	 */
+//	public static synchronized Iterator<OQueryOperatorFactory> getOperatorFactories() {
+//		if (OPERATOR_FACTORIES == null) {
+//
+//			final Iterator<OQueryOperatorFactory> ite = lookupProviderWithOrientClassLoader(OQueryOperatorFactory.class,
+//					orientClassLoader);
+//
+//			final Set<OQueryOperatorFactory> factories = new HashSet<OQueryOperatorFactory>();
+//			while (ite.hasNext()) {
+//				factories.add(ite.next());
+//			}
+//			OPERATOR_FACTORIES = Collections.unmodifiableSet(factories);
+//		}
+//		return OPERATOR_FACTORIES.iterator();
+//	}
 
 	/**
 	 * @return Iterator of all command factories
@@ -287,40 +285,6 @@ public class OSQLEngine {
 
 	public static OSQLEngine getInstance() {
 		return INSTANCE;
-	}
-
-	/**
-	 * internal use only, to sort operators.
-	 */
-	private static final class Pair {
-
-		final OQueryOperator	before;
-		final OQueryOperator	after;
-
-		public Pair(final OQueryOperator before, final OQueryOperator after) {
-			this.before = before;
-			this.after = after;
-		}
-
-		@Override
-		public boolean equals(final Object obj) {
-			if (obj instanceof Pair) {
-				final Pair that = (Pair) obj;
-				return before == that.before && after == that.after;
-			}
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			return System.identityHashCode(before) + 31 * System.identityHashCode(after);
-		}
-
-		@Override
-		public String toString() {
-			return before + " > " + after;
-		}
-
 	}
 
 }

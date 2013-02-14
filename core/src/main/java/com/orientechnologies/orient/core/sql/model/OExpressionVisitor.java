@@ -18,7 +18,7 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
+import com.orientechnologies.orient.core.sql.operator.OSQLOperator;
 
 /**
  *
@@ -88,7 +88,7 @@ public interface OExpressionVisitor {
   
   Object visit(OSQLMethod candidate, Object data);
           
-  Object visit(OQueryOperator candidate, Object data);
+  Object visit(OSQLOperator candidate, Object data);
   
   Object visitInclude(OExpression candidate, Object data);
   

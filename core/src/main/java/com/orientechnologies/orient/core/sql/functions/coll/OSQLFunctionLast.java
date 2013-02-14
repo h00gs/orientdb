@@ -17,10 +17,6 @@ package com.orientechnologies.orient.core.sql.functions.coll;
 
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.filter.OSQLFilterItem;
-import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 
 /**
@@ -31,40 +27,23 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
  */
 public class OSQLFunctionLast extends OSQLFunctionAbstract {
   public static final String NAME = "last";
-  private Object             last;
+  private Object last;
 
   public OSQLFunctionLast() {
     super(NAME, 1, 1);
   }
 
-  public Object execute(final OIdentifiable iCurrentRecord, ODocument iCurrentResult, final Object[] iParameters,
-      final OCommandContext iContext) {
-    Object value = iParameters[0];
+  @Override
+  public Object evaluate(OCommandContext context, Object candidate) {
+    Object value = children.get(0).evaluate(context, candidate);
 
-    if (value instanceof OSQLFilterItem)
-      value = ((OSQLFilterItem) value).getValue(iCurrentRecord, iContext);
-
-    if (OMultiValue.isMultiValue(value))
+    if (OMultiValue.isMultiValue(value)){
       value = OMultiValue.getLastValue(value);
+    }
 
     last = value;
-
     return value;
   }
-//
-//  public boolean aggregateResults() {
-//    return configuredParameters.length == 1;
-//  }
-//
-//  @Override
-//  public Object getResult() {
-//    return last;
-//  }
-//
-//  @Override
-//  public boolean filterResult() {
-//    return true;
-//  }
 
   public String getSyntax() {
     return "Syntax error: last(<field>)";
@@ -78,8 +57,4 @@ public class OSQLFunctionLast extends OSQLFunctionAbstract {
     return fct;
   }
 
-  @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 }

@@ -48,7 +48,7 @@ import com.orientechnologies.orient.core.sql.model.OPath;
 import com.orientechnologies.orient.core.sql.model.OSuperior;
 import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
+import com.orientechnologies.orient.core.sql.operator.OSQLOperator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -109,7 +109,7 @@ public class CopyVisitor implements OExpressionVisitor {
     for(int i=0;i<args.size();i++){
       args.set(i, (OExpression)args.get(i).accept(this, data));
     }
-    OSQLFunction copy = candidate.copy();
+    final OSQLFunction copy = candidate.copy();
     copy.getArguments().clear();
     copy.getArguments().addAll(args);
     return copy;
@@ -123,21 +123,22 @@ public class CopyVisitor implements OExpressionVisitor {
     for(int i=0;i<args.size();i++){
       args.set(i, (OExpression)args.get(i).accept(this, data));
     }
-    OSQLMethod copy = candidate.copy();
+    final OSQLMethod copy = candidate.copy();
     copy.getArguments().clear();
     copy.getArguments().addAll(args);
     return copy;
   }
   
   @Override
-  public Object visit(OQueryOperator candidate, Object data) {
-    throw new UnsupportedOperationException("Unknowned expression :"+candidate.getClass());
-//    final List<OExpression> args = candidate.getArguments();
-//    for(int i=0;i<args.size();i++){
-//      args.set(i, (OExpression)args.get(i).accept(this, data));
-//    }
-//    OOperator copy = new OOperator(candidate.getName(), candidate.getAlias(), args);
-//    return copy;
+  public Object visit(OSQLOperator candidate, Object data) {
+    final List<OExpression> args = new ArrayList<OExpression>(candidate.getArguments());
+    for(int i=0;i<args.size();i++){
+      args.set(i, (OExpression)args.get(i).accept(this, data));
+    }
+    final OSQLOperator copy = candidate.copy();
+    copy.getArguments().clear();
+    copy.getArguments().addAll(args);
+    return copy;
   }
 
   @Override

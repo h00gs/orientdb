@@ -15,18 +15,31 @@
  */
 package com.orientechnologies.orient.core.sql.operator;
 
+import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import java.util.Set;
 
 /**
- * Factory to register new OqueryOperators.
+ * Factory to register new OSQLOperator.
  * 
  * @author Johann Sorel (Geomatys)
  */
-public interface OQueryOperatorFactory {
+public interface OSQLOperatorFactory {
     
-    /**
-     * @return set of operators
-     */
-    Set<OQueryOperator> getOperators();
+  boolean hasOperator(String iName);
+
+  /**
+   * @return Set of supported function names of this factory
+   */
+  Set<String> getOperatorNames();
+
+  /**
+   * Create operator for the given name. returned operator may be a new instance each time or a constant.
+   * 
+   * @param name
+   * @return OSQLOperator : created operator
+   * @throws OCommandExecutionException
+   *           : when operator creation fail
+   */
+  OSQLOperator createOperator(String name) throws OCommandExecutionException;
     
 }

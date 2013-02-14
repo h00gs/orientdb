@@ -6,12 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorContains;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorContainsKey;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorContainsValue;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorEquals;
-
+import com.orientechnologies.orient.core.sql.operator.OSQLOperator;
 /**
  * Presents query subset in form of field1 = "field1 value" AND field2 = "field2 value" ... AND fieldN anyOpetator "fieldN value"
  * 
@@ -25,11 +20,11 @@ import com.orientechnologies.orient.core.sql.operator.OQueryOperatorEquals;
  */
 public class OIndexSearchResult {
   final Map<String, Object>            fieldValuePairs = new HashMap<String, Object>(8);
-  final OQueryOperator                 lastOperator;
+  final OSQLOperator                 lastOperator;
   final OSQLFilterItemField.FieldChain lastField;
   final Object                         lastValue;
 
-  OIndexSearchResult(final OQueryOperator lastOperator, final OSQLFilterItemField.FieldChain field, final Object value) {
+  OIndexSearchResult(final OSQLOperator lastOperator, final OSQLFilterItemField.FieldChain field, final Object value) {
     this.lastOperator = lastOperator;
     lastField = field;
     lastValue = value;
@@ -44,22 +39,23 @@ public class OIndexSearchResult {
    * @return New instance that presents merged query.
    */
   OIndexSearchResult merge(final OIndexSearchResult searchResult) {
-    final OQueryOperator operator;
-    final OIndexSearchResult result;
-
-    if (searchResult.lastOperator instanceof OQueryOperatorEquals) {
-      result = new OIndexSearchResult(this.lastOperator, lastField, lastValue);
-      result.fieldValuePairs.putAll(searchResult.fieldValuePairs);
-      result.fieldValuePairs.putAll(fieldValuePairs);
-      result.fieldValuePairs.put(searchResult.lastField.getItemName(0), searchResult.lastValue);
-    } else {
-      operator = searchResult.lastOperator;
-      result = new OIndexSearchResult(operator, searchResult.lastField, searchResult.lastValue);
-      result.fieldValuePairs.putAll(searchResult.fieldValuePairs);
-      result.fieldValuePairs.putAll(fieldValuePairs);
-      result.fieldValuePairs.put(lastField.getItemName(0), lastValue);
-    }
-    return result;
+    throw new UnsupportedOperationException("TODO select query, to be removed.");
+//    final OSQLOperator operator;
+//    final OIndexSearchResult result;
+//
+//    if (searchResult.lastOperator instanceof OQueryOperatorEquals) {
+//      result = new OIndexSearchResult(this.lastOperator, lastField, lastValue);
+//      result.fieldValuePairs.putAll(searchResult.fieldValuePairs);
+//      result.fieldValuePairs.putAll(fieldValuePairs);
+//      result.fieldValuePairs.put(searchResult.lastField.getItemName(0), searchResult.lastValue);
+//    } else {
+//      operator = searchResult.lastOperator;
+//      result = new OIndexSearchResult(operator, searchResult.lastField, searchResult.lastValue);
+//      result.fieldValuePairs.putAll(searchResult.fieldValuePairs);
+//      result.fieldValuePairs.putAll(fieldValuePairs);
+//      result.fieldValuePairs.put(lastField.getItemName(0), lastValue);
+//    }
+//    return result;
   }
 
   /**
@@ -85,8 +81,9 @@ public class OIndexSearchResult {
     return fieldValuePairs.size() + 1;
   }
 
-  public static boolean isIndexEqualityOperator(OQueryOperator queryOperator) {
-    return queryOperator instanceof OQueryOperatorEquals || queryOperator instanceof OQueryOperatorContains
-        || queryOperator instanceof OQueryOperatorContainsKey || queryOperator instanceof OQueryOperatorContainsValue;
+  public static boolean isIndexEqualityOperator(OSQLOperator queryOperator) {
+    throw new UnsupportedOperationException("TODO operator api, to be removed.");
+//    return queryOperator instanceof OQueryOperatorEquals || queryOperator instanceof OQueryOperatorContains
+//        || queryOperator instanceof OQueryOperatorContainsKey || queryOperator instanceof OQueryOperatorContainsValue;
   }
 }

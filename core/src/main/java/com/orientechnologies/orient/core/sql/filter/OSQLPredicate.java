@@ -36,8 +36,6 @@ import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSelect;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.OSQLEngine;
 import com.orientechnologies.orient.core.sql.OSQLHelper;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorNot;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 
 /**
@@ -125,30 +123,32 @@ public class OSQLPredicate extends OBaseParser implements OCommandPredicate {
     parserSetCurrentPosition(oldPosition);
     OSQLFilterCondition currentCondition = extractCondition();
 
-    // CHECK IF THERE IS ANOTHER CONDITION ON RIGHT
-    while (parserSkipWhiteSpaces()) {
-
-      if (!parserIsEnded() && parserGetCurrentChar() == ')')
-        return currentCondition;
-
-      final OQueryOperator nextOperator = extractConditionOperator();
-      if (nextOperator == null)
-        return currentCondition;
-
-      if (nextOperator.precedence > currentCondition.getOperator().precedence) {
-        // SWAP ITEMS
-        final OSQLFilterCondition subCondition = new OSQLFilterCondition(currentCondition.right, nextOperator);
-        currentCondition.right = subCondition;
-        subCondition.right = extractConditionItem(false, 1);
-      } else {
-        final OSQLFilterCondition parentCondition = new OSQLFilterCondition(currentCondition, nextOperator);
-        parentCondition.right = extractConditions(parentCondition);
-        currentCondition = parentCondition;
-      }
-    }
-
-    // END OF TEXT
-    return currentCondition;
+    throw new UnsupportedOperationException("TODO obsolete model api, to be removed.");
+//    
+//    // CHECK IF THERE IS ANOTHER CONDITION ON RIGHT
+//    while (parserSkipWhiteSpaces()) {
+//
+//      if (!parserIsEnded() && parserGetCurrentChar() == ')')
+//        return currentCondition;
+//
+//      final OQueryOperator nextOperator = extractConditionOperator();
+//      if (nextOperator == null)
+//        return currentCondition;
+//
+//      if (nextOperator.precedence > currentCondition.getOperator().precedence) {
+//        // SWAP ITEMS
+//        final OSQLFilterCondition subCondition = new OSQLFilterCondition(currentCondition.right, nextOperator);
+//        currentCondition.right = subCondition;
+//        subCondition.right = extractConditionItem(false, 1);
+//      } else {
+//        final OSQLFilterCondition parentCondition = new OSQLFilterCondition(currentCondition, nextOperator);
+//        parentCondition.right = extractConditions(parentCondition);
+//        currentCondition = parentCondition;
+//      }
+//    }
+//
+//    // END OF TEXT
+//    return currentCondition;
   }
 
   protected OSQLFilterCondition extractCondition() {
@@ -162,25 +162,26 @@ public class OSQLPredicate extends OBaseParser implements OCommandPredicate {
     if (left != null && checkForEnd(left.toString()))
       return null;
 
-    OQueryOperator oper;
-    final Object right;
-
-    if (left instanceof OQueryOperator && ((OQueryOperator) left).isUnary()) {
-      oper = (OQueryOperator) left;
-      left = extractConditionItem(false, 1);
-      right = null;
-    } else {
-      oper = extractConditionOperator();
-
-      if (oper instanceof OQueryOperatorNot)
-        // SPECIAL CASE: READ NEXT OPERATOR
-        oper = new OQueryOperatorNot(extractConditionOperator());
-
-      right = oper != null ? extractConditionItem(false, oper.expectedRightWords) : null;
-    }
-
-    // CREATE THE CONDITION OBJECT
-    return new OSQLFilterCondition(left, oper, right);
+    throw new UnsupportedOperationException("TODO obsolete model api, to be removed.");
+//    OQueryOperator oper;
+//    final Object right;
+//
+//    if (left instanceof OQueryOperator && ((OQueryOperator) left).isUnary()) {
+//      oper = (OQueryOperator) left;
+//      left = extractConditionItem(false, 1);
+//      right = null;
+//    } else {
+//      oper = extractConditionOperator();
+//
+//      if (oper instanceof OQueryOperatorNot)
+//        // SPECIAL CASE: READ NEXT OPERATOR
+//        oper = new OQueryOperatorNot(extractConditionOperator());
+//
+//      right = oper != null ? extractConditionItem(false, oper.expectedRightWords) : null;
+//    }
+//
+//    // CREATE THE CONDITION OBJECT
+//    return new OSQLFilterCondition(left, oper, right);
   }
 
   protected boolean checkForEnd(final String iWord) {
@@ -193,148 +194,150 @@ public class OSQLPredicate extends OBaseParser implements OCommandPredicate {
     return false;
   }
 
-  private OQueryOperator extractConditionOperator() {
-    if (!parserSkipWhiteSpaces())
-      // END OF PARSING: JUST RETURN
-      return null;
-
-    if (parserGetCurrentChar() == ')')
-      // FOUND ')': JUST RETURN
-      return null;
-
-    final OQueryOperator[] operators = OSQLEngine.getInstance().getRecordOperators();
-    final String[] candidateOperators = new String[operators.length];
-    for (int i = 0; i < candidateOperators.length; ++i)
-      candidateOperators[i] = operators[i].keyword;
-
-    final int operatorPos = parserNextChars(true, false, candidateOperators);
-
-    if (operatorPos == -1) {
-      parserGoBack();
-      return null;
-    }
-
-    final OQueryOperator op = operators[operatorPos];
-    if (op.expectsParameters) {
-      // PARSE PARAMETERS IF ANY
-      parserGoBack();
-
-      parserNextWord(true, " 0123456789'\"");
-      final String word = parserGetLastWord();
-
-      final List<String> params = new ArrayList<String>();
-      // CHECK FOR PARAMETERS
-      if (word.length() > op.keyword.length() && word.charAt(op.keyword.length()) == OStringSerializerHelper.EMBEDDED_BEGIN) {
-        int paramBeginPos = parserGetCurrentPosition() - (word.length() - op.keyword.length());
-        parserSetCurrentPosition(OStringSerializerHelper.getParameters(parserText, paramBeginPos, -1, params));
-      } else if (!word.equals(op.keyword))
-        throw new OQueryParsingException("Malformed usage of operator '" + op.toString() + "'. Parsed operator is: " + word);
-
-      try {
-        // CONFIGURE COULD INSTANTIATE A NEW OBJECT: ACT AS A FACTORY
-        return op.configure(params);
-      } catch (Exception e) {
-        throw new OQueryParsingException("Syntax error using the operator '" + op.toString() + "'. Syntax is: " + op.getSyntax());
-      }
-    } else
-      parserMoveCurrentPosition(+1);
-    return op;
-  }
+//  private OQueryOperator extractConditionOperator() {
+//    if (!parserSkipWhiteSpaces())
+//      // END OF PARSING: JUST RETURN
+//      return null;
+//
+//    if (parserGetCurrentChar() == ')')
+//      // FOUND ')': JUST RETURN
+//      return null;
+//
+//    final OQueryOperator[] operators = OSQLEngine.getInstance().getRecordOperators();
+//    final String[] candidateOperators = new String[operators.length];
+//    for (int i = 0; i < candidateOperators.length; ++i)
+//      candidateOperators[i] = operators[i].keyword;
+//
+//    final int operatorPos = parserNextChars(true, false, candidateOperators);
+//
+//    if (operatorPos == -1) {
+//      parserGoBack();
+//      return null;
+//    }
+//
+//    final OQueryOperator op = operators[operatorPos];
+//    if (op.expectsParameters) {
+//      // PARSE PARAMETERS IF ANY
+//      parserGoBack();
+//
+//      parserNextWord(true, " 0123456789'\"");
+//      final String word = parserGetLastWord();
+//
+//      final List<String> params = new ArrayList<String>();
+//      // CHECK FOR PARAMETERS
+//      if (word.length() > op.keyword.length() && word.charAt(op.keyword.length()) == OStringSerializerHelper.EMBEDDED_BEGIN) {
+//        int paramBeginPos = parserGetCurrentPosition() - (word.length() - op.keyword.length());
+//        parserSetCurrentPosition(OStringSerializerHelper.getParameters(parserText, paramBeginPos, -1, params));
+//      } else if (!word.equals(op.keyword))
+//        throw new OQueryParsingException("Malformed usage of operator '" + op.toString() + "'. Parsed operator is: " + word);
+//
+//      try {
+//        // CONFIGURE COULD INSTANTIATE A NEW OBJECT: ACT AS A FACTORY
+//        return op.configure(params);
+//      } catch (Exception e) {
+//        throw new OQueryParsingException("Syntax error using the operator '" + op.toString() + "'. Syntax is: " + op.getSyntax());
+//      }
+//    } else
+//      parserMoveCurrentPosition(+1);
+//    return op;
+//  }
 
   private Object extractConditionItem(final boolean iAllowOperator, final int iExpectedWords) {
-    final Object[] result = new Object[iExpectedWords];
-
-    for (int i = 0; i < iExpectedWords; ++i) {
-      parserNextWord(false, " =><,\r\n");
-      String word = parserGetLastWord();
-
-      if (word.length() == 0)
-        break;
-
-      final String uWord = word.toUpperCase();
-
-      final int lastPosition = parserIsEnded() ? parserText.length() : parserGetCurrentPosition();
-
-      if (word.length() > 0 && word.charAt(0) == OStringSerializerHelper.EMBEDDED_BEGIN) {
-        braces++;
-
-        // SUB-CONDITION
-        parserSetCurrentPosition(lastPosition - word.length() + 1);
-
-        final Object subCondition = extractConditions(null);
-
-        if (!parserSkipWhiteSpaces() || parserGetCurrentChar() == ')') {
-          braces--;
-          parserMoveCurrentPosition(+1);
-        }
-
-        result[i] = subCondition;
-      } else if (word.charAt(0) == OStringSerializerHelper.COLLECTION_BEGIN) {
-        // COLLECTION OF ELEMENTS
-        parserSetCurrentPosition(lastPosition - word.length());
-
-        final List<String> stringItems = new ArrayList<String>();
-        parserSetCurrentPosition(OStringSerializerHelper.getCollection(parserText, parserGetCurrentPosition(), stringItems));
-
-        // if (stringItems.get(0).charAt(0) == OStringSerializerHelper.COLLECTION_BEGIN) {
-        // // TODO: is this needed anymore?
-        // final List<List<Object>> coll = new ArrayList<List<Object>>();
-        // for (String stringItem : stringItems) {
-        // final List<String> stringSubItems = new ArrayList<String>();
-        // OStringSerializerHelper.getCollection(stringItem, 0, stringSubItems);
-        //
-        // coll.add(convertCollectionItems(stringSubItems));
-        // }
-        //
-        // result[i] = coll;
-        //
-        // } else
-        result[i] = convertCollectionItems(stringItems);
-
-        parserMoveCurrentPosition(+1);
-
-      } else if (uWord.startsWith(OSQLFilterItemFieldAll.NAME + OStringSerializerHelper.EMBEDDED_BEGIN)) {
-
-        result[i] = new OSQLFilterItemFieldAll(this, word);
-
-      } else if (uWord.startsWith(OSQLFilterItemFieldAny.NAME + OStringSerializerHelper.EMBEDDED_BEGIN)) {
-
-        result[i] = new OSQLFilterItemFieldAny(this, word);
-
-      } else {
-
-        if (uWord.equals("NOT")) {
-          if (iAllowOperator)
-            return new OQueryOperatorNot();
-          else {
-            // GET THE NEXT VALUE
-            parserNextWord(false, " )=><,\r\n");
-            final String nextWord = parserGetLastWord();
-
-            if (nextWord.length() > 0) {
-              word += " " + nextWord;
-
-              if (word.endsWith(")"))
-                word = word.substring(0, word.length() - 1);
-            }
-          }
-        }
-
-        while (word.endsWith(")")) {
-          final int openParenthesis = word.indexOf('(');
-          if (openParenthesis == -1) {
-            // DISCARD END PARENTHESIS
-            word = word.substring(0, word.length() - 1);
-            parserMoveCurrentPosition(-1);
-          } else
-            break;
-        }
-
-        result[i] = OSQLHelper.parseValue(this, this, word, context);
-      }
-    }
-
-    return iExpectedWords == 1 ? result[0] : result;
+    throw new UnsupportedOperationException("TODO obsolete model api, to be removed.");
+    
+//    final Object[] result = new Object[iExpectedWords];
+//
+//    for (int i = 0; i < iExpectedWords; ++i) {
+//      parserNextWord(false, " =><,\r\n");
+//      String word = parserGetLastWord();
+//
+//      if (word.length() == 0)
+//        break;
+//
+//      final String uWord = word.toUpperCase();
+//
+//      final int lastPosition = parserIsEnded() ? parserText.length() : parserGetCurrentPosition();
+//
+//      if (word.length() > 0 && word.charAt(0) == OStringSerializerHelper.EMBEDDED_BEGIN) {
+//        braces++;
+//
+//        // SUB-CONDITION
+//        parserSetCurrentPosition(lastPosition - word.length() + 1);
+//
+//        final Object subCondition = extractConditions(null);
+//
+//        if (!parserSkipWhiteSpaces() || parserGetCurrentChar() == ')') {
+//          braces--;
+//          parserMoveCurrentPosition(+1);
+//        }
+//
+//        result[i] = subCondition;
+//      } else if (word.charAt(0) == OStringSerializerHelper.COLLECTION_BEGIN) {
+//        // COLLECTION OF ELEMENTS
+//        parserSetCurrentPosition(lastPosition - word.length());
+//
+//        final List<String> stringItems = new ArrayList<String>();
+//        parserSetCurrentPosition(OStringSerializerHelper.getCollection(parserText, parserGetCurrentPosition(), stringItems));
+//
+//        // if (stringItems.get(0).charAt(0) == OStringSerializerHelper.COLLECTION_BEGIN) {
+//        // // TODO: is this needed anymore?
+//        // final List<List<Object>> coll = new ArrayList<List<Object>>();
+//        // for (String stringItem : stringItems) {
+//        // final List<String> stringSubItems = new ArrayList<String>();
+//        // OStringSerializerHelper.getCollection(stringItem, 0, stringSubItems);
+//        //
+//        // coll.add(convertCollectionItems(stringSubItems));
+//        // }
+//        //
+//        // result[i] = coll;
+//        //
+//        // } else
+//        result[i] = convertCollectionItems(stringItems);
+//
+//        parserMoveCurrentPosition(+1);
+//
+//      } else if (uWord.startsWith(OSQLFilterItemFieldAll.NAME + OStringSerializerHelper.EMBEDDED_BEGIN)) {
+//
+//        result[i] = new OSQLFilterItemFieldAll(this, word);
+//
+//      } else if (uWord.startsWith(OSQLFilterItemFieldAny.NAME + OStringSerializerHelper.EMBEDDED_BEGIN)) {
+//
+//        result[i] = new OSQLFilterItemFieldAny(this, word);
+//
+//      } else {
+//
+//        if (uWord.equals("NOT")) {
+//          if (iAllowOperator)
+//            return new OQueryOperatorNot();
+//          else {
+//            // GET THE NEXT VALUE
+//            parserNextWord(false, " )=><,\r\n");
+//            final String nextWord = parserGetLastWord();
+//
+//            if (nextWord.length() > 0) {
+//              word += " " + nextWord;
+//
+//              if (word.endsWith(")"))
+//                word = word.substring(0, word.length() - 1);
+//            }
+//          }
+//        }
+//
+//        while (word.endsWith(")")) {
+//          final int openParenthesis = word.indexOf('(');
+//          if (openParenthesis == -1) {
+//            // DISCARD END PARENTHESIS
+//            word = word.substring(0, word.length() - 1);
+//            parserMoveCurrentPosition(-1);
+//          } else
+//            break;
+//        }
+//
+//        result[i] = OSQLHelper.parseValue(this, this, word, context);
+//      }
+//    }
+//
+//    return iExpectedWords == 1 ? result[0] : result;
   }
 
   private List<Object> convertCollectionItems(List<String> stringItems) {

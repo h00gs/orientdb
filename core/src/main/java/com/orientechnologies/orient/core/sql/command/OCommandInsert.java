@@ -40,7 +40,6 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSetAware;
 import com.orientechnologies.orient.core.sql.OCommandParameters;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
-import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
@@ -203,31 +202,33 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   }
   
   private Object getIndexKeyValue(OCommandParameters commandParameters, Map<String, Object> candidate) {
-    final Object parsedKey = candidate.get(KEYWORD_KEY);
-    if (parsedKey instanceof OSQLFilterItemField) {
-      final OSQLFilterItemField f = (OSQLFilterItemField) parsedKey;
-      if (f.getRoot().equals("?"))
-        // POSITIONAL PARAMETER
-        return commandParameters.getNext();
-      else if (f.getRoot().startsWith(":"))
-        // NAMED PARAMETER
-        return commandParameters.getByName(f.getRoot().substring(1));
-    }
-    return parsedKey;
+    return null;
+//    final Object parsedKey = candidate.get(KEYWORD_KEY);
+//    if (parsedKey instanceof OSQLFilterItemField) {
+//      final OSQLFilterItemField f = (OSQLFilterItemField) parsedKey;
+//      if (f.getRoot().equals("?"))
+//        // POSITIONAL PARAMETER
+//        return commandParameters.getNext();
+//      else if (f.getRoot().startsWith(":"))
+//        // NAMED PARAMETER
+//        return commandParameters.getByName(f.getRoot().substring(1));
+//    }
+//    return parsedKey;
   }
 
   private OIdentifiable getIndexValue(OCommandParameters commandParameters, Map<String, Object> candidate) {
-    final Object parsedRid = candidate.get(KEYWORD_RID);
-    if (parsedRid instanceof OSQLFilterItemField) {
-      final OSQLFilterItemField f = (OSQLFilterItemField) parsedRid;
-      if (f.getRoot().equals("?"))
-        // POSITIONAL PARAMETER
-        return (OIdentifiable) commandParameters.getNext();
-      else if (f.getRoot().startsWith(":"))
-        // NAMED PARAMETER
-        return (OIdentifiable) commandParameters.getByName(f.getRoot().substring(1));
-    }
-    return (OIdentifiable) parsedRid;
+    return null;
+//    final Object parsedRid = candidate.get(KEYWORD_RID);
+//    if (parsedRid instanceof OSQLFilterItemField) {
+//      final OSQLFilterItemField f = (OSQLFilterItemField) parsedRid;
+//      if (f.getRoot().equals("?"))
+//        // POSITIONAL PARAMETER
+//        return (OIdentifiable) commandParameters.getNext();
+//      else if (f.getRoot().startsWith(":"))
+//        // NAMED PARAMETER
+//        return (OIdentifiable) commandParameters.getByName(f.getRoot().substring(1));
+//    }
+//    return (OIdentifiable) parsedRid;
   }
 
   public boolean isReplicated() {
