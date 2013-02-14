@@ -265,6 +265,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       for(OSQLParser.ReferenceContext wc : candidate.insertFields().reference()){
         fields.add(visitAsString(wc));
       }
+      this.fields = fields.toArray(new String[0]);
       visit(candidate.insertSource());
     }else{
       //SET operations
@@ -275,16 +276,14 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
         final OSQLParser.ExpressionContext exp = entry.expression();
         values.put(att,SQLGrammarUtils.visit(exp));
       }
+      this.fields = fields.toArray(new String[0]);
       final List<Map<String,Object>> entries = new ArrayList<Map<String,Object>>();
       entries.add(values);
       this.newRecords = entries;
     }
     
-    
-    
     this.target = target;
     this.clusterName = cluster;
-    this.fields = fields.toArray(new String[0]);
   }
   
   private void visit(OSQLParser.InsertSourceContext candidate) throws OCommandSQLParsingException{  

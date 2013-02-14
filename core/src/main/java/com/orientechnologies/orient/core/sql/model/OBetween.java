@@ -23,33 +23,49 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OInferior extends OExpressionWithChildren{
+public class OBetween extends OExpressionWithChildren{
   
-  public OInferior(OExpression left, OExpression right) {
-    this(null,left,right);
+  public OBetween(OExpression target, OExpression left, OExpression right) {
+    this(null,target,left,right);
   }
 
-  public OInferior(String alias, OExpression left, OExpression right) {
-    super(alias,left,right);
+  public OBetween(String alias, OExpression target, OExpression left, OExpression right) {
+    super(alias,target,left,right);
   }
   
-  public OExpression getLeft(){
+  public OExpression getTarget(){
     return children.get(0);
   }
   
-  public OExpression getRight(){
+  public OExpression getLeft(){
     return children.get(1);
+  }
+  
+  public OExpression getRight(){
+    return children.get(2);
   }
   
   @Override
   protected String thisToString() {
-    return "(<)";
+    return "(Between)";
   }
 
   @Override
   public Object evaluate(OCommandContext context, Object candidate) {
-    final Integer v = compare(getLeft(),getRight(),context,candidate);
-    return (v == null) ? false : (v < 0) ;
+    final Object objTarget = getTarget().evaluate(context, candidate);
+    final Object objLeft = getLeft().evaluate(context, candidate);
+    final Object objRight = getRight().evaluate(context, candidate);
+    
+    final Integer minRange = OInferior.compare(objTarget,objLeft);
+    if(minRange == null || minRange < 0){
+      return false;
+    }
+    final Integer maxRange = OInferior.compare(objTarget,objRight);
+    if(maxRange == null || maxRange > 0){
+      return false;
+    }
+    
+    return true ;
   }
 
   @Override
@@ -73,43 +89,9 @@ public class OInferior extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
-  /**
-   * Generic compare method
-   *
-   * @param object
-   * @return Integer or null
-   */
-  static Integer compare(OExpression left, OExpression right, OCommandContext context, Object candidate) {
-    final Object objleft = left.evaluate(context, candidate);
-    if (!(objleft instanceof Comparable)) {
-      return null;
-    }
-    final Object objright = right.evaluate(context, candidate);
-    return compare(objleft, objright);
-  }
-  
-  static Integer compare(Object objleft, Object objright) {
-
-    if (!(objleft instanceof Comparable)) {
-      return null;
-    }
-
-    if (objright == null) {
-      return null;
-    }
-    
-    if(objleft instanceof Number && objright instanceof Number){
-      final Double dl = (Double)((Number)objleft).doubleValue();
-      final Double dr = (Double)((Number)objright).doubleValue();
-      return dl.compareTo(dr);
-    }
-    
-    return ((Comparable) objleft).compareTo(objright);
-  }
-
   @Override
-  public OInferior copy() {
-    return new OInferior(alias, getLeft(),getRight());
+  public OBetween copy() {
+    return new OBetween(alias, getTarget(),getLeft(),getRight());
   }
   
 }

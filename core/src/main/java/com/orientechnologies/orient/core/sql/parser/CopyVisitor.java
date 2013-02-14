@@ -19,6 +19,7 @@ package com.orientechnologies.orient.core.sql.parser;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OAnd;
+import com.orientechnologies.orient.core.sql.model.OBetween;
 import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OContextVariable;
 import com.orientechnologies.orient.core.sql.model.OEquals;
@@ -291,5 +292,12 @@ public class CopyVisitor implements OExpressionVisitor {
             (OExpression)candidate.getLeft().accept(this,data), 
             (OExpression)candidate.getRight().accept(this,data));
   }
-
+  
+  @Override
+  public Object visit(OBetween candidate, Object data) {
+    return new OBetween(candidate.getAlias(), 
+            (OExpression)candidate.getTarget().accept(this,data),
+            (OExpression)candidate.getLeft().accept(this,data),
+            (OExpression)candidate.getRight().accept(this,data));
+  }
 }

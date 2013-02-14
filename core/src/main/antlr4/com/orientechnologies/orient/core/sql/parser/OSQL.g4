@@ -79,6 +79,7 @@ TRAVERSE : T R A V E R S E ;
 PUT : P U T ;
 INCREMENT : I N C R E M E N T ;
 WHILE : W H I L E ;
+BETWEEN : B E T W E E N ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -197,7 +198,7 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE
+  | INCREMENT | WHILE | BETWEEN
   ;
 
 anything        : .*? ;
@@ -211,8 +212,8 @@ unset           : UNSET | (DOUBLEDOT reference);
 map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (expression (COMMA expression)*)? RPAREN ;
-functionCall    : reference arguments ;
-methodOrPathCall: DOT reference arguments? ;
+functionCall    : reference arguments ;       // custom function
+methodOrPathCall: DOT reference arguments? ;  // custom method
 
 expression
   : literal
@@ -227,18 +228,21 @@ expression
   | expression MOD<assoc=left>    expression
   | expression POWER<assoc=left>  expression
   | expression UNARY<assoc=right> expression
+  | expression WORD               expression // custom operators
   | functionCall
   | expression methodOrPathCall
   ;
 
-filterAnd   : AND filter ;
-filterOr    : OR filter ;
-filterIn    : IN (literal|collection|commandSelect) ;
+filterAnd     : AND filter ;
+filterOr      : OR filter ;
+filterIn      : IN (literal|collection|commandSelect) ;
+filterBetween : BETWEEN expression AND expression ;
 filter
   : LPAREN filter RPAREN
   | filter filterAnd
   | filter filterOr
   | expression filterIn
+  | expression filterBetween
   | NOT filter
   | expression COMPARE_EQL     expression
   | expression COMPARE_INF     expression
@@ -246,9 +250,10 @@ filter
   | expression COMPARE_INF_EQL expression
   | expression COMPARE_SUP_EQL expression
   | expression COMPARE_DIF     expression
+  | expression LIKE            expression
+  | filter     WORD            filter     // custom operators
   | expression IS NULL
   | expression IS NOT NULL
-  | expression LIKE expression
   ;
 
 // COMMANDS

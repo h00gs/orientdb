@@ -28,6 +28,8 @@ public interface OExpressionVisitor {
 
   Object visit(OAnd candidate, Object data);
   
+  Object visit(OBetween candidate, Object data);
+  
   Object visit(OCollection candidate, Object data);
   
   Object visit(OContextVariable candidate, Object data);

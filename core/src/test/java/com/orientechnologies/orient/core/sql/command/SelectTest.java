@@ -343,6 +343,15 @@ public class SelectTest {
   }
   
   @Test
+  public void selectWhereBetween(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE size BETWEEN 150 AND 200");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+  }
+  
+  @Test
   public void selectOrderBy(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person ORDER BY size");
     final List<ODocument> docs = db.query(query);

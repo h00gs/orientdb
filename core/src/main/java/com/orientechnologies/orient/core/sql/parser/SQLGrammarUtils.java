@@ -62,6 +62,7 @@ import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
 import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.model.OBetween;
 import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
 import com.orientechnologies.orient.core.sql.model.OOperatorMinus;
 import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
@@ -505,7 +506,7 @@ public final class SQLGrammarUtils {
     }
     
   }
-    
+
   public static OExpression visit(ProjectionContext candidate) throws OCommandSQLParsingException {
     
     OExpression exp;
@@ -534,6 +535,7 @@ public final class SQLGrammarUtils {
       //filter filterAnd
       //filter filterOr
       //expression filterIn
+      //expression filterBetween
       //NOT filter
       if(candidate.filterAnd() != null){
         return new OAnd(
@@ -554,6 +556,11 @@ public final class SQLGrammarUtils {
           throw new OCommandSQLParsingException("Unexpected arguments");
         }
         return new OIn(left,right);
+      }else if(candidate.filterBetween()!= null){
+        final OExpression target = (OExpression)visit(candidate.getChild(0));
+        final OExpression left = (OExpression)visit(candidate.filterBetween().expression(0));
+        final OExpression right = (OExpression)visit(candidate.filterBetween().expression(1));
+        return new OBetween(target,left,right);
       }else if(candidate.NOT() != null){
         return new ONot(
                 (OExpression)visit(candidate.getChild(1)));
