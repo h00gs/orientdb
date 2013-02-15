@@ -33,7 +33,7 @@ public class OSQLMethodCharAt extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = getSource().evaluate(context, candidate);
     int index = Integer.parseInt(getMethodArguments().get(0).evaluate(context, candidate).toString());
     value = value != null ? value.toString().substring(index, index + 1) : null;

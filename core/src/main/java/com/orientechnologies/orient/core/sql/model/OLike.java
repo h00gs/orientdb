@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.query.OQueryHelper;
 
 /**
@@ -48,7 +47,7 @@ public class OLike extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     return equals(getLeft(), getRight(), context, candidate);
   }
 
@@ -63,11 +62,6 @@ public class OLike extends OExpressionWithChildren{
     return OQueryHelper.like(String.valueOf(value1), String.valueOf(value2));    
   }
   
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);

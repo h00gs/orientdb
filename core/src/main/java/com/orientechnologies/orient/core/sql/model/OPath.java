@@ -49,15 +49,10 @@ public class OPath extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object left = getLeft().evaluate(context, candidate);
     final Object right = getRight().evaluate(context, left);
     return right;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override

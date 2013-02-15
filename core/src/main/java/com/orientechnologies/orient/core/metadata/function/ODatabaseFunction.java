@@ -118,17 +118,12 @@ public class ODatabaseFunction extends OSQLFunction {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
   public int compareTo(OSQLFunction o) {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 }

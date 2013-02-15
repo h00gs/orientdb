@@ -17,7 +17,10 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -47,7 +50,7 @@ public class OOr extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object objLeft = children.get(0).evaluate(context, candidate);
     if(!(objLeft instanceof Boolean)){
       //can not combine non boolean values
@@ -68,10 +71,74 @@ public class OOr extends OExpressionWithChildren{
   }
 
   @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    //combine search results for left and right filters.
+    final OSearchResult resLeft = getLeft().getSearchResult();
+    final OSearchResult resRight = getRight().getSearchResult();
+    
+    if(resLeft.getState() == OSearchResult.STATE.EVALUATE || resRight.getState() == OSearchResult.STATE.EVALUATE){
+      //we can't reduce global search, all elements will have to be tested
+      return;
+    }
+    
+    result.setState(OSearchResult.STATE.FILTER);
+    
+    final Collection<OIdentifiable> leftIncluded = resLeft.getIncluded();
+    final Collection<OIdentifiable> leftCandidates = resLeft.getCandidates();
+    final Collection<OIdentifiable> leftExcluded = resLeft.getExcluded();
+    final Collection<OIdentifiable> rightIncluded = resRight.getIncluded();
+    final Collection<OIdentifiable> rightCandidates = resRight.getCandidates();
+    final Collection<OIdentifiable> rightExcluded = resRight.getExcluded();
+    
+    if(leftIncluded == OSearchResult.ALL || rightIncluded == OSearchResult.ALL){
+      //all result will match
+      result.setIncluded(OSearchResult.ALL);
+      return;
+    }
+    
+    if(leftExcluded == OSearchResult.ALL){
+      //we can copy the right condition result to reduce search
+      result.setIncluded(rightIncluded);
+      result.setCandidates(rightCandidates);
+      result.setExcluded(rightExcluded);
+      return;
+    }else if(rightExcluded == OSearchResult.ALL){
+      //we can copy the left condition result to reduce search
+      result.setIncluded(leftIncluded);
+      result.setCandidates(leftCandidates);
+      result.setExcluded(leftExcluded);
+      return;
+    }
+    
+    //merge result
+    final Set<OIdentifiable> included;
+    final Set<OIdentifiable> candidates;
+    final Set<OIdentifiable> excluded;
+    //knowing a OSearchResult can only have Included+Candidates or Excluded
+    if(leftExcluded != null && rightExcluded != null){
+      //cross exclusion list
+      excluded = new HashSet<OIdentifiable>(leftExcluded);
+      included = null;
+      candidates = null;
+      excluded.retainAll(rightExcluded);
+      return;      
+    }else{
+      //merge included and candidates
+      included = new HashSet<OIdentifiable>();
+      candidates = new HashSet<OIdentifiable>();
+      excluded = null;
+      if(leftIncluded != null) included.addAll(leftIncluded);
+      if(rightIncluded != null) included.addAll(rightIncluded);
+      if(leftCandidates != null) candidates.addAll(leftCandidates);
+      if(rightCandidates != null) candidates.addAll(rightCandidates);
+      candidates.removeAll(included);
+    }
+    
+    result.setIncluded(included);
+    result.setCandidates(candidates);
+    result.setExcluded(excluded);    
   }
-
+  
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);

@@ -70,7 +70,7 @@ public class OSQLMethodField extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 }

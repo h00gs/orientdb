@@ -44,7 +44,7 @@ public final class OName extends OExpressionAbstract {
   }
   
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     if(candidate instanceof ORID){
       candidate = ((ORID)candidate).getRecord();
     }
@@ -63,11 +63,6 @@ public final class OName extends OExpressionAbstract {
   @Override
   public boolean isDocumentFree() {
     return false;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    return null;
   }
 
   @Override

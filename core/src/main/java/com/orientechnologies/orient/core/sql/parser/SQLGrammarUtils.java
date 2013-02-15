@@ -651,7 +651,7 @@ public final class SQLGrammarUtils {
     }else if(candidate.collection() != null){
       //collection of identifier
       final OCollection col = visit(candidate.collection());
-      List lst = col.evaluate(null, null);
+      List lst = (List) col.evaluate(null, null);
       for(Object obj : lst){
         ids.add( ((ORecordId)obj).getIdentity() );
       }

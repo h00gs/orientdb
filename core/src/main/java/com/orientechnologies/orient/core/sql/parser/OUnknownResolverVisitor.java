@@ -27,12 +27,12 @@ import java.util.Map.Entry;
  * Replace ? expression by values from given parameter map.
  * @author Johann Sorel (Geomatys)
  */
-public class UnknownResolverVisitor extends CopyVisitor{
+public class OUnknownResolverVisitor extends OCopyVisitor{
   
   private final Map parameters;
   private final Iterator<Entry> entries;
   
-  public UnknownResolverVisitor(Map parameters) {
+  public OUnknownResolverVisitor(Map parameters) {
     this.parameters = parameters;
     entries = parameters.entrySet().iterator();
   }

@@ -43,7 +43,7 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
+import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
@@ -132,7 +132,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   public Object execute(final Map<Object, Object> iArgs) {
     if(iArgs != null && !iArgs.isEmpty()){
       //we need to set value where we have OUnknowned
-      final UnknownResolverVisitor visitor = new UnknownResolverVisitor(iArgs);
+      final OUnknownResolverVisitor visitor = new OUnknownResolverVisitor(iArgs);
       for(Map<String,Object> newRecord : newRecords){
         for(Entry<String,Object> entry : newRecord.entrySet()){
           if(entry.getValue() instanceof OUnset){

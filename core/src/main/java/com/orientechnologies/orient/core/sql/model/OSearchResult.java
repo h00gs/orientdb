@@ -17,30 +17,54 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
 public final class OSearchResult {
+    
+  /**
+   * Key used when storing searchcontext in OCommandContext.
+   */
+  public static final String CONTEXT_KEY = "searchresult";
+  
+  public static enum STATE{
+    /** indicate this expression does not always result in a boolean, 
+     * result is unknown */
+    EVALUATE,
+    /** indicate this expression result in a boolean, 
+     * using the included/candidates/excluded collection is safe */
+    FILTER
+  }
   
   /**
    * Iterable used to explain it matches ALL results.
    */
-  public static final Iterable ALL = Collections.unmodifiableSet(new HashSet());
+  public static final Collection ALL = Collections.unmodifiableSet(new HashSet());
   
   private final OExpression filter;
+  private STATE state = STATE.EVALUATE;
   
-  private Iterable<OIdentifiable> included = null;
-  
-  private Iterable<OIdentifiable> candidates = null;
-  
-  private Iterable<OIdentifiable> excluded = null;
+  private Collection<OIdentifiable> included = null;  
+  private Collection<OIdentifiable> candidates = null;  
+  private Collection<OIdentifiable> excluded = null;
 
   public OSearchResult(final OExpression filter) {
     this.filter = filter;
+  }
+
+  public STATE getState() {
+    return state;
+  }
+
+  public void setState(STATE state) {
+    this.state = state;
   }
 
   /**
@@ -54,8 +78,12 @@ public final class OSearchResult {
    * Records guaranted to be match the filter.
    * Filter evaluation is guaranted to be true.
    */
-  public Iterable<OIdentifiable> getIncluded() {
+  public Collection<OIdentifiable> getIncluded() {
     return included;
+  }
+
+  public void setIncluded(Collection<OIdentifiable> included) {
+    this.included = included;
   }
 
   /**
@@ -63,16 +91,24 @@ public final class OSearchResult {
    * Records not in the include list and not in this list are guarantee to be excluded.
    * Filter evaluation is needed ensure the candidate matches the filter.
    */
-  public Iterable<OIdentifiable> getCandidates() {
+  public Collection<OIdentifiable> getCandidates() {
     return candidates;
+  }
+
+  public void setCandidates(Collection<OIdentifiable> candidates) {
+    this.candidates = candidates;
   }
 
   /**
    * Records guaranted to not match the filter.
    * Filter evaluation is guaranted to be false.
    */
-  public Iterable<OIdentifiable> getExcluded() {
+  public Collection<OIdentifiable> getExcluded() {
     return excluded;
+  }
+
+  public void setExcluded(Collection<OIdentifiable> excluded) {
+    this.excluded = excluded;
   }
   
 }

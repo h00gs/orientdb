@@ -52,7 +52,7 @@ public class OMap extends OExpressionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final LinkedHashMap value = new LinkedHashMap();
     for(Entry<OLiteral,OExpression> entry : map.entrySet()){
       value.put(entry.getKey().evaluate(context, candidate), 
@@ -83,11 +83,6 @@ public class OMap extends OExpressionAbstract {
       }
     }
     return true;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    return null;
   }
 
   @Override

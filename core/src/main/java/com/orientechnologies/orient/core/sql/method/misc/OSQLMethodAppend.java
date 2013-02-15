@@ -34,7 +34,7 @@ public class OSQLMethodAppend extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     String concat = null;
     for (OExpression exp : children) {
       final Object obj = exp.evaluate(context, candidate);

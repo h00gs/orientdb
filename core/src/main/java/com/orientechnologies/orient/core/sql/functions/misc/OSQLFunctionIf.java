@@ -64,7 +64,7 @@ public class OSQLFunctionIf extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
 
     boolean result;
     try {

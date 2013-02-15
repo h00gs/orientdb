@@ -16,6 +16,11 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
+import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -25,6 +30,8 @@ import java.util.List;
 public abstract class OExpressionAbstract implements OExpression{
 
   protected String alias;
+  //prepared searched
+  protected OSearchResult searchResult;
 
   public OExpressionAbstract() {
     this(null);
@@ -42,6 +49,66 @@ public abstract class OExpressionAbstract implements OExpression{
   @Override
   public void setAlias(String alias) {
     this.alias = alias;
+  }
+
+  @Override
+  public final Object evaluate(OCommandContext context, Object candidate) {    
+    if(searchResult != null && candidate instanceof OIdentifiable && searchResult.getState() != OSearchResult.STATE.EVALUATE){
+      final Collection<OIdentifiable> included = searchResult.getIncluded();
+      final Collection<OIdentifiable> candidates = searchResult.getIncluded();
+      final Collection<OIdentifiable> excluded = searchResult.getIncluded();
+
+      if(included == OSearchResult.ALL){
+        //guarantee all result match, we can safely ignore the evaluation
+        return Boolean.TRUE;
+      }else if(excluded == OSearchResult.ALL){
+        //guarantee no result match, we can complete skip the search
+        return Boolean.FALSE;
+      }else{
+        //try to avoid evaluation
+        if(included != null && included.contains(candidate)){ // included
+          return Boolean.TRUE;
+        }
+        if(candidates != null){ // possible
+          if(candidates.contains(candidate)){
+            return evaluateNow(context, candidate);
+          }else{
+            return Boolean.FALSE;
+          }
+        }
+        if(excluded != null){ // definitly not valid
+          if(excluded.contains(candidate)){
+            return Boolean.FALSE;
+          }
+        }
+      }
+    }
+    
+    return evaluateNow(context, candidate);    
+  }
+  
+  /**
+   * Evaluate expression, do not check the OSearchResult.
+   * @param context
+   * @param candidate
+   * @return Object
+   */
+  protected abstract Object evaluateNow(OCommandContext context, Object candidate);
+  
+  /**
+   * By Default return an SearchResult in STATE.EVALUATE;
+   * @param searchContext
+   * @return SearchResult, can not be null
+   */
+  @Override
+  public OSearchResult searchIndex(OSearchContext searchContext) {
+    this.searchResult = new OSearchResult(this);
+    return this.searchResult;
+  }
+  
+  @Override
+  public OSearchResult getSearchResult() {
+    return searchResult;
   }
   
   @Override
@@ -99,6 +166,10 @@ public abstract class OExpressionAbstract implements OExpression{
     }else{
       return candidate.toString();
     }
+  }
+  
+  protected ODatabaseRecord getDatabase() {
+    return ODatabaseRecordThreadLocal.INSTANCE.get();
   }
   
 }

@@ -34,7 +34,7 @@ public class OSQLMethodAsLong extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = getSource().evaluate(context, candidate);
     if (value instanceof Number) {
       value = ((Number) value).longValue();

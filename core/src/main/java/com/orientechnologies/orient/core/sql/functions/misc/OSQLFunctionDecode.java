@@ -50,7 +50,7 @@ public class OSQLFunctionDecode extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     
     final String str = children.get(0).evaluate(context, candidate).toString();
     final String format = children.get(1).evaluate(context, candidate).toString();

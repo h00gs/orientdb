@@ -70,11 +70,6 @@ public abstract class OSQLFunctionAbstract extends OSQLFunction {
   }
   
   @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
   public int compareTo(OSQLFunction o) {
     return this.getName().compareTo(o.getName());
   }

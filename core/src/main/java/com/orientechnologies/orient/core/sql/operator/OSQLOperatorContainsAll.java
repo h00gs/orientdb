@@ -37,7 +37,7 @@ public class OSQLOperatorContainsAll extends OSQLOperator {
 	}
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     throw new UnsupportedOperationException("Not supported yet.");
     
 //		final OSQLFilterCondition condition;

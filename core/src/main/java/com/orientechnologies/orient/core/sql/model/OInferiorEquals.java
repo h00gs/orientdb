@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 
 /**
  *
@@ -47,14 +46,9 @@ public class OInferiorEquals extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Integer v = OInferior.compare(getLeft(),getRight(),context,candidate);
     return (v == null) ? false : (v <= 0) ;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override

@@ -40,13 +40,18 @@ import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
+import com.orientechnologies.orient.core.sql.model.OSearchContext;
+import com.orientechnologies.orient.core.sql.model.OSearchResult;
 import com.orientechnologies.orient.core.sql.model.OSortBy;
-import com.orientechnologies.orient.core.sql.parser.CopyVisitor;
+import com.orientechnologies.orient.core.sql.parser.OCopyVisitor;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.OSimplifyVisitor;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
-import com.orientechnologies.orient.core.sql.parser.UnknownResolverVisitor;
+import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Executes the SQL SELECT statement. the parse() method compiles the query and 
@@ -207,13 +212,18 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   public Collection execute(final Map<Object, Object> iArgs) {
     if(iArgs != null && !iArgs.isEmpty()){
       //we need to set value where we have OUnknowned
-      final UnknownResolverVisitor visitor = new UnknownResolverVisitor(iArgs);
+      final OUnknownResolverVisitor visitor = new OUnknownResolverVisitor(iArgs);
       for(int i=0;i<projections.size();i++){
-        projections.set(i, (OExpression)projections.get(i).accept(visitor,null));
+        OExpression exp = (OExpression)projections.get(i).accept(visitor,null);
+        //simplify expression
+        exp = (OExpression) exp.accept(OSimplifyVisitor.INSTANCE, null);
+        projections.set(i, exp);
+        
       }
-      if(filter != null){
-        filter = (OExpression) filter.accept(visitor, null);
-      }
+      //filter should never be null, in the worst case it's OExpression.INCLUDE
+      filter = (OExpression) filter.accept(visitor, null);
+      //simplify filter
+      filter = (OExpression) filter.accept(OSimplifyVisitor.INSTANCE, null);
     }
     
     result.clear();
@@ -239,9 +249,51 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   private void search(final List<OExpression> projections, final long skip, final long limit, boolean notifyListeners){
     
     final OCommandContext context = getContext();
-    final Iterable<? extends OIdentifiable> target = source.createIterator();
-    final Iterator<? extends OIdentifiable> ite = target.iterator();
     
+    //Optimize research using indexes
+    final OExpression simplifiedFilter;
+    final Iterable<? extends OIdentifiable> target;
+    
+    final OSearchContext searchContext = new OSearchContext();
+    searchContext.setSource(source);
+    final OSearchResult searchResult = filter.searchIndex(searchContext);
+    
+    if(searchResult.getState() == OSearchResult.STATE.EVALUATE){
+      // undeterministe, we need to evaluate each record one by one
+      target = source.createIterator();
+      simplifiedFilter = filter; //no simplification
+    }else{
+      //merge safe and candidates list
+      final Collection<OIdentifiable> included = searchResult.getIncluded();
+      final Collection<OIdentifiable> candidates = searchResult.getIncluded();
+      final Collection<OIdentifiable> excluded = searchResult.getIncluded();
+      
+      if(included == OSearchResult.ALL){
+        //guarantee all result match, we can safely ignore the filter
+        target = source.createIterator();
+        simplifiedFilter = OExpression.INCLUDE;
+      }else if(excluded == OSearchResult.ALL){
+        //guarantee no result match, we can complete skip the search
+        target = Collections.EMPTY_LIST;
+        simplifiedFilter = OExpression.EXCLUDE;
+      }else{
+        //reduce the search
+        if(included != null || candidates != null){
+          //combine included and candidates to obtain our search list
+          final Set<OIdentifiable> ids = new HashSet<OIdentifiable>();
+          if(included != null){ids.addAll(included);}
+          if(candidates != null){ids.addAll(candidates);}
+          target = source.createIteratorFilterCandidates(ids);
+        }else{
+          //we are only sure of an exclude list
+          target = source.createIteratorFilterExcluded(excluded);
+        }
+        simplifiedFilter = filter; //no simplification
+      }
+    }
+    
+    //iterate on candidates
+    final Iterator<? extends OIdentifiable> ite = target.iterator();    
     long nbvalid = 0;
     long nbtested = 0;
     
@@ -249,7 +301,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       final ORecord candidate = ite.next().getRecord();
 
       //filter
-      final Object valid = filter.evaluate(context, candidate);
+      final Object valid = simplifiedFilter.evaluate(context, candidate);
       if (!Boolean.TRUE.equals(valid)) {
         continue;
       }
@@ -317,7 +369,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     //we don't need the original result list anymore, we refill it after projections.
     result.clear();
 
-    final CopyVisitor cloner = new CopyVisitor();
+    final OCopyVisitor cloner = new OCopyVisitor();
 
     //apply projections
     long inc = 0;
@@ -368,10 +420,6 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }
   }
   
-  
-  // GRAMMAR PARSING ///////////////////////////////////////////////////////////
-  
-
   @Override
   public Iterator iterator() {
     return execute(null).iterator();

@@ -40,7 +40,7 @@ public class OSQLOperatorContainsValue extends OSQLOperator {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     throw new UnsupportedOperationException("Not implemented yet.");
 //    Object iLeft = getLeft().evaluate(context, candidate);
 //    Object iRight = getRight().evaluate(context, candidate);

@@ -59,7 +59,7 @@ public class OCommandTruncateRecord extends OCommandAbstract implements OCommand
     if(candidate.orid() != null){
       records.add(candidate.orid().getText());
     }else if(candidate.collection() != null){
-      final Collection col = visit(candidate.collection()).evaluate(null, null);
+      final Collection col = (Collection) visit(candidate.collection()).evaluate(null, null);
       records.addAll(col);
     }
     return this;

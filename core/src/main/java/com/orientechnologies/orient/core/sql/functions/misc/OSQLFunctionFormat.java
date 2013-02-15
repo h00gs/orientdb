@@ -45,7 +45,7 @@ public class OSQLFunctionFormat extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object[] args = new Object[children.size() - 1];
 
 		for (int i = 0; i < args.length; ++i){

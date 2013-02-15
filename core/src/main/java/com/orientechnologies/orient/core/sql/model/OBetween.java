@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 
 /**
  *
@@ -51,7 +50,7 @@ public class OBetween extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object objTarget = getTarget().evaluate(context, candidate);
     final Object objLeft = getLeft().evaluate(context, candidate);
     final Object objRight = getRight().evaluate(context, candidate);
@@ -66,11 +65,6 @@ public class OBetween extends OExpressionWithChildren{
     }
     
     return true ;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override

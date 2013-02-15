@@ -36,7 +36,7 @@ public class OSQLFunctionMin extends OSQLFunctionAbstract {
   }
   
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     
     if (getArguments().size() == 1) {
       //group by case

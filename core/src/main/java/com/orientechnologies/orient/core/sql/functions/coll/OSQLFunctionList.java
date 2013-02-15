@@ -39,7 +39,7 @@ public class OSQLFunctionList extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     
     final List<Object> result;
     if(children.size() == 1){

@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 
 /**
  *
@@ -43,17 +42,30 @@ public class ONot extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object obj = children.get(0).evaluate(context, candidate);
     if(!(obj instanceof Boolean)){
-      return false;
+      return Boolean.FALSE;
     }
     return !((Boolean)obj);
   }
 
   @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    final OSearchResult childRes = getExpression().getSearchResult();
+    
+    if(childRes.getState() == OSearchResult.STATE.EVALUATE){
+      //we can't reduce global search, all elements will have to be tested
+      return;
+    }
+    
+    result.setState(OSearchResult.STATE.FILTER);
+    if(childRes.getIncluded() != null || childRes.getCandidates() != null){
+      result.setExcluded(childRes.getIncluded());
+    }else{
+      result.setIncluded(childRes.getExcluded());
+    }
+    
   }
 
   @Override

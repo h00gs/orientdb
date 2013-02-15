@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +52,7 @@ public class OCollection extends OExpressionAbstract {
   }
 
   @Override
-  public List evaluate(OCommandContext context, Object candidate) {
+  protected List evaluateNow(OCommandContext context, Object candidate) {
     final List value = new ArrayList();
     for(OExpression exp : children){
       value.add(exp.evaluate(context, candidate));
@@ -79,11 +78,6 @@ public class OCollection extends OExpressionAbstract {
       }
     }
     return true;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    return null;
   }
 
   @Override

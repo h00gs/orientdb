@@ -37,7 +37,7 @@ public class OSQLFunctionMap extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
 
     final Map result;
     if(children.size()>2){

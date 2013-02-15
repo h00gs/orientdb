@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 
 /**
  * Literal value in SQL.
@@ -42,7 +41,7 @@ public final class OLiteral extends OExpressionAbstract{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     return value;
   }
 
@@ -54,11 +53,6 @@ public final class OLiteral extends OExpressionAbstract{
   @Override
   public boolean isDocumentFree() {
     return true;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    return null;
   }
 
   @Override

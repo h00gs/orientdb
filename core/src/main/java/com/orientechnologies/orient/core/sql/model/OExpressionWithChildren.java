@@ -18,7 +18,6 @@ package com.orientechnologies.orient.core.sql.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -48,6 +47,27 @@ public abstract class OExpressionWithChildren extends OExpressionAbstract {
 
   public List<OExpression> getChildren() {
     return children;
+  }
+  
+  @Override
+  public final OSearchResult searchIndex(OSearchContext searchContext) {
+    searchResult = new OSearchResult(this);
+    for(OExpression child : children){
+      //children search optimization
+      child.searchIndex(searchContext);
+    }
+    analyzeSearchIndex(searchContext, searchResult);
+    return searchResult;
+  }
+    
+  /**
+   * Override this method if this expression can take advantage of indexes.
+   * By Default return an SearchResult in STATE.EVALUATE;
+   * @param searchContext
+   * @param result 
+   */
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result){
+    //no optimisation
   }
   
   @Override

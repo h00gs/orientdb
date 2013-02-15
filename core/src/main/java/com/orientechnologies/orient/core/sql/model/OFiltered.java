@@ -18,7 +18,6 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +49,7 @@ public final class OFiltered extends OExpressionWithChildren {
   }
   
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object left = getSource().evaluate(context, candidate);
     
     final List<ODocument> result = new ArrayList<ODocument>();
@@ -102,11 +101,6 @@ public final class OFiltered extends OExpressionWithChildren {
   @Override
   public boolean isDocumentFree() {
     return false;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    return null;
   }
 
   @Override

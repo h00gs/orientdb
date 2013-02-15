@@ -17,7 +17,13 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OType;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  *
@@ -49,8 +55,51 @@ public class OEquals extends OExpressionWithChildren{
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     return equals(getLeft(), getRight(), context, candidate);
+  }
+
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    final String className = searchContext.getSource().getTargetClasse();
+    if(className == null){
+      //no optimisation
+      return;
+    }
+    
+    //test is equality match pattern : field = value
+    OName fieldName;
+    OLiteral literal;
+    if(getLeft() instanceof OName && getRight() instanceof OLiteral){
+      fieldName = (OName) getLeft();
+      literal = (OLiteral) getRight();
+    }else if(getLeft() instanceof OLiteral && getRight() instanceof OName){
+      fieldName = (OName) getRight();
+      literal = (OLiteral) getLeft();
+    }else{
+      //no optimisation
+      return;
+    }
+    
+    //search for an index
+    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    for(OIndex index : indexes){
+      if(OClass.INDEX_TYPE.UNIQUE.toString().equals(index.getType())){
+        //found a usable index
+        final Collection searchFor = Collections.singleton(literal.getValue());
+        final Collection<OIdentifiable> ids = index.getValues(searchFor);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        return;
+      }
+    }
+    
   }
 
   static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
@@ -99,11 +148,6 @@ public class OEquals extends OExpressionWithChildren{
       return n1.longValue() == n2.longValue();
     }
     return false;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override

@@ -35,7 +35,7 @@ public class OSQLMethodIndexOf extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final List<OExpression> arguments = getMethodArguments();
     Object value = getSource().evaluate(context, candidate);
     final String param0 = arguments.get(0).evaluate(context, candidate).toString();

@@ -60,7 +60,7 @@ public abstract class OSQLFunctionPathFinder<T extends Comparable<T>> extends OS
 
   protected abstract T sumDistances(T iDistance1, T iDistance2);
 
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     settledNodes = new HashSet<OIdentifiable>();
     unSettledNodes = new HashSet<OIdentifiable>();
     distance = new HashMap<OIdentifiable, T>();

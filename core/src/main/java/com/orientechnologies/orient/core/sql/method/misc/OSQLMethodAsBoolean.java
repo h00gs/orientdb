@@ -33,7 +33,7 @@ public class OSQLMethodAsBoolean extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = getSource().evaluate(context, candidate);
     if (value != null) {
       if (value instanceof String) {

@@ -47,7 +47,7 @@ public class OSQLOperatorInstanceof extends OSQLOperator {
 	}
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
 
 		final OSchema schema = ODatabaseRecordThreadLocal.INSTANCE.get().getMetadata().getSchema();
 

@@ -58,7 +58,7 @@ import java.util.Map;
  *
  * @author Johann Sorel (Geomatys)
  */
-public class CopyVisitor implements OExpressionVisitor {
+public class OCopyVisitor implements OExpressionVisitor {
 
   @Override
   public Object visit(OLiteral candidate, Object data) {

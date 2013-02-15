@@ -41,7 +41,7 @@ public class OSQLFunctionAverage extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     if (children.size() == 1) {
       final Object val = children.get(0).evaluate(context, candidate);
       

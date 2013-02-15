@@ -35,7 +35,7 @@ public class OSQLMethodFormat extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = getSource().evaluate(context, candidate);
     final Object v = getMethodArguments().get(0).evaluate(context, candidate);
     if (v != null) {

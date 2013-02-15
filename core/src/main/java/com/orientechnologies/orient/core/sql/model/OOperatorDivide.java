@@ -47,7 +47,7 @@ public class OOperatorDivide extends OExpressionWithChildren {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object left = getLeft().evaluate(context, candidate);
     final Object right = getRight().evaluate(context, candidate);
     
@@ -56,11 +56,6 @@ public class OOperatorDivide extends OExpressionWithChildren {
       return d;
     }
     return null;
-  }
-
-  @Override
-  public OSearchResult searchIndex(OSearchContext searchContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override

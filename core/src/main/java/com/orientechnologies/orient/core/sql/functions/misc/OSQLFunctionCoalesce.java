@@ -51,7 +51,7 @@ public class OSQLFunctionCoalesce extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final int length = children.size();
     for (int i = 0; i < length; i++) {
       final Object obj = children.get(i).evaluate(context, candidate);

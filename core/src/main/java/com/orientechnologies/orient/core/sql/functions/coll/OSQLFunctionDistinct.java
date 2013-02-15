@@ -37,7 +37,7 @@ public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object value = children.get(0).evaluate(context, candidate);
 
     if (value != null && !set.contains(value)) {

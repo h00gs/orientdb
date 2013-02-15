@@ -33,7 +33,7 @@ public class OSQLMethodTrim extends OSQLMethod {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = getSource().evaluate(context, candidate);
     value = value != null ? value.toString().trim() : null;
     return value;

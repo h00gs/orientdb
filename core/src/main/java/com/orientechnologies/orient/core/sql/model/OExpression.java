@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 
 /**
  * An Expression is an unresolved operation which result change based
@@ -80,13 +79,19 @@ public interface OExpression {
   boolean isDocumentFree();
   
   /**
-   * Estimate index use possibilities.
+   * Prepare filter taking advantage of indexes when possible.
    * 
    * @param clazz
    * @param sorts
    * @return OIndexResult
    */
   OSearchResult searchIndex(OSearchContext searchContext);
+  
+  /**
+   * Get current OSearchResult.
+   * @return OSearchResult
+   */
+  OSearchResult getSearchResult();
   
   /**
    * Visitor pattern.
@@ -112,7 +117,7 @@ public interface OExpression {
     }
 
     @Override
-    public Object evaluate(OCommandContext context, Object candidate) {
+    protected  Object evaluateNow(OCommandContext context, Object candidate) {
       return Boolean.TRUE;
     }
 
@@ -128,7 +133,10 @@ public interface OExpression {
 
     @Override
     public OSearchResult searchIndex(OSearchContext searchContext) {
-      return null;
+      final OSearchResult res = new OSearchResult(this);
+      res.setState(OSearchResult.STATE.FILTER);
+      res.setIncluded(OSearchResult.ALL);
+      return res;
     }
 
     @Override
@@ -154,7 +162,7 @@ public interface OExpression {
     }
 
     @Override
-    public Object evaluate(OCommandContext context, Object candidate) {
+    protected Object evaluateNow(OCommandContext context, Object candidate) {
       return Boolean.FALSE;
     }
 
@@ -170,7 +178,10 @@ public interface OExpression {
 
     @Override
     public OSearchResult searchIndex(OSearchContext searchContext) {
-      return null;
+      final OSearchResult res = new OSearchResult(this);
+      res.setState(OSearchResult.STATE.FILTER);
+      res.setExcluded(OSearchResult.ALL);
+      return res;
     }
 
     @Override

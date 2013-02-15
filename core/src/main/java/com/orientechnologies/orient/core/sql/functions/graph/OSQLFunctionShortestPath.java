@@ -39,7 +39,7 @@ public class OSQLFunctionShortestPath extends OSQLFunctionPathFinder<Integer> {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     final ODatabaseRecord currentDatabase = ODatabaseRecordThreadLocal.INSTANCE.get();
     db = (OGraphDatabase) (currentDatabase instanceof OGraphDatabase ? currentDatabase : new OGraphDatabase(
         (ODatabaseRecordTx) currentDatabase));

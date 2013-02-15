@@ -33,7 +33,7 @@ public class OSQLFunctionFirst extends OSQLFunctionAbstract {
   }
 
   @Override
-  public Object evaluate(OCommandContext context, Object candidate) {
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = children.get(0).evaluate(context, candidate);
 
     if (OMultiValue.isMultiValue(value)){
