@@ -223,7 +223,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       search(projections, skip, limit, true);
     }else{
       //groupby or sort by search, we must collect all results first
-      search(null, skip, skip, false);
+      search(null, -1, -1, false);
       applyGroups();
       applySort();
       

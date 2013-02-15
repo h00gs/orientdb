@@ -105,7 +105,7 @@ public final class OFiltered extends OExpressionWithChildren {
   }
 
   @Override
-  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+  public OSearchResult searchIndex(OSearchContext searchContext) {
     return null;
   }
 

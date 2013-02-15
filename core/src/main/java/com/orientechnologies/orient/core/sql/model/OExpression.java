@@ -20,47 +20,95 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 
 /**
- *
+ * An Expression is an unresolved operation which result change based
+ * on the context and the tested object.
+ * Use the evaluate method to obtain it's value.
+ * 
  * @author Johann Sorel (Geomatys)
  */
 public interface OExpression {
   
-  public static final OExpression INCLUDE = new Constant(true);
-  public static final OExpression EXCLUDE = new Constant(false);
+  /**
+   * Expression which always return TRUE.
+   */
+  public static final Include INCLUDE = new Include();
+  /**
+   * Expression which always return FALSE.
+   */
+  public static final Exclude EXCLUDE = new Exclude();
   
+  /**
+   * Evaluate the expression.
+   * 
+   * @param context
+   * @param candidate
+   * @return Object  can be null
+   */
   Object evaluate(OCommandContext context, Object candidate);
   
+  /**
+   * Get the alias of this expression.
+   * Used in projections.
+   * @param alias 
+   */
   String getAlias();
   
+  /**
+   * Set the alias of this expression.
+   * Used in projections.
+   * @param alias 
+   */
   void setAlias(String alias);
   
+  /**
+   * Check if the expression evaluation is affected by document or context.
+   * If an expression is static it can be evaluated only once.
+   * @return true if expression is document or context sensitive
+   */
   boolean isStatic();
   
+  /**
+   * Check if the expression evaluation is affected by the passed context.
+   * @return true if expression is context sensitive
+   */
   boolean isContextFree();
   
+  /**
+   * Check if the expression evaluation is affected by the passed document.
+   * @return true if expression is document sensitive
+   */
   boolean isDocumentFree();
   
-  OIndexResult searchIndex(OClass clazz ,OSortBy[] sorts);
+  /**
+   * Estimate index use possibilities.
+   * 
+   * @param clazz
+   * @param sorts
+   * @return OIndexResult
+   */
+  OSearchResult searchIndex(OSearchContext searchContext);
   
+  /**
+   * Visitor pattern.
+   * @param visitor
+   * @param data
+   * @return 
+   */
   Object accept(OExpressionVisitor visitor, Object data);
   
+  /**
+   * Duplicate this expression
+   * @return copy of this expression
+   */
   OExpression copy();
   
-  public static final class Constant extends OExpressionAbstract{
+  public static final class Include extends OExpressionAbstract{
 
-    private final boolean value;
-
-    public Constant(boolean value) {
-      this.value = value;
-    }
+    private Include() {}
     
     @Override
     protected String thisToString() {
-      if(value){
-        return "INCLUDE";
-      }else{
-        return "EXCLUDE";
-      }
+      return "INCLUDE";
     }
 
     @Override
@@ -79,17 +127,55 @@ public interface OExpression {
     }
 
     @Override
-    public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+    public OSearchResult searchIndex(OSearchContext searchContext) {
       return null;
     }
 
     @Override
     public Object accept(OExpressionVisitor visitor, Object data) {
-      if(value){
-        return visitor.visitInclude(this, data);
-      }else{
-        return visitor.visitExclude(this, data);
-      }
+        return visitor.visit(this, data);
+    }
+
+    @Override
+    public OExpression copy() {
+      //immutable
+      return this;
+    }
+    
+  }
+  
+  public static final class Exclude extends OExpressionAbstract{
+
+    private Exclude() {}
+    
+    @Override
+    protected String thisToString() {
+      return "EXCLUDE";
+    }
+
+    @Override
+    public Object evaluate(OCommandContext context, Object candidate) {
+      return Boolean.FALSE;
+    }
+
+    @Override
+    public boolean isContextFree() {
+      return true;
+    }
+
+    @Override
+    public boolean isDocumentFree() {
+      return true;
+    }
+
+    @Override
+    public OSearchResult searchIndex(OSearchContext searchContext) {
+      return null;
+    }
+
+    @Override
+    public Object accept(OExpressionVisitor visitor, Object data) {
+        return visitor.visit(this, data);
     }
 
     @Override

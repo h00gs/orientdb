@@ -158,10 +158,10 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       // BIND VALUES
       Map<String,Object> record = new HashMap<String, Object>();
       Map<String, Object> result = null;
-      for (Map<String,Object> newRecord : newRecords) {        
+      for (Map<String,Object> newRecord : newRecords) {
+        record.clear();
         for(Entry<String,Object> entry : newRecord.entrySet()){
-          Object value = evaluate(entry.getValue());
-          record.put(entry.getKey(), value );
+          record.put(entry.getKey(), evaluate(entry.getValue()) );
         }
         index.put(getIndexKeyValue(commandParameters, record), getIndexValue(commandParameters, record));
         result = record;
@@ -202,33 +202,13 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   }
   
   private Object getIndexKeyValue(OCommandParameters commandParameters, Map<String, Object> candidate) {
-    return null;
-//    final Object parsedKey = candidate.get(KEYWORD_KEY);
-//    if (parsedKey instanceof OSQLFilterItemField) {
-//      final OSQLFilterItemField f = (OSQLFilterItemField) parsedKey;
-//      if (f.getRoot().equals("?"))
-//        // POSITIONAL PARAMETER
-//        return commandParameters.getNext();
-//      else if (f.getRoot().startsWith(":"))
-//        // NAMED PARAMETER
-//        return commandParameters.getByName(f.getRoot().substring(1));
-//    }
-//    return parsedKey;
+    final Object parsedKey = candidate.get(KEYWORD_KEY);
+    return parsedKey;
   }
 
   private OIdentifiable getIndexValue(OCommandParameters commandParameters, Map<String, Object> candidate) {
-    return null;
-//    final Object parsedRid = candidate.get(KEYWORD_RID);
-//    if (parsedRid instanceof OSQLFilterItemField) {
-//      final OSQLFilterItemField f = (OSQLFilterItemField) parsedRid;
-//      if (f.getRoot().equals("?"))
-//        // POSITIONAL PARAMETER
-//        return (OIdentifiable) commandParameters.getNext();
-//      else if (f.getRoot().startsWith(":"))
-//        // NAMED PARAMETER
-//        return (OIdentifiable) commandParameters.getByName(f.getRoot().substring(1));
-//    }
-//    return (OIdentifiable) parsedRid;
+    final Object parsedRid = candidate.get(KEYWORD_RID);
+    return (OIdentifiable) parsedRid;
   }
 
   public boolean isReplicated() {

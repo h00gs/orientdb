@@ -52,7 +52,7 @@ public class ONot extends OExpressionWithChildren{
   }
 
   @Override
-  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+  public OSearchResult searchIndex(OSearchContext searchContext) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 

@@ -193,13 +193,13 @@ public class CopyVisitor implements OExpressionVisitor {
   }
 
   @Override
-  public Object visitInclude(OExpression candidate, Object data) {
+  public Object visit(OExpression.Include candidate, Object data) {
     //inmutable
     return candidate;
   }
 
   @Override
-  public Object visitExclude(OExpression candidate, Object data) {
+  public Object visit(OExpression.Exclude candidate, Object data) {
     //inmutable
     return candidate;
   }

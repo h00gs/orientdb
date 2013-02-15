@@ -16,7 +16,8 @@
 package com.orientechnologies.orient.core.sql.functions;
 
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.sql.model.OIndexResult;
+import com.orientechnologies.orient.core.sql.model.OSearchContext;
+import com.orientechnologies.orient.core.sql.model.OSearchResult;
 import com.orientechnologies.orient.core.sql.model.OSortBy;
 import java.math.BigDecimal;
 
@@ -69,7 +70,7 @@ public abstract class OSQLFunctionAbstract extends OSQLFunction {
   }
   
   @Override
-  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+  public OSearchResult searchIndex(OSearchContext searchContext) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 

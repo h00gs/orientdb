@@ -56,7 +56,7 @@ public final class OContextVariable extends OExpressionAbstract {
   }
 
   @Override
-  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+  public OSearchResult searchIndex(OSearchContext searchContext) {
     return null;
   }
 

@@ -86,6 +86,8 @@ COMMA 	: ',';
 DOUBLEDOT 	: ':';
 DOT 	: '.';
 WS  :   ( ' ' | '\t' | '\r'| '\n' ) -> skip ;
+TRUE : T R U E ;
+FALSE : F A L S E ;
 
 // math operations
 UNARY : '+' | '-' ;
@@ -198,7 +200,7 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE | BETWEEN
+  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE
   ;
 
 anything        : .*? ;
@@ -206,7 +208,7 @@ number          : (UNARY^)? (INT|FLOAT)	;
 cword           : anything | NULL ;
 numberOrWord    : number | reference ;
 reference       : WORD | ESCWORD | keywords;
-literal         : NULL | TEXT | number ;
+literal         : NULL | TEXT | number | TRUE | FALSE;
 orid            : ORID INT ':' INT;
 unset           : UNSET | (DOUBLEDOT reference);
 map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;

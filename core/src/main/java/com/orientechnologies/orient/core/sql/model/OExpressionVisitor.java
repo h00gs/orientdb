@@ -90,8 +90,8 @@ public interface OExpressionVisitor {
           
   Object visit(OSQLOperator candidate, Object data);
   
-  Object visitInclude(OExpression candidate, Object data);
+  Object visit(OExpression.Include candidate, Object data);
   
-  Object visitExclude(OExpression candidate, Object data);
+  Object visit(OExpression.Exclude candidate, Object data);
   
 }

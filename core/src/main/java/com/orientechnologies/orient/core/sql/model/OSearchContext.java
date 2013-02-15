@@ -1,6 +1,5 @@
 /*
  * Copyright 2013 Orient Technologies.
- * Copyright 2013 Geomatys.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +15,27 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+
 /**
- *
+ * A SearchContext describes a query source.
+ * More informations may be added later.
+ * 
  * @author Johann Sorel (Geomatys)
  */
-public interface OIndexResult {
+public final class OSearchContext {
+  
+  private OQuerySource source = null;
+
+  public OSearchContext() {
+  }
+
+  public OQuerySource getSource() {
+    return source;
+  }
+
+  public void setSource(OQuerySource source) {
+    this.source = source;
+  }
   
 }

@@ -22,7 +22,8 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
-import com.orientechnologies.orient.core.sql.model.OIndexResult;
+import com.orientechnologies.orient.core.sql.model.OSearchContext;
+import com.orientechnologies.orient.core.sql.model.OSearchResult;
 import com.orientechnologies.orient.core.sql.model.OSortBy;
 
 /**
@@ -122,7 +123,7 @@ public class ODatabaseFunction extends OSQLFunction {
   }
 
   @Override
-  public OIndexResult searchIndex(OClass clazz, OSortBy[] sorts) {
+  public OSearchResult searchIndex(OSearchContext searchContext) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 

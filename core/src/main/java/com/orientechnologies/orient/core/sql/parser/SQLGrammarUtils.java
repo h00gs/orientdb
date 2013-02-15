@@ -477,6 +477,12 @@ public final class SQLGrammarUtils {
     }else if(candidate.NULL()!= null){
       return new OLiteral(null);
       
+    }else if(candidate.TRUE()!= null){
+      return new OLiteral(Boolean.TRUE);
+      
+    }else if(candidate.FALSE()!= null){
+      return new OLiteral(Boolean.FALSE);
+      
     }else{
       throw new OCommandSQLParsingException("Should not happen");
     }
