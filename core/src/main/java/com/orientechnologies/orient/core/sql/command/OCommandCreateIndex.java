@@ -82,7 +82,7 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
       final List<OSQLParser.ReferenceContext> words = ctx.reference();
       oClass = findClass(words.get(0).getText());
       fields = new String[words.size()-1];
-      for(int k=1;k<fields.length;k++){
+      for(int k=1;k<words.size();k++){
         fields[k-1] = visitAsString(words.get(k));
       }
     }
@@ -100,8 +100,8 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
         final String text = visitAsString(candidate.reference(i));
         keyTypes.add(OType.valueOf(text));
       }
-      this.keyTypes = keyTypes.toArray(new OType[0]);
-      if (this.fields.length != this.keyTypes.length) {
+      this.keyTypes = (keyTypes.isEmpty()) ? null : keyTypes.toArray(new OType[0]);
+      if (this.keyTypes != null && (this.fields.length != this.keyTypes.length)) {
           throw new OCommandSQLParsingException("Count of fields doesn't match with count of property types. " + "Fields: "
               + Arrays.toString(this.fields) + "; Types: " + Arrays.toString(this.keyTypes));
         }

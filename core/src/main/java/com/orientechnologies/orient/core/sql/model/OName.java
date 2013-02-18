@@ -36,6 +36,10 @@ public final class OName extends OExpressionAbstract {
   
   public OName(String alias, String name) {
     super(alias);
+    //by default name expression has the same alias
+    if(alias == null){
+      setAlias(name);
+    }
     this.name = name;
   }
 

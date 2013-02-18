@@ -37,6 +37,7 @@ import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import java.util.AbstractCollection;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -112,6 +113,28 @@ public class OQuerySource {
       final Set<OIdentifiable> cross = new HashSet<OIdentifiable>(ids);
       cross.retainAll((Collection)targetRecords);
       return cross;
+    }else if(targetClasse != null){
+      if(targetCluster == null){
+        //we can simply copy the given list
+        final Set<OIdentifiable> copy = new HashSet<OIdentifiable>(ids);
+        return copy;
+      }else{
+        //exclude ids which are not in the searched cluster
+        final ODatabaseRecord db = getDatabase();
+        final int[] clIds = new int[]{db.getClusterIdByName(targetCluster)};
+        final Set<OIdentifiable> copy = new HashSet<OIdentifiable>();
+        idloop:
+        for(OIdentifiable id : ids){
+          final int idc = id.getIdentity().getClusterId();
+          for(int cid : clIds){
+            if(cid == idc){
+              copy.add(id);
+              continue idloop;
+            }
+          }
+        }
+        return copy;        
+      }
     }
     
     //can't not optimize, wrap the full iterator and exclude wrong results
@@ -200,7 +223,7 @@ public class OQuerySource {
     
     @Override
     public Iterator<OIdentifiable> iterator() {
-      throw new UnsupportedOperationException("Not supported yet.");
+      return new ClippedIterator();
     }
 
     @Override

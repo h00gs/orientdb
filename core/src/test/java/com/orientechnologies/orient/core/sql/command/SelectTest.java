@@ -189,10 +189,10 @@ public class SelectTest {
     final List<ODocument> docs = db.query(query);
     assertEquals(docs.size(), 4);
     assertEquals(docs.get(0).fieldNames().length, 1);
-    assertEquals(docs.get(0).field("0"), "tempo");
-    assertEquals(docs.get(1).field("0"), "fiesta");
-    assertEquals(docs.get(2).field("0"), null);
-    assertEquals(docs.get(3).field("0"), "supreme");
+    assertEquals(docs.get(0).field("name"), "tempo");
+    assertEquals(docs.get(1).field("name"), "fiesta");
+    assertEquals(docs.get(2).field("name"), null);
+    assertEquals(docs.get(3).field("name"), "supreme");
   }
   
   @Test

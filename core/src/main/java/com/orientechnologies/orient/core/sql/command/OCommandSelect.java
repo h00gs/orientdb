@@ -265,8 +265,8 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }else{
       //merge safe and candidates list
       final Collection<OIdentifiable> included = searchResult.getIncluded();
-      final Collection<OIdentifiable> candidates = searchResult.getIncluded();
-      final Collection<OIdentifiable> excluded = searchResult.getIncluded();
+      final Collection<OIdentifiable> candidates = searchResult.getCandidates();
+      final Collection<OIdentifiable> excluded = searchResult.getExcluded();
       
       if(included == OSearchResult.ALL){
         //guarantee all result match, we can safely ignore the filter
@@ -276,6 +276,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
         //guarantee no result match, we can complete skip the search
         target = Collections.EMPTY_LIST;
         simplifiedFilter = OExpression.EXCLUDE;
+      }else if(included != null && (candidates==null || candidates.isEmpty()) ){
+        //we have only included results, filter can be skipped
+        target = source.createIteratorFilterCandidates(included);
+        simplifiedFilter = OExpression.INCLUDE;
       }else{
         //reduce the search
         if(included != null || candidates != null){
