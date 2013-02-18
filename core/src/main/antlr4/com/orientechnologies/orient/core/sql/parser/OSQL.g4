@@ -85,6 +85,7 @@ BETWEEN : B E T W E E N ;
 COMMA 	: ',';
 DOUBLEDOT 	: ':';
 DOT 	: '.';
+DOTCOMMA : ';';
 WS  :   ( ' ' | '\t' | '\r'| '\n' ) -> skip ;
 TRUE : T R U E ;
 FALSE : F A L S E ;
@@ -159,6 +160,7 @@ FLOAT
 
 WORD : LETTER (DIGIT|LETTER)* ;
 ESCWORD : ('"'  ( ESC_SEQ | ~('\\'|'"' ) )* '"' ) ;
+DATE : DIGIT DIGIT DIGIT DIGIT '-' DIGIT DIGIT '-' DIGIT DIGIT ('T' DIGIT DIGIT ':' DIGIT DIGIT ':' DIGIT DIGIT ('.' DIGIT+)? 'Z')?;
 
 
 
@@ -208,7 +210,7 @@ number          : (UNARY^)? (INT|FLOAT)	;
 cword           : anything | NULL ;
 numberOrWord    : number | reference ;
 reference       : WORD | ESCWORD | keywords;
-literal         : NULL | TEXT | number | TRUE | FALSE;
+literal         : NULL | TEXT | number | TRUE | FALSE | DATE;
 orid            : ORID INT ':' INT;
 unset           : UNSET | (DOUBLEDOT reference);
 map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
@@ -371,5 +373,5 @@ command
   | commandDeleteVertex
   | commandTraverse
   | commandUpdate)
-    EOF
+    DOTCOMMA? EOF
   ;

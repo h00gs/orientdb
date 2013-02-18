@@ -59,7 +59,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
 
   private String target;
   private String[] fields;
-  private OProperty[] fieldProperties;
+  private final Map<String,OProperty> fieldProperties = new HashMap<String, OProperty>();
   private List<Map<String,Object>> newRecords;
   private OSQLParser.CommandSelectContext source;
   private final List<ODocument> results = new ArrayList<ODocument>();
@@ -104,9 +104,12 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       if (cls == null) {
         throw new OException("Class " + target + " not found in database");
       }else{
-        fieldProperties = new OProperty[fields.length];
+        fieldProperties.clear();
         for(int i=0;i<fields.length;i++){
-          fieldProperties[i] = cls.getProperty(fields[i]);
+          final OProperty prop = cls.getProperty(fields[i]);
+          if(prop != null){
+            fieldProperties.put(fields[i], prop);
+          }
         }
       }
 
@@ -177,8 +180,9 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
         int i=0;
         for(Entry<String,Object> entry : newRecord.entrySet()){
           Object value = evaluate(entry.getValue());
-          if(fieldProperties!=null && fieldProperties[i]!=null){
-            doc.field(entry.getKey(), value, fieldProperties[i].getType());
+          final OProperty prop = fieldProperties.get(entry.getKey());
+          if(prop != null){
+            doc.field(entry.getKey(), value, prop.getType());
           }else{
             doc.field(entry.getKey(), value);
           }

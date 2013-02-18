@@ -72,6 +72,10 @@ import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
 import com.orientechnologies.orient.core.sql.model.OOperatorPower;
 import com.orientechnologies.orient.core.sql.model.OPath;
 import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -86,6 +90,10 @@ import org.antlr.v4.runtime.TokenStream;
 public final class SQLGrammarUtils {
 
   private static ClassLoader CLASSLOADER = SQLGrammarUtils.class.getClassLoader();
+  
+  private static final DateFormat DF1 = new SimpleDateFormat("yyyy-MM-dd");
+    private static final SimpleDateFormat DF2 = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static final SimpleDateFormat DF3 = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
   
   private SQLGrammarUtils() {
   }
@@ -482,6 +490,30 @@ public final class SQLGrammarUtils {
       
     }else if(candidate.FALSE()!= null){
       return new OLiteral(Boolean.FALSE);
+      
+    }else if(candidate.DATE()!= null){
+      final String datetxt = candidate.DATE().getText();
+      Date date = null;
+      try{
+        if(datetxt.contains("T")){
+          synchronized(DF1){
+            date = DF1.parse(datetxt);
+          }
+        }else{
+          if(datetxt.contains("Z")){
+            synchronized(DF2){
+              date = DF2.parse(datetxt);
+            }
+          }else{
+            synchronized(DF3){
+              date = DF3.parse(datetxt);
+            }
+          }
+        }
+      }catch(ParseException ex){
+        throw new OCommandSQLParsingException("Invalid date format : "+ datetxt);
+      }
+      return new OLiteral(date);
       
     }else{
       throw new OCommandSQLParsingException("Should not happen");
