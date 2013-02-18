@@ -118,6 +118,17 @@ public class InsertTest {
   }
   
   @Test
+  public void insertEscapeSequences(){
+    final OCommandSQL query = new OCommandSQL("INSERT INTO \"car\"(\"name\",\"size\") VALUES ('tem''po',250)");
+    db.command(query).execute();
+    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "tem'po");
+    assertEquals(docs.get(0).field("size"), 250d);
+  }
+  
+  @Test
   public void insertMultiple(){
     final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES ('tempo',250),('fiesta',160),(null,260),('supreme',310)");
     db.command(query).execute();

@@ -432,7 +432,11 @@ public final class SQLGrammarUtils {
   
   public static String visitAsString(ReferenceContext candidate) throws OCommandSQLParsingException {
     if(candidate.WORD() != null){
-      return candidate.WORD().getText();
+      String txt = candidate.WORD().getText();
+      if(txt.startsWith("\"") && txt.endsWith("\"")){
+        txt = txt.substring(1, txt.length() - 1);
+      }
+      return txt;
     }else if(candidate.ESCWORD() != null){
       String txt = candidate.ESCWORD().getText();
       txt = txt.substring(1, txt.length() - 1);
@@ -543,6 +547,7 @@ public final class SQLGrammarUtils {
   public static String visitText(TerminalNode candidate) {
     String txt = candidate.getText();
     txt = txt.substring(1, txt.length() - 1);
+    txt = txt.replaceAll("''", "'");
     return txt;
   }
 
