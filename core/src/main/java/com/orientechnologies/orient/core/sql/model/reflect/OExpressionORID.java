@@ -14,36 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql.model;
+package com.orientechnologies.orient.core.sql.model.reflect;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.model.OExpressionAbstract;
+import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
 
 /**
- * Reference to a document field value.
+ * Reference to a document orid.
  * 
  * @author Johann Sorel (Geomatys)
  */
-public final class OName extends OExpressionAbstract {
+public final class OExpressionORID extends OExpressionAbstract {
 
-  private final String name;
-
-  public OName(String name) {
-    this(null,name);
+  public OExpressionORID() {
+    this(null);
   }
   
-  public OName(String alias, String name) {
+  public OExpressionORID(String alias) {
     super(alias);
-    //by default name expression has the same alias
-    if(alias == null){
-      setAlias(name);
-    }
-    this.name = name;
-  }
-
-  public String getName() {
-    return name;
   }
   
   @Override
@@ -53,7 +44,7 @@ public final class OName extends OExpressionAbstract {
     }
     if(candidate instanceof ODocument){
       final ODocument doc = (ODocument) candidate;
-      return doc.field(name);
+      return doc.getIdentity();
     }
     return null;
   }
@@ -75,14 +66,7 @@ public final class OName extends OExpressionAbstract {
 
   @Override
   protected String thisToString() {
-    return "(Name) "+name;
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 29 * hash + (this.name != null ? this.name.hashCode() : 0);
-    return hash;
+    return "(@Rid) ";
   }
 
   @Override
@@ -93,16 +77,12 @@ public final class OName extends OExpressionAbstract {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final OName other = (OName) obj;
-    if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
-      return false;
-    }
     return true;
   }
   
   @Override
-  public OName copy() {
-    return new OName(alias,getName());
+  public OExpressionORID copy() {
+    return new OExpressionORID(alias);
   }
   
 }

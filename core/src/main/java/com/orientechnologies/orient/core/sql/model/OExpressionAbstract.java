@@ -116,6 +116,15 @@ public abstract class OExpressionAbstract implements OExpression{
     return isContextFree() && isDocumentFree();
   }
 
+  /**
+   * {@inheritDoc}
+   * @return false by default
+   */
+  @Override
+  public boolean isAgregation() {
+    return false;
+  }
+
   protected abstract String thisToString();
   
   @Override

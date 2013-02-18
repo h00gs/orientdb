@@ -38,7 +38,6 @@ import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OIn;
 import com.orientechnologies.orient.core.sql.model.OInferior;
 import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
-import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OIsNotNull;
 import com.orientechnologies.orient.core.sql.model.OIsNull;
 import com.orientechnologies.orient.core.sql.model.OMap;
@@ -64,6 +63,7 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.model.OBetween;
 import com.orientechnologies.orient.core.sql.model.OFiltered;
+import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
 import com.orientechnologies.orient.core.sql.model.OOperatorMinus;
 import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
@@ -71,6 +71,12 @@ import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
 import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
 import com.orientechnologies.orient.core.sql.model.OOperatorPower;
 import com.orientechnologies.orient.core.sql.model.OPath;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionClass;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionORID;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionSize;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionThis;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionType;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionVersion;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -351,8 +357,22 @@ public final class SQLGrammarUtils {
   public static OExpression visit(ExpressionContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
     
+    if(candidate.OCLASS_ATTR() != null){
+      return new OExpressionClass();
+    }else if(candidate.ORID_ATTR() != null){
+      return new OExpressionORID();
+    }else if(candidate.OSIZE_ATTR() != null){
+      return new OExpressionSize();
+    }else if(candidate.OTHIS() != null){
+      return new OExpressionThis();
+    }else if(candidate.OTYPE_ATTR() != null){
+      return new OExpressionType();
+    }else if(candidate.OVERSION_ATTR() != null){
+      return new OExpressionVersion();
+    }
+    
     if(nbChild == 1){
-      //can be a word, literal, functionCall
+      //can be a word, literal, functionCall      
       return (OExpression)visit(candidate.getChild(0));
     }else if(nbChild == 2){
       //can be a method call, pathcall
@@ -665,6 +685,12 @@ public final class SQLGrammarUtils {
   public static List<OExpression> visit(ArgumentsContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
     final List<OExpression> elements = new ArrayList<OExpression>(nbChild);
+    
+    if(candidate.MULT() != null){
+      elements.add(new OExpressionThis());
+      return elements;
+    }
+    
     for(int i=1;i<nbChild-1;i+=2){
       final ParseTree child = candidate.getChild(i);
       elements.add((OExpression)visit(child));

@@ -20,6 +20,7 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.io.File;
 import java.io.IOException;
@@ -243,6 +244,26 @@ public class SelectTest {
   }
   
   @Test
+  public void selectCount(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT count(*) AS nb FROM car");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 1);
+    assertEquals(docs.get(0).field("nb"), 4l);
+  }
+  
+  @Test
+  public void selectWrongCount(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name,count(*) AS nb FROM car");
+    try{
+      final List<ODocument> docs = db.query(query);
+      fail("should have raised a OCommandSQLParsingException");
+    }catch(OCommandSQLParsingException ex){
+      //ok
+    }
+  }
+  
+  @Test
   public void selectSubFilter(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT docks[name='alger'].capacity as capa from sea");
     final List<ODocument> docs = db.query(query);
@@ -250,6 +271,7 @@ public class SelectTest {
     assertEquals(docs.get(0).field("capa"), 90d);
     
   }
+  
   @Test
   public void selectPath(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT navigator.name AS boatname, navigator.freight.name AS freighttype FROM sea");

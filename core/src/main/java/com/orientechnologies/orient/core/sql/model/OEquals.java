@@ -20,7 +20,6 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -90,6 +89,10 @@ public class OEquals extends OExpressionWithChildren{
     }
     
     for(OIndex index : indexes){
+      if(index.getKeyTypes().length != 1){
+        continue;
+      }
+      
       if(OClass.INDEX_TYPE.UNIQUE.toString().equals(index.getType())){
         //found a usable index
         final Collection searchFor = Collections.singleton(literal.getValue());

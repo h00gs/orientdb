@@ -79,6 +79,13 @@ public interface OExpression {
   boolean isDocumentFree();
   
   /**
+   * Some expression like : count,avg,sum,... are aggregations
+   * The queries interpretation changes is such expressions are in the query.
+   * @return true is expression is an aggregation
+   */
+  boolean isAgregation();
+  
+  /**
    * Prepare filter taking advantage of indexes when possible.
    * 
    * @param clazz

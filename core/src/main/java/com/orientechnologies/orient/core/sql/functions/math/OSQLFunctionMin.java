@@ -36,6 +36,12 @@ public class OSQLFunctionMin extends OSQLFunctionAbstract {
   }
   
   @Override
+  public boolean isAgregation() {
+    //aggregation mode
+    return children.size() == 1;
+  }
+  
+  @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     
     if (getArguments().size() == 1) {

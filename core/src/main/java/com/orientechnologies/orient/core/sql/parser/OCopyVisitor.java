@@ -48,6 +48,12 @@ import com.orientechnologies.orient.core.sql.model.OPath;
 import com.orientechnologies.orient.core.sql.model.OSuperior;
 import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionClass;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionORID;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionSize;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionThis;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionType;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionVersion;
 import com.orientechnologies.orient.core.sql.operator.OSQLOperator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -308,5 +314,35 @@ public class OCopyVisitor implements OExpressionVisitor {
     return new OFiltered(candidate.getAlias(), 
             (OExpression)candidate.getSource().accept(this,data),
             (OExpression)candidate.getFilter().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OExpressionClass candidate, Object data) {
+    return candidate.copy();
+  }
+
+  @Override
+  public Object visit(OExpressionORID candidate, Object data) {
+    return candidate.copy();
+  }
+
+  @Override
+  public Object visit(OExpressionSize candidate, Object data) {
+    return candidate.copy();
+  }
+
+  @Override
+  public Object visit(OExpressionThis candidate, Object data) {
+    return candidate.copy();
+  }
+
+  @Override
+  public Object visit(OExpressionType candidate, Object data) {
+    return candidate.copy();
+  }
+
+  @Override
+  public Object visit(OExpressionVersion candidate, Object data) {
+    return candidate.copy();
   }
 }

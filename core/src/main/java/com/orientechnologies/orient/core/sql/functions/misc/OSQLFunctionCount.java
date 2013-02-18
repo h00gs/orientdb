@@ -35,6 +35,11 @@ public class OSQLFunctionCount extends OSQLFunctionAbstract {
   }
 
   @Override
+  public boolean isAgregation() {
+    return true;
+  }
+
+  @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     total++;
     return total;

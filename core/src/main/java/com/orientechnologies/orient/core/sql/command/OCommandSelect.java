@@ -38,6 +38,7 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.model.OSearchContext;
@@ -71,6 +72,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   private final List<OExpression> groupBys = new ArrayList<OExpression>();
   private final List<OSortBy> sortBys = new ArrayList<OSortBy>();
   private long skip;
+  private boolean hasAggregate = false;
   
   //result list
   private final List<ODocument> result = new ArrayList<ODocument>();
@@ -107,6 +109,8 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     skip = -1;
     sortBys.clear();
     groupBys.clear();
+    hasAggregate = false;
+    boolean allAggregate = true;
     
     //parse projections
     for(OSQLParser.ProjectionContext proj : candidate.projection()){
@@ -115,7 +119,13 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
         projections.clear();
         break;
       }
-      projections.add(SQLGrammarUtils.visit(proj));
+      final OExpression exp = SQLGrammarUtils.visit(proj);
+      projections.add(exp);
+      if(exp.isAgregation()){
+        hasAggregate = true;
+      }else{
+        allAggregate = false;
+      }
     }
     
     //parse source
@@ -155,6 +165,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       setLimit(Integer.valueOf(candidate.limit().INT().getText()));
     }
     
+    //check aggregation projections is there is no groupby
+    if(groupBys.isEmpty() && hasAggregate && !allAggregate){
+      throw new OCommandSQLParsingException("Combining normal and aggregating expressions must be used with a Group by clause");
+    }
     
     return (RET)this;
   }
@@ -228,7 +242,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     result.clear();
     
-    if(groupBys.isEmpty() && sortBys.isEmpty()){
+    if(groupBys.isEmpty() && sortBys.isEmpty() && !hasAggregate){
       //normal query
       search(projections, skip, limit, true);
     }else{
@@ -351,7 +365,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
    * Build groups for current result list.
    */
   private void applyGroups() {
-    if(groupBys.isEmpty()) {
+    if(groupBys.isEmpty() && !hasAggregate) {
       return;
     }
     

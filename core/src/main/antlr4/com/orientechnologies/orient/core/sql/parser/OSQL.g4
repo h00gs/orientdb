@@ -215,7 +215,7 @@ orid            : ORID INT ':' INT;
 unset           : UNSET | (DOUBLEDOT reference);
 map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
-arguments       : LPAREN (expression (COMMA expression)*)? RPAREN ;
+arguments       : LPAREN (MULT |expression (COMMA expression)*)? RPAREN ;
 functionCall    : reference arguments ;       // custom function
 methodOrPathCall: DOT reference arguments? ;  // custom method
 
@@ -236,6 +236,12 @@ expression
   | functionCall
   | expression methodOrPathCall
   | expression LBRACKET filter RBRACKET
+  | OTHIS
+  | ORID_ATTR
+  | OCLASS_ATTR
+  | OVERSION_ATTR
+  | OSIZE_ATTR
+  | OTYPE_ATTR
   ;
 
 filterAnd     : AND filter ;
