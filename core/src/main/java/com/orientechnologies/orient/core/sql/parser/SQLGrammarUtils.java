@@ -597,7 +597,7 @@ public final class SQLGrammarUtils {
   public static OExpression visit(FilterContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
     if(nbChild == 1){
-      //can be a word, literal, functionCall
+      //can be a word, literal, functionCall, expression
       return (OExpression) visit(candidate.getChild(0));
     }else if(nbChild == 2){
       //can be :

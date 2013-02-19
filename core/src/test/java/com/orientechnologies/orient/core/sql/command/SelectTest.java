@@ -98,36 +98,42 @@ public class SelectTest {
     personClass.createProperty("name", OType.STRING);    
     personClass.createProperty("size", OType.DOUBLE);    
     personClass.createProperty("weight", OType.DOUBLE);    
-    personClass.createProperty("points", OType.INTEGER);    
+    personClass.createProperty("points", OType.INTEGER);   
+    personClass.createProperty("alive", OType.BOOLEAN);    
     final ODocument person1 = db.newInstance(personClass.getName());
     person1.field("name","chief");
     person1.field("size",1.8);
     person1.field("weight",60);
     person1.field("points",100);
+    person1.field("alive",false);
     person1.save();    
     final ODocument person2 = db.newInstance(personClass.getName());
     person2.field("name","joe");
     person2.field("size",1.3);
     person2.field("weight",52);
     person2.field("points",80);
+    person2.field("alive",false);
     person2.save();
     final ODocument person3 = db.newInstance(personClass.getName());
     person3.field("name","mary");
     person3.field("size",1.7);
     person3.field("weight",34.5);
     person3.field("points",100);
+    person3.field("alive",false);
     person3.save();    
     final ODocument person4 = db.newInstance(personClass.getName());
     person4.field("name","alex");
     person4.field("size",2.1);
     person4.field("weight",52);
     person4.field("points",100);
+    person4.field("alive",true);
     person4.save();    
     final ODocument person5 = db.newInstance(personClass.getName());
     person5.field("name","suzan");
     person5.field("size",1.55);
     person5.field("weight",52);
     person5.field("points",80);
+    person5.field("alive",false);
     person5.save();
     
     //complex test type
@@ -250,6 +256,16 @@ public class SelectTest {
     assertEquals(docs.size(), 1);
     assertEquals(docs.get(0).fieldNames().length, 1);
     assertEquals(docs.get(0).field("nb"), 4l);
+  }
+  
+  public void selectCustom1(){
+    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name FROM person WHERE alive SKIP 0 LIMIT 1000");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 1);
+    assertEquals(docs.get(0).field("name"), "alex");
+    
   }
   
   @Test

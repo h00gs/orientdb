@@ -263,8 +263,7 @@ filter
   | expression COMPARE_DIF     expression
   | expression LIKE            expression
   | filter     WORD            filter     // custom operators
-  | expression IS NULL
-  | expression IS NOT NULL
+  | expression (IS NULL | IS NOT NULL)?
   ;
 
 // COMMANDS
