@@ -39,9 +39,8 @@ public class OCommandExecutorSQLDelegate extends OCommandExecutorSQLAbstract {
     if (iCommand instanceof OCommandRequestText) {
       final OCommandRequestText textRequest = (OCommandRequestText) iCommand;
       final String text = textRequest.getText();
-      final String textUpperCase = text.toUpperCase(Locale.ENGLISH);
 
-      delegate = (OCommandExecutor) OSQLEngine.getInstance().getCommand(textUpperCase);
+      delegate = (OCommandExecutor) OSQLEngine.getInstance().getCommand(text);
       if (delegate == null)
         throw new OCommandExecutorNotFoundException("Cannot find a command executor for the command request: " + iCommand);
 

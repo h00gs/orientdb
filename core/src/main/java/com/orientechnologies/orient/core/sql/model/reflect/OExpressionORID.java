@@ -44,7 +44,7 @@ public final class OExpressionORID extends OExpressionAbstract {
     }
     if(candidate instanceof ODocument){
       final ODocument doc = (ODocument) candidate;
-      return doc.getIdentity();
+      return doc.getIdentity().toString();
     }
     return null;
   }

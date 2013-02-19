@@ -220,7 +220,13 @@ functionCall    : reference arguments ;       // custom function
 methodOrPathCall: DOT reference arguments? ;  // custom method
 
 expression
-  : literal
+  : OTHIS
+  | ORID_ATTR
+  | OCLASS_ATTR
+  | OVERSION_ATTR
+  | OSIZE_ATTR
+  | OTYPE_ATTR
+  | literal
   | map
   | collection
   | orid
@@ -236,12 +242,6 @@ expression
   | functionCall
   | expression methodOrPathCall
   | expression LBRACKET filter RBRACKET
-  | OTHIS
-  | ORID_ATTR
-  | OCLASS_ATTR
-  | OVERSION_ATTR
-  | OSIZE_ATTR
-  | OTYPE_ATTR
   ;
 
 filterAnd     : AND filter ;

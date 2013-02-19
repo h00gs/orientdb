@@ -47,17 +47,19 @@ public class OIn extends OExpressionWithChildren{
 
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
-    final OExpression left = getLeft();
+    final Object left = getLeft().evaluate(context, candidate);
     if(getRight() instanceof OCollection){
       for(OExpression exp : ((OCollection)getRight()).getChildren() ){
-        if(OEquals.equals(left, exp, context, candidate)){
+        final Object right = exp.evaluate(context, candidate);
+        if(OEquals.equals(left, right)){
           return true;
         }
       }
       return false;
     }else{
       //single value compare
-      return OEquals.equals(getLeft(), getRight(), context, candidate);
+      final Object right = getRight().evaluate(context, candidate);
+      return OEquals.equals(left, right);
     }
   }
 

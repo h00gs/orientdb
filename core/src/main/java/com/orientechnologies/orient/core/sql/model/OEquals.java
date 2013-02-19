@@ -18,6 +18,8 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.id.ORID;
+import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import java.util.Collection;
@@ -108,6 +110,10 @@ public class OEquals extends OExpressionWithChildren{
   static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
     final Object value1 = left.evaluate(context, candidate);
     final Object value2 = right.evaluate(context, candidate);
+    return equals(value1, value2);
+  }
+  
+  static boolean equals(Object value1, Object value2){
     
     if (value1 == value2) {
       // Includes the (value1 == null && value2 == null) case.
@@ -117,6 +123,24 @@ public class OEquals extends OExpressionWithChildren{
       // No need to check for (value2 != null) or (value1 != null).
       // If they were null, the previous check would have caugh them.
       return false;
+    }
+    
+    if(value1 instanceof ORID && value2 instanceof String){
+      //orid check
+      try{
+        ORID r = new ORecordId((String)value2);
+        return value1.equals(r);
+      }catch(IllegalArgumentException ex){
+        //string is not an id
+      }
+    }else if(value1 instanceof String && value2 instanceof ORID){
+      //orid check
+      try{
+        ORID r = new ORecordId((String)value1);
+        return value2.equals(r);
+      }catch(IllegalArgumentException ex){
+        //string is not an id
+      }
     }
 
     //resolving for numbers

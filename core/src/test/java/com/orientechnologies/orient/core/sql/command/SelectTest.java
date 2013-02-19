@@ -253,6 +253,27 @@ public class SelectTest {
   }
   
   @Test
+  public void selectReflectionExpression(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT @rid as id, @this as doc, @size as size, @class as class FROM car WHERE name = 'fiesta' ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 4);
+    assertEquals(docs.get(0).field("id"), "#8:1");
+    assertTrue(docs.get(0).field("doc") instanceof ODocument);
+    assertEquals(docs.get(0).field("size"), 29);
+    assertEquals(docs.get(0).field("class"), "Car");
+  }
+  
+  @Test
+  public void selectUsingReflectionExpression(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE @rid IN [#8:1] ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+    assertEquals(docs.get(0).field("size"), 160d);
+  }
+  
+  @Test
   public void selectWrongCount(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name,count(*) AS nb FROM car");
     try{
