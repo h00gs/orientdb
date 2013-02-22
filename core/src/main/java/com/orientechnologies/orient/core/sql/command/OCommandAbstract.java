@@ -39,10 +39,12 @@ public abstract class OCommandAbstract implements OCommandExecutor {
   protected Map<Object, Object> parameters;
   protected OCommandContext context;
 
+  @Override
   public String getSyntax() {
     return "?";
   }
   
+  @Override
   public <RET extends OCommandExecutor> RET setProgressListener(OProgressListener progressListener) {
     removeListener(this.progressListener);
     if(progressListener != null){
@@ -56,19 +58,23 @@ public abstract class OCommandAbstract implements OCommandExecutor {
     return limit;
   }
 
+  @Override
   public <RET extends OCommandExecutor> RET setLimit(final int iLimit) {
     this.limit = iLimit;
     return (RET) this;
   }
 
+  @Override
   public Map<Object, Object> getParameters() {
     return parameters;
   }
 
+  @Override
   public boolean isIdempotent() {
     return false;
   }
   
+  @Override
   public OCommandContext getContext() {
     if (context == null)
       context = new OBasicCommandContext();
@@ -87,6 +93,11 @@ public abstract class OCommandAbstract implements OCommandExecutor {
   @Override
   public void removeListener(OCommandListener listener) {
     listeners.remove(OCommandListener.class, listener);
+  }
+
+  @Override
+  public String explain() {
+    return toString();
   }
   
   protected void fireBegin(Object itask, long iTotal){

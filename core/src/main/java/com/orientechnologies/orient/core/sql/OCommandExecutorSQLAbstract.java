@@ -57,4 +57,10 @@ public abstract class OCommandExecutorSQLAbstract extends OCommandExecutorAbstra
   public boolean isIdempotent() {
     return false;
   }  
+
+  @Override
+  public String explain() {
+    return this.toString();
+  }
+
 }

@@ -48,12 +48,14 @@ public class OSQLFunctionMax extends OSQLFunctionAbstract {
       //group by case
       final Comparable<Object> value = (Comparable<Object>)children.get(0).evaluate(context, candidate);
 
-      if (max == null){
-        // FIRST TIME
-        max = value;
-      }else if (max.compareTo(value) < 0){
-        // BIGGER
-        max = value;
+      if(value != null){
+        if (max == null){
+          // FIRST TIME
+          max = value;
+        }else if (max.compareTo(value) < 0){
+          // BIGGER
+          max = value;
+        }
       }
 
       return max;
@@ -62,10 +64,12 @@ public class OSQLFunctionMax extends OSQLFunctionAbstract {
       Comparable<Object> max = null;
       for(OExpression  ex : children){
         final Comparable<Object> value = (Comparable<Object>) ex.evaluate(context, candidate);
-        if(max == null){
-          max = value;
-        }else if (max.compareTo(value) < 0){
-          max = value;
+        if(value != null){
+          if(max == null){
+            max = value;
+          }else if (max.compareTo(value) < 0){
+            max = value;
+          }
         }
       }
       return max;

@@ -41,6 +41,7 @@ import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
 import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
 import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
 import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
+import com.orientechnologies.orient.core.sql.command.OCommandExplain;
 import com.orientechnologies.orient.core.sql.command.OCommandFindReferences;
 import com.orientechnologies.orient.core.sql.command.OCommandGrant;
 import com.orientechnologies.orient.core.sql.command.OCommandInsert;
@@ -93,6 +94,7 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandDelete.NAME, OCommandDelete.class);
     commands.put(OCommandDeleteEdge.NAME, OCommandDeleteEdge.class);
     commands.put(OCommandDeleteVertex.NAME, OCommandDeleteVertex.class);
+    commands.put(OCommandExplain.KEYWORD_EXPLAIN, OCommandExplain.class);
     
     // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
@@ -100,7 +102,6 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
         
     // OLD MANUAL PARSING COMMANDS
     commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
-    commands.put(OCommandExecutorSQLExplain.KEYWORD_EXPLAIN, OCommandExecutorSQLExplain.class);
 
     COMMANDS = Collections.unmodifiableMap(commands);
   }

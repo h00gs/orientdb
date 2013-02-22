@@ -48,12 +48,14 @@ public class OSQLFunctionMin extends OSQLFunctionAbstract {
       //group by case
       final Comparable<Object> value = (Comparable<Object>)children.get(0).evaluate(context, candidate);
 
-      if (min == null){
-        // FIRST TIME
-        min = value;
-      }else if (min.compareTo(value) > 0){
-        // SMALLER
-        min = value;
+      if(value != null){
+        if (min == null){
+          // FIRST TIME
+          min = value;
+        }else if (min.compareTo(value) > 0){
+          // SMALLER
+          min = value;
+        }
       }
 
       return min;
@@ -62,10 +64,12 @@ public class OSQLFunctionMin extends OSQLFunctionAbstract {
       Comparable<Object> min = null;
       for(OExpression  ex : children){
         final Comparable<Object> value = (Comparable<Object>) ex.evaluate(context, candidate);
-        if(min == null){
-          min = value;
-        }else if (min.compareTo(value) > 0){
-          min = value;
+        if(value != null){
+          if(min == null){
+            min = value;
+          }else if (min.compareTo(value) > 0){
+            min = value;
+          }
         }
       }
       return min;

@@ -90,4 +90,10 @@ public abstract class OCommandExecutorAbstract extends OBaseParser implements OC
   public void removeListener(OCommandListener listener) {
     listeners.remove(OCommandListener.class, listener);
   }
+
+  @Override
+  public String explain() {
+    return toString();
+  }
+    
 }

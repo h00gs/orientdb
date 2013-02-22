@@ -249,6 +249,7 @@ public abstract class OIndexManagerAbstract extends ODocumentWrapperNoClass impl
     }
   }
 
+  @Override
   public OIndex<?> getIndex(final ORID iRID) {
     for (final OIndex<?> idx : indexes.values()) {
       if (idx.getIdentity().equals(iRID)) {

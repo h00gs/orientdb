@@ -90,4 +90,11 @@ public interface OCommandExecutor {
    */
   void removeListener(OCommandListener listener);
   
+  /**
+   * Obtain a string description of the command.
+   * 
+   * @return description of the command
+   */
+  String explain();
+  
 }

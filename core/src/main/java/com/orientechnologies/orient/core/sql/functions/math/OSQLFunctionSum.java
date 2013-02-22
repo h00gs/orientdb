@@ -48,10 +48,12 @@ public class OSQLFunctionSum extends OSQLFunctionAbstract {
       //group by case
       final Number value = (Number)children.get(0).evaluate(context, candidate);
 
-      if (sum == null){
-        sum = value;
-      }else{
-        sum = value.doubleValue() + sum.doubleValue();
+      if(value != null){
+        if (sum == null){
+          sum = value;
+        }else{
+          sum = value.doubleValue() + sum.doubleValue();
+        }
       }
 
       return sum;
@@ -60,10 +62,12 @@ public class OSQLFunctionSum extends OSQLFunctionAbstract {
       Number sum = null;
       for(OExpression  ex : children){
         final Number value = (Number) ex.evaluate(context, candidate);
-        if(sum == null){
-          sum = value;
-        }else{
-          sum = value.doubleValue() + sum.doubleValue();
+        if(value != null){
+          if(sum == null){
+            sum = value;
+          }else{
+            sum = value.doubleValue() + sum.doubleValue();
+          }
         }
       }
       return sum;
