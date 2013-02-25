@@ -33,7 +33,10 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.id.OClusterPosition;
 import com.orientechnologies.orient.core.id.OClusterPositionLong;
+import com.orientechnologies.orient.core.id.ORID;
+import com.orientechnologies.orient.core.iterator.OFilteredCollection;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecord;
@@ -51,8 +54,9 @@ import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
-import java.util.HashSet;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Executes the SQL SELECT statement. the parse() method compiles the query and 
@@ -65,6 +69,9 @@ import java.util.Set;
 public class OCommandSelect extends OCommandAbstract implements Iterable {
   
   public static final String KEYWORD_SELECT = "SELECT";
+  
+  private static final String PAGING_FINISHED = "finished"; 
+  private static final String PAGING_LINEAR_ORID = "sourceskip"; 
 
   private final List<OExpression> projections = new ArrayList<OExpression>();
   private OQuerySource source;
@@ -76,10 +83,30 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   
   //result list
   private final List<ODocument> result = new ArrayList<ODocument>();
+  //iteration state
+  private boolean isPaging = false;
+  private ODocument previousPagingState = null;
+  private ODocument currentPagingState = null;
+  private ORID rangeStart = null;
+  private ORID rangeEnd = null;
   
   @Override
   public boolean isIdempotent() {
     return true;
+  }
+  
+  private void reset(){
+    projections.clear();
+    setLimit(-1);
+    skip = -1;
+    sortBys.clear();
+    groupBys.clear();
+    hasAggregate = false;
+    isPaging = false;
+    previousPagingState = null;
+    currentPagingState = null;
+    rangeStart = null;
+    rangeEnd = null;
   }
   
   @Override
@@ -90,10 +117,18 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     final OSQLParser.CommandSelectContext candidate = getCommand(iRequest, OSQLParser.CommandSelectContext.class);
     parse(candidate);
       
+    //check if we have listeners
     if (iRequest instanceof OSQLAsynchQuery) {
       final OSQLAsynchQuery request = (OSQLAsynchQuery)iRequest;
       final OCommandResultListener res = request.getResultListener();
       addListener(new ResultListenerWrap(res));
+    }
+    
+    //check if there is a restart orid
+    isPaging = iRequest instanceof OSQLSynchQuery;
+    if (isPaging) {
+      final OSQLSynchQuery request = (OSQLSynchQuery)iRequest;
+      previousPagingState = request.getIterationState();
     }
     
     return (RET)this;
@@ -104,12 +139,8 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
     
     //variables
-    projections.clear();
-    setLimit(-1);
-    skip = -1;
-    sortBys.clear();
-    groupBys.clear();
-    hasAggregate = false;
+    reset();
+    
     boolean allAggregate = true;
     
     //parse projections
@@ -178,11 +209,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
     
     //variables
-    projections.clear();
-    setLimit(-1);
-    skip = -1;
-    sortBys.clear();
-    groupBys.clear();
+    reset();
     
     //parse source
     source = new OQuerySource();
@@ -202,11 +229,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
     
     //variables
-    projections.clear();
-    setLimit(-1);
-    skip = -1;
-    sortBys.clear();
-    groupBys.clear();
+    reset();
     
     //parse source
     source = new OQuerySource();
@@ -242,6 +265,20 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     result.clear();
     
+    currentPagingState = new ODocument();
+    currentPagingState.setIdentity(Integer.MIN_VALUE, OClusterPosition.INVALID_POSITION);
+    
+    //see if paging already tell us that we have finish
+    if(previousPagingState != null){
+        Boolean finished = previousPagingState.field(PAGING_FINISHED);
+        if(Boolean.TRUE.equals(finished)){
+            currentPagingState.field(PAGING_FINISHED,Boolean.TRUE);
+            result.add(currentPagingState);
+            return result;
+        }
+    }
+    
+    
     if(groupBys.isEmpty() && sortBys.isEmpty() && !hasAggregate){
       //normal query
       search(projections, skip, limit, true);
@@ -257,11 +294,26 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       }
     }
     
+    //we can store paging if there is no groupby or orderby
+    if(sortBys.isEmpty() && groupBys.isEmpty()){
+        result.add(currentPagingState);
+    }
     return result;
   }
   
   private void search(final List<OExpression> projections, final long skip, final long limit, boolean notifyListeners){
     
+    if(previousPagingState != null){
+        rangeStart = previousPagingState.field(PAGING_LINEAR_ORID,ORID.class);
+        if(rangeStart!= null){
+            //we move to the next record.
+            rangeStart = rangeStart.nextRid();
+            
+            //clip the results we are looking for
+            removeOutOfRange(source.getTargetRecords());
+        }
+    }
+      
     final OCommandContext context = getContext();
     
     //Optimize research using indexes
@@ -271,20 +323,31 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     final OSearchContext searchContext = new OSearchContext();
     searchContext.setSource(source);
     final OSearchResult searchResult = filter.searchIndex(searchContext);
+    //clip the results we are looking for
+    removeOutOfRange(searchResult.getIncluded());
+    removeOutOfRange(searchResult.getCandidates());
+    removeOutOfRange(searchResult.getExcluded());
     
     if(searchResult.getState() == OSearchResult.STATE.EVALUATE){
       // undeterministe, we need to evaluate each record one by one
-      target = source.createIterator();
+      target = source.createIterator(rangeStart,rangeEnd);
       simplifiedFilter = filter; //no simplification
     }else{
       //merge safe and candidates list
-      final Collection<OIdentifiable> included = searchResult.getIncluded();
-      final Collection<OIdentifiable> candidates = searchResult.getCandidates();
-      final Collection<OIdentifiable> excluded = searchResult.getExcluded();
+      Collection<OIdentifiable> included = searchResult.getIncluded();
+      Collection<OIdentifiable> candidates = searchResult.getCandidates();
+      Collection<OIdentifiable> excluded = searchResult.getExcluded();
+      //sort ids
+      if(included != null && included != OSearchResult.ALL){
+          included = new TreeSet(included);
+      }
+      if(candidates != null && candidates != OSearchResult.ALL){
+          candidates = new TreeSet(candidates);
+      }
       
       if(included == OSearchResult.ALL){
         //guarantee all result match, we can safely ignore the filter
-        target = source.createIterator();
+        target = source.createIterator(rangeStart,rangeEnd);
         simplifiedFilter = OExpression.INCLUDE;
       }else if(excluded == OSearchResult.ALL){
         //guarantee no result match, we can complete skip the search
@@ -292,19 +355,19 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
         simplifiedFilter = OExpression.EXCLUDE;
       }else if(included != null && (candidates==null || candidates.isEmpty()) ){
         //we have only included results, filter can be skipped
-        target = source.createIteratorFilterCandidates(included);
+        target = createIteratorFilterCandidates(included);
         simplifiedFilter = OExpression.INCLUDE;
       }else{
         //reduce the search
         if(included != null || candidates != null){
           //combine included and candidates to obtain our search list
-          final Set<OIdentifiable> ids = new HashSet<OIdentifiable>();
+          final Set<OIdentifiable> ids = new TreeSet<OIdentifiable>();
           if(included != null){ids.addAll(included);}
           if(candidates != null){ids.addAll(candidates);}
-          target = source.createIteratorFilterCandidates(ids);
+          target = createIteratorFilterCandidates(ids);
         }else{
           //we are only sure of an exclude list
-          target = source.createIteratorFilterExcluded(excluded);
+          target = createIteratorFilterExcluded(excluded);
         }
         simplifiedFilter = filter; //no simplification
       }
@@ -317,6 +380,12 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     while (ite.hasNext()) {
       final ORecord candidate = ite.next().getRecord();
+      if(candidate.getIdentity().getClusterId() < 0){
+          //possible sub query paging state, ignore it
+          continue;
+      }
+      
+      currentPagingState.field(PAGING_LINEAR_ORID, candidate.getIdentity());
 
       //filter
       final Object valid = simplifiedFilter.evaluate(context, candidate);
@@ -355,11 +424,83 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       //check limit
       if (limit >= 0 && nbvalid == limit) {
         //reached the limit
-        break;
+        return;
       }
     }
     
+    //we have finish
+    currentPagingState.field(PAGING_FINISHED,Boolean.TRUE);    
   }
+  
+  private Iterable<OIdentifiable> createIteratorFilterCandidates(Collection<OIdentifiable> ids) {
+    final Iterable<? extends OIdentifiable> targetRecords = source.getTargetRecords();
+    final String targetClasse = source.getTargetClasse();
+    final String targetCluster = source.getTargetCluster();
+    
+    if(targetRecords != null){
+      //optimize list, clip results
+      final Set<OIdentifiable> cross = new TreeSet<OIdentifiable>(ids);
+      cross.retainAll((Collection)targetRecords);
+      return cross;
+    }else if(targetClasse != null){
+      if(targetCluster == null){
+        //we can simply copy the given list
+        final Set<OIdentifiable> copy = new TreeSet<OIdentifiable>(ids);
+        return copy;
+      }else{
+        //exclude ids which are not in the searched cluster
+        final ODatabaseRecord db = getDatabase();
+        final int[] clIds = new int[]{db.getClusterIdByName(targetCluster)};
+        final Set<OIdentifiable> copy = new TreeSet<OIdentifiable>();
+        idloop:
+        for(OIdentifiable id : ids){
+          final int idc = id.getIdentity().getClusterId();
+          for(int cid : clIds){
+            if(cid == idc){
+              copy.add(id);
+              continue idloop;
+            }
+          }
+        }
+        return copy;        
+      }
+    }
+    
+    //can't not optimize, wrap the full iterator and exclude wrong results
+    return new OFilteredCollection(source.createIterator(rangeStart,rangeEnd), ids, true);
+  }
+
+  private Iterable<OIdentifiable> createIteratorFilterExcluded(Collection<OIdentifiable> ids) {
+    final Iterable<? extends OIdentifiable> targetRecords = source.getTargetRecords();
+    if(targetRecords != null){
+      //optimize list, clip results
+      final Set<OIdentifiable> cross = new TreeSet<OIdentifiable>((Collection)targetRecords);
+      cross.removeAll(ids);
+      return cross;
+    }
+    
+    //can't not optimize, wrap the full iterator and exclude wrong results
+    return new OFilteredCollection(source.createIterator(rangeStart,rangeEnd), ids, false);
+  }
+  
+  private void removeOutOfRange(Iterable<? extends OIdentifiable> ids){
+      if(rangeStart == null && rangeEnd == null) return;
+      if(ids == null) return;
+      
+      final Iterator<? extends OIdentifiable> ite = ids.iterator();
+      while(ite.hasNext()){
+        final OIdentifiable candidate = ite.next();
+        if(rangeStart!=null && rangeStart.compareTo(candidate.getIdentity()) > 0){
+            ite.remove();
+            continue;
+        }
+        if(rangeEnd!=null && rangeEnd.compareTo(candidate.getIdentity()) < 0){
+            ite.remove();
+            continue;
+        }
+      }
+  }
+  
   
   /**
    * Build groups for current result list.

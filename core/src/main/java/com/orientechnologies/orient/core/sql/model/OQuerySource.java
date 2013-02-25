@@ -16,9 +16,9 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Collection;
+import java.util.TreeSet;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
@@ -36,13 +36,6 @@ import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
-import java.util.AbstractCollection;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
 
 /**
  *
@@ -50,7 +43,7 @@ import java.util.Set;
  */
 public class OQuerySource {
   
-  protected Iterable<? extends OIdentifiable> targetRecords;
+  protected Iterable<OIdentifiable> targetRecords;
   protected String targetCluster;
   protected String targetClasse;
   protected String targetIndex;
@@ -88,6 +81,10 @@ public class OQuerySource {
   }
   
   public Iterable<? extends OIdentifiable> createIterator(){
+    return createIterator(null, null);
+  }
+  
+  public Iterable<? extends OIdentifiable> createIterator(ORID start, ORID end){
     
     if(targetRecords != null){
       return targetRecords;
@@ -95,64 +92,24 @@ public class OQuerySource {
     }else if(targetClasse != null){
       final ODatabaseRecord db = getDatabase();
       db.checkSecurity(ODatabaseSecurityResources.CLASS, ORole.PERMISSION_READ, targetClasse);
-      return new ORecordIteratorClass(db, (ODatabaseRecordAbstract)db, targetClasse, true);
+      ORecordIteratorClass ite = new ORecordIteratorClass(db, (ODatabaseRecordAbstract)db, targetClasse, true);
+      if(start != null || end != null){
+          ite = (ORecordIteratorClass) ite.setRange(start, end);
+      }
       
+      return ite;
     }else if(targetCluster != null){
       final ODatabaseRecord db = getDatabase();
       final int[] clIds = new int[]{db.getClusterIdByName(targetCluster)};
-      return new ORecordIteratorClusters<ORecordInternal<?>>(db, db, clIds, false, false);
-      
+      ORecordIteratorClusters ite =  new ORecordIteratorClusters<ORecordInternal<?>>(db, db, clIds, false, false).setRange(start, end);
+      if(start != null || end != null){
+          ite = (ORecordIteratorClass) ite.setRange(start, end);
+      }
+      return ite;
     }else{
       throw new OException("Source not supported yet");
     }
   }
-  
-  public Iterable<OIdentifiable> createIteratorFilterCandidates(Collection<OIdentifiable> ids) {
-    if(targetRecords != null){
-      //optimize list, clip results
-      final Set<OIdentifiable> cross = new HashSet<OIdentifiable>(ids);
-      cross.retainAll((Collection)targetRecords);
-      return cross;
-    }else if(targetClasse != null){
-      if(targetCluster == null){
-        //we can simply copy the given list
-        final Set<OIdentifiable> copy = new HashSet<OIdentifiable>(ids);
-        return copy;
-      }else{
-        //exclude ids which are not in the searched cluster
-        final ODatabaseRecord db = getDatabase();
-        final int[] clIds = new int[]{db.getClusterIdByName(targetCluster)};
-        final Set<OIdentifiable> copy = new HashSet<OIdentifiable>();
-        idloop:
-        for(OIdentifiable id : ids){
-          final int idc = id.getIdentity().getClusterId();
-          for(int cid : clIds){
-            if(cid == idc){
-              copy.add(id);
-              continue idloop;
-            }
-          }
-        }
-        return copy;        
-      }
-    }
-    
-    //can't not optimize, wrap the full iterator and exclude wrong results
-    return new ClippedCollection(createIterator(), ids, true);
-  }
-
-  public Iterable<OIdentifiable> createIteratorFilterExcluded(Collection<OIdentifiable> ids) {
-    if(targetRecords != null){
-      //optimize list, clip results
-      final Set<OIdentifiable> cross = new HashSet<OIdentifiable>((Collection)targetRecords);
-      cross.removeAll(ids);
-      return cross;
-    }
-    
-    //can't not optimize, wrap the full iterator and exclude wrong results
-    return new ClippedCollection(createIterator(), ids, false);
-  }
-  
   
   public void parse(OSQLParser.FromContext from) throws OCommandSQLParsingException {
     parse(from.source());
@@ -164,12 +121,15 @@ public class OQuerySource {
       //single identifier
       final OLiteral literal = visit(candidate.orid());
       final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
-      targetRecords = Collections.singleton(id);
+      targetRecords = new TreeSet<OIdentifiable>();
+      ((TreeSet<OIdentifiable>) targetRecords).add(id);
       
     }else if(candidate.collection() != null){
       //collection of identifier
       final OCollection col = SQLGrammarUtils.visit(candidate.collection());
-      targetRecords = (Iterable<? extends OIdentifiable>) col.evaluate(null, null);
+      final Collection c = (Collection) col.evaluate(null, null);
+      targetRecords = new TreeSet<OIdentifiable>();
+      ((TreeSet)targetRecords).addAll(c);
       
     }else if(candidate.commandSelect() != null){
       //sub query
@@ -187,7 +147,7 @@ public class OQuerySource {
     }else if(candidate.DICTIONARY()!= null){
       //dictionnay
       final String key = visitAsString(candidate.reference());
-      targetRecords = new ArrayList<OIdentifiable>();
+      targetRecords = new TreeSet<OIdentifiable>();
       final OIdentifiable value = ODatabaseRecordThreadLocal.INSTANCE.get().getDictionary().get(key);
       if (value != null) {
         ((List<OIdentifiable>) targetRecords).add(value);
@@ -205,91 +165,5 @@ public class OQuerySource {
   private ODatabaseRecord getDatabase() {
     return ODatabaseRecordThreadLocal.INSTANCE.get();
   }
-  
-  /**
-   * Unmodifiable collection result of a the merge of two collections.
-   */
-  private class ClippedCollection extends AbstractCollection<OIdentifiable>{
-
-    private final Iterable<? extends OIdentifiable> source;
-    private final boolean include;
-    private final Collection<OIdentifiable> ids;
     
-    private ClippedCollection(Iterable<? extends OIdentifiable> source, Collection<OIdentifiable> ids, boolean include){
-      this.source = source;
-      this.ids = ids;
-      this.include = include;
-    }
-    
-    @Override
-    public Iterator<OIdentifiable> iterator() {
-      return new ClippedIterator();
-    }
-
-    @Override
-    public int size() {
-      int size = 0;
-      final Iterator ite = iterator();
-      while(ite.hasNext()){
-        ite.next();
-        size++;
-      }
-      return size;
-    }
-  
-    private class ClippedIterator implements Iterator<OIdentifiable>{
-
-      private final Iterator<? extends OIdentifiable> baseIte;
-      private OIdentifiable next = null;
-
-      public ClippedIterator() {
-        baseIte = source.iterator();
-      }
-      
-      @Override
-      public boolean hasNext() {
-        findNext();
-        return next != null;
-      }
-
-      @Override
-      public OIdentifiable next() {
-        findNext();
-        if(next == null){
-          throw new NoSuchElementException("No more elements.");
-        }
-        OIdentifiable c = next;
-        next = null;
-        return c;
-      }
-
-      private void findNext(){
-        if(next != null) return;
-        
-        while(next == null){
-          if(baseIte.hasNext()){
-            final OIdentifiable candidate = baseIte.next();
-            if(include && ids.contains(candidate)){
-              //included record
-              next = candidate;
-            }else if(!include && !ids.contains(candidate)){
-              //not excluded result
-              next = candidate;
-            }
-          }else{
-            //no more records
-            break;
-          }
-        }
-      }
-      
-      @Override
-      public void remove() {
-        throw new UnsupportedOperationException("Not supported.");
-      }
-      
-    }
-    
-  }
-  
 }

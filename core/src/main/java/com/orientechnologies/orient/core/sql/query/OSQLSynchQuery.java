@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.OMemoryStream;
 
 /**
@@ -40,6 +41,8 @@ public class OSQLSynchQuery<T extends Object> extends OSQLAsynchQuery<T> impleme
   private ORID                nextPageRID;
   private final List<T>       result              = new ArrayList<T>();
   private Map<Object, Object> previousQueryParams = new HashMap<Object, Object>();
+  
+  private ODocument iterationState = null;
 
   public OSQLSynchQuery() {
     resultListener = this;
@@ -79,7 +82,16 @@ public class OSQLSynchQuery<T extends Object> extends OSQLAsynchQuery<T> impleme
     queryParams = fetchQueryParams(iArgs);
     resetNextRIDIfParametersWereChanged(queryParams);
 
-    super.run(iArgs);
+    final List result = super.run(iArgs);
+    
+    if(!result.isEmpty()){
+      ODocument candidate = (ODocument) result.get(result.size()-1);
+      if(candidate.getIdentity().getClusterId() == Integer.MIN_VALUE){
+        //it's a state object
+        iterationState = candidate;
+        result.remove(result.size()-1);
+      }
+    }
 
     if (!result.isEmpty()) {
       previousQueryParams = new HashMap<Object, Object>(queryParams);
@@ -88,6 +100,10 @@ public class OSQLSynchQuery<T extends Object> extends OSQLAsynchQuery<T> impleme
     }
 
     return result;
+  }
+
+  public ODocument getIterationState() {
+    return iterationState;
   }
 
   private void resetNextRIDIfParametersWereChanged(final Map<Object, Object> queryParams) {

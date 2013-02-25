@@ -24,6 +24,7 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -225,6 +226,17 @@ public class SelectTest {
   }
   
   @Test
+  public void selectAllPaging(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car LIMIT 1");
+    final List<ODocument> docs = new ArrayList<ODocument>();
+    for (List<ODocument> resultset = db.query(query); !resultset.isEmpty(); resultset = db.query(query)) {
+      docs.addAll(resultset);
+    }
+    assertEquals(docs.size(), 4 );
+    assertEquals(docs.get(0).fieldNames().length, 2);
+  }
+  
+  @Test
   public void selectSkip(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car SKIP 1 LIMIT 1");
     final List<ODocument> docs = db.query(query);
@@ -258,14 +270,13 @@ public class SelectTest {
     assertEquals(docs.get(0).field("nb"), 4l);
   }
   
-  public void selectCustom1(){
-    
+  @Test
+  public void selectCustom1(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name FROM person WHERE alive SKIP 0 LIMIT 1000");
     final List<ODocument> docs = db.query(query);
     assertEquals(docs.size(), 1);
     assertEquals(docs.get(0).fieldNames().length, 1);
     assertEquals(docs.get(0).field("name"), "alex");
-    
   }
   
   @Test
