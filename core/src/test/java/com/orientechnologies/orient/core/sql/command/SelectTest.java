@@ -20,6 +20,7 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.io.File;
@@ -269,7 +270,21 @@ public class SelectTest {
     assertEquals(docs.get(0).fieldNames().length, 1);
     assertEquals(docs.get(0).field("nb"), 4l);
   }
-  
+
+  @Test
+  public void selectOnIndex(){
+    final OCommandSQL cmd = new OCommandSQL("CREATE INDEX Car.name UNIQUE");
+    db.command(cmd).execute();
+
+    final OSQLSynchQuery query = new OSQLSynchQuery("select key, rid from index:Car.name");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 3);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("key"), "fiesta");
+    assertEquals(docs.get(1).field("key"), "supreme");
+    assertEquals(docs.get(2).field("key"), "tempo");
+  }
+
   @Test
   public void selectCustom1(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT name FROM person WHERE alive SKIP 0 LIMIT 1000");

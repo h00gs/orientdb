@@ -73,7 +73,7 @@ public class OCommandDeleteEdge extends OCommandAbstract implements OCommandList
       source = candidate.source();
       if(source.orid() != null){
         single = (ORID)visit(source.orid()).evaluate(null, null);
-      }else if(source.reference() != null){
+      }else if(source.expression() != null){
         //ok
       }else{
         //complex source

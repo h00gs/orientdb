@@ -372,7 +372,7 @@ public final class SQLGrammarUtils {
     }
     
     if(nbChild == 1){
-      //can be a word, literal, functionCall      
+      //can be a word, literal, functionCall
       return (OExpression)visit(candidate.getChild(0));
     }else if(nbChild == 2){
       //can be a method call, pathcall
@@ -558,7 +558,7 @@ public final class SQLGrammarUtils {
     fct.getArguments().addAll(args);
     return fct;
   }
-  
+
   public static OExpression visit(MethodOrPathCallContext candidate) throws OCommandSQLParsingException {
     if(candidate.arguments() != null){
       final String name = visitAsString(candidate.reference());
@@ -573,7 +573,7 @@ public final class SQLGrammarUtils {
       path.getChildren().add(name);
       return path;
     }
-    
+
   }
 
   public static OExpression visit(ProjectionContext candidate) throws OCommandSQLParsingException {

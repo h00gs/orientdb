@@ -136,6 +136,17 @@ public class InsertTest {
     assertEquals(docs.size(), 4);
     assertEquals(docs.get(0).fieldNames().length, 2);
   }
+
+    @Test
+    public void insertDoubleQuoteEscapeForValue(){
+        final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES (\"tempo\",250)");
+        db.command(query).execute();
+        final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
+        assertEquals(docs.size(), 1);
+        assertEquals(docs.get(0).fieldNames().length, 2);
+        assertEquals(docs.get(0).field("name"), "tempo");
+        assertEquals(docs.get(0).field("size"), 250d);
+    }
   
   
 }

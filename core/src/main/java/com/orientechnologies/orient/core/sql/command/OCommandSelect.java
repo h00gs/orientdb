@@ -380,8 +380,8 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     while (ite.hasNext()) {
       final ORecord candidate = ite.next().getRecord();
-      if(candidate.getIdentity().getClusterId() < 0){
-          //possible sub query paging state, ignore it
+      if(candidate.getIdentity().getClusterId() == Integer.MIN_VALUE){
+          //sub query paging state, ignore it
           continue;
       }
       

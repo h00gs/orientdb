@@ -80,6 +80,8 @@ PUT : P U T ;
 INCREMENT : I N C R E M E N T ;
 WHILE : W H I L E ;
 BETWEEN : B E T W E E N ;
+VALUE : V A L U E ;
+KEY : K E Y ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -202,7 +204,7 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE
+  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | VALUE | KEY
   ;
 
 anything        : .*? ;
@@ -293,11 +295,11 @@ projection    : (MULT
               | OTYPE_ATTR ) 
               (alias)?
               ;
-source        : ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? reference
-              | orid 
+source        : orid
               | collection 
               | commandSelect 
               | LPAREN commandSelect RPAREN
+              | ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? expression //only reference or path are valid
               ;
 alias          : AS reference ;
 from           : FROM source ; 
@@ -310,8 +312,9 @@ limit          : LIMIT INT ;
 
 commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
 commandCreateCluster    : CREATE CLUSTER reference reference (DATASEGMENT reference)? (LOCATION reference)? (POSITION reference)? ;
-commandCreateIndex      : CREATE INDEX reference (indexOn)? reference (NULL | RUNTIME INT | (reference (COMMA reference)*))?;
-indexOn                 : ON reference LPAREN reference (COMMA reference)* RPAREN ;
+commandCreateIndex      : CREATE INDEX ((reference DOT reference reference) | reference (indexOn)? reference (NULL | RUNTIME INT | (reference (COMMA reference)*))?);
+indexOn                 : ON reference LPAREN indexField (COMMA indexField)* RPAREN ;
+indexField              : reference (BY (VALUE|KEY) )? ;
 commandCreateProperty   : CREATE PROPERTY reference DOT reference reference reference?;
 commandCreateEdge       : CREATE EDGE reference? (edgeCluster)? FROM source TO source (SET insertSet (COMMA insertSet)*)?;
 edgeCluster             : CLUSTER reference ;

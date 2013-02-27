@@ -73,39 +73,60 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
     final OSQLParser.CommandCreateIndexContext candidate = getCommand(iRequest, OSQLParser.CommandCreateIndexContext.class);
-    
-    int i=0;
-    indexName = visitAsString(candidate.reference(i++));
-    
-    if(candidate.indexOn()!= null){
-      final OSQLParser.IndexOnContext ctx = candidate.indexOn();
-      final List<OSQLParser.ReferenceContext> words = ctx.reference();
-      oClass = findClass(words.get(0).getText());
-      fields = new String[words.size()-1];
-      for(int k=1;k<words.size();k++){
-        fields[k-1] = visitAsString(words.get(k));
-      }
-    }
-    
-    final String indexTypeName = visitAsString(candidate.reference(i++));
-    indexType = OClass.INDEX_TYPE.valueOf(indexTypeName.toUpperCase());
-    
-    if(candidate.NULL() != null){
-      //do nothing
-    }else if(candidate.RUNTIME() != null){
-      serializerKeyId = Byte.parseByte(candidate.INT().getText());
+
+    if(candidate.DOT() != null){
+        //query is like : CREATE INDEX class.prop UNIQUE
+        final String className = visitAsString(candidate.reference(0));
+        fields = new String[1];
+        fields[0] = visitAsString(candidate.reference(1));
+        indexName = className+"."+fields[0];
+        oClass = findClass(className);
+        final String indexTypeName = visitAsString(candidate.reference(2));
+        indexType = OClass.INDEX_TYPE.valueOf(indexTypeName.toUpperCase());
+
     }else{
-      final List<OType> keyTypes = new ArrayList<OType>();
-      for(;i<candidate.reference().size();i++){
-        final String text = visitAsString(candidate.reference(i));
-        keyTypes.add(OType.valueOf(text));
-      }
-      this.keyTypes = (keyTypes.isEmpty()) ? null : keyTypes.toArray(new OType[0]);
-      if (this.keyTypes != null && (this.fields.length != this.keyTypes.length)) {
-          throw new OCommandSQLParsingException("Count of fields doesn't match with count of property types. " + "Fields: "
-              + Arrays.toString(this.fields) + "; Types: " + Arrays.toString(this.keyTypes));
+        int i=0;
+        indexName = visitAsString(candidate.reference(i++));
+
+        if(candidate.indexOn()!= null){
+            final OSQLParser.IndexOnContext ctx = candidate.indexOn();
+            oClass = findClass(visitAsString(ctx.reference()));
+
+            final List<OSQLParser.IndexFieldContext> ifields = ctx.indexField();
+            this.fields = new String[ifields.size()];
+            for(int k=0,n=ifields.size();k<n;k++){
+                final OSQLParser.IndexFieldContext ifield = ifields.get(k);
+                String str = visitAsString(ifield.reference());
+                if(ifield.KEY() != null){
+                    str += " by key";
+                }else if(ifield.VALUE() != null){
+                    str += " by value";
+                }
+                this.fields[k] = str;
+            }
+        }
+
+        final String indexTypeName = visitAsString(candidate.reference(i++));
+        indexType = OClass.INDEX_TYPE.valueOf(indexTypeName.toUpperCase());
+
+        if(candidate.NULL() != null){
+            //do nothing
+        }else if(candidate.RUNTIME() != null){
+            serializerKeyId = Byte.parseByte(candidate.INT().getText());
+        }else{
+            final List<OType> keyTypes = new ArrayList<OType>();
+            for(;i<candidate.reference().size();i++){
+                final String text = visitAsString(candidate.reference(i));
+                keyTypes.add(OType.valueOf(text));
+            }
+            this.keyTypes = (keyTypes.isEmpty()) ? null : keyTypes.toArray(new OType[0]);
+            if (this.keyTypes != null && (this.fields.length != this.keyTypes.length)) {
+                throw new OCommandSQLParsingException("Count of fields doesn't match with count of property types. " + "Fields: "
+                        + Arrays.toString(this.fields) + "; Types: " + Arrays.toString(this.keyTypes));
+            }
         }
     }
+
     return this;
   }
 
@@ -118,20 +139,22 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
    */
   @SuppressWarnings("rawtypes")
   public Object execute(final Map<Object, Object> iArgs) {
-    if (indexName == null)
+    if (indexName == null){
       throw new OCommandExecutionException("Cannot execute the command because it has not been parsed yet");
+    }
 
     final ODatabaseRecord database = getDatabase();
     final OIndex<?> idx;
     if (fields == null || fields.length == 0) {
-      if (keyTypes != null)
+      if (keyTypes != null) {
         idx = database.getMetadata().getIndexManager()
             .createIndex(indexName, indexType.toString(), new OSimpleKeyIndexDefinition(keyTypes), null, null);
-      else if (serializerKeyId != 0) {
+      } else if (serializerKeyId != 0) {
         idx = database.getMetadata().getIndexManager()
             .createIndex(indexName, indexType.toString(), new ORuntimeKeyIndexDefinition(serializerKeyId), null, null);
-      } else
+      } else {
         idx = database.getMetadata().getIndexManager().createIndex(indexName, indexType.toString(), null, null, null);
+      }
     } else {
       if (keyTypes == null || keyTypes.length == 0) {
         idx = oClass.createIndex(indexName, indexType, fields);

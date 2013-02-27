@@ -40,6 +40,9 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSetAware;
 import com.orientechnologies.orient.core.sql.OCommandParameters;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
@@ -287,7 +290,12 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
         final List<OSQLParser.ExpressionContext> exps = entry.expression();
         final Map<String,Object> values = new HashMap<String, Object>();
         for(int i=0;i<exps.size();i++){
-          values.put(fields[i], SQLGrammarUtils.visit(exps.get(i)));
+          OExpression exp = SQLGrammarUtils.visit(exps.get(i));
+          if(exp instanceof OName){
+              //we are tolerant here, this literal was escaped with " whre it should have been '.
+              exp = new OLiteral(((OName)exp).getName());
+          }
+          values.put(fields[i], exp);
         }
         entries.add(values);
       }
