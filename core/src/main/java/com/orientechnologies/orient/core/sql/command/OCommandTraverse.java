@@ -16,13 +16,14 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.command.OCommandResultListener;
+import com.orientechnologies.orient.core.command.traverse.OTraverse;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass.ATTRIBUTES;
@@ -30,7 +31,13 @@ import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OQuerySource;
+import com.orientechnologies.orient.core.sql.model.OSortBy;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
+
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 
 /**
@@ -52,10 +59,13 @@ import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
  * @author Luca Garulli
  * @author Johann Sorel (Geomatys)
  */
-public class OCommandTraverse extends OCommandAbstract {
-  
-  public static final String KEYWORD_WHILE    = "WHILE";
+public class OCommandTraverse extends OCommandAbstract implements Iterable {
+
   public static final String KEYWORD_TRAVERSE = "TRAVERSE";
+
+  private final List<String> projections = new ArrayList<String>();
+  private OQuerySource source;
+  private OExpression filter;
 
   public OCommandTraverse() {
   }
@@ -64,17 +74,88 @@ public class OCommandTraverse extends OCommandAbstract {
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
 
-    final OSQLParser.CommandAlterClassContext candidate = getCommand(iRequest, OSQLParser.CommandAlterClassContext.class);
+    final OSQLParser.CommandTraverseContext candidate = getCommand(iRequest, OSQLParser.CommandTraverseContext.class);
+
+    //check if we have listeners
+    if (iRequest instanceof OSQLAsynchQuery) {
+      final OSQLAsynchQuery request = (OSQLAsynchQuery)iRequest;
+      final OCommandResultListener res = request.getResultListener();
+      addListener(new ResultListenerWrap(res));
+    }
+
+    parse(candidate);
+
     return this;
   }
 
+  public OCommandTraverse parse(final OSQLParser.CommandTraverseContext candidate) {
+        final ODatabaseRecord database = getDatabase();
+        database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
+
+        //parse projections
+        for(OSQLParser.TraverseProjectionContext proj : candidate.traverseProjection()){
+            final String p;
+            if(proj.MULT() != null){
+                p = "*";
+            }else if(proj.traverseAll() != null){
+                p = "any()";
+            }else if(proj.traverseAny() != null){
+                p = "all()";
+            }else{
+                p = SQLGrammarUtils.visitAsString(proj.reference());
+            }
+            projections.add(p);
+        }
+
+        //parse source
+        final OSQLParser.FromContext from = candidate.from();
+        source = new OQuerySource();
+        source.parse(from);
+
+        //parse filter
+        if(candidate.filter()!= null){
+            filter = SQLGrammarUtils.visit(candidate.filter());
+        }else{
+            filter = OExpression.INCLUDE;
+        }
+
+        //parse limit
+        if(candidate.limit() != null){
+            setLimit(Integer.valueOf(candidate.limit().INT().getText()));
+        }
+
+        return this;
+    }
+
   @Override
-  public Object execute(Map<Object, Object> iArgs) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public boolean isIdempotent() {
+    return true;
+  }
+
+  @Override
+  public Collection execute(Map<Object, Object> iArgs) {
+    final OTraverse trs = new OTraverse();
+    trs.predicate(filter);
+    trs.target(source.createIterator());
+    trs.fields(projections);
+    trs.limit(getLimit());
+    final List<OIdentifiable> result = trs.execute();
+
+    //notify listeners
+    for(OIdentifiable r : result){
+      fireResult(r);
+    }
+
+    return result;
+  }
+
+  @Override
+  public Iterator iterator() {
+    return execute(null).iterator();
   }
 
   public String getSyntax() {
-    return "TRAVERSE <field>* FROM <target> [WHILE <condition>]";
+    return "TRAVERSE <field>* FROM <target> [WHILE <condition>] [LIMIT int]";
   }
   
 }

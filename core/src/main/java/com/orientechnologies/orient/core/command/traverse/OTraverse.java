@@ -23,6 +23,7 @@ import java.util.List;
 import com.orientechnologies.orient.core.command.OCommand;
 import com.orientechnologies.orient.core.command.OCommandPredicate;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
  * Base class for traversing.
@@ -31,7 +32,7 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
  */
 public class OTraverse implements OCommand, Iterable<OIdentifiable>, Iterator<OIdentifiable> {
   private OTraverseContext                  context     = new OTraverseContext();
-  private OCommandPredicate                 predicate;
+  private OExpression                       predicate;
   private Iterator<? extends OIdentifiable> target;
   private List<String>                      fields      = new ArrayList<String>();
   private long                              resultCount = 0;
@@ -130,12 +131,12 @@ public class OTraverse implements OCommand, Iterable<OIdentifiable>, Iterator<OI
     return target;
   }
 
-  public OTraverse predicate(final OCommandPredicate iPredicate) {
+  public OTraverse predicate(final OExpression iPredicate) {
     predicate = iPredicate;
     return this;
   }
 
-  public OCommandPredicate getPredicate() {
+  public OExpression getPredicate() {
     return predicate;
   }
 

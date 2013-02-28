@@ -36,6 +36,7 @@ import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
+import com.orientechnologies.orient.core.sql.command.OCommandTraverse;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
@@ -195,6 +196,12 @@ public class OQuerySource {
       sub.parse(candidate.commandSelect());
       targetRecords = sub;
       
+    }else if(candidate.commandTraverse() != null){
+        //sub query
+        final OCommandTraverse sub = new OCommandTraverse();
+        sub.parse(candidate.commandTraverse());
+        targetRecords = sub;
+
     }else if(candidate.CLUSTER() != null){
       //cluster
       final OExpression exp = visit(candidate.expression());

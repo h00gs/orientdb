@@ -22,36 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
-import com.orientechnologies.orient.core.sql.command.OCommandAlterClass;
-import com.orientechnologies.orient.core.sql.command.OCommandAlterCluster;
-import com.orientechnologies.orient.core.sql.command.OCommandAlterDatabase;
-import com.orientechnologies.orient.core.sql.command.OCommandAlterProperty;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateClass;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateCluster;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateEdge;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateFunction;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateIndex;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateLink;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateProperty;
-import com.orientechnologies.orient.core.sql.command.OCommandCreateVertex;
-import com.orientechnologies.orient.core.sql.command.OCommandDelete;
-import com.orientechnologies.orient.core.sql.command.OCommandDeleteEdge;
-import com.orientechnologies.orient.core.sql.command.OCommandDeleteVertex;
-import com.orientechnologies.orient.core.sql.command.OCommandDropClass;
-import com.orientechnologies.orient.core.sql.command.OCommandDropCluster;
-import com.orientechnologies.orient.core.sql.command.OCommandDropIndex;
-import com.orientechnologies.orient.core.sql.command.OCommandDropProperty;
-import com.orientechnologies.orient.core.sql.command.OCommandExplain;
-import com.orientechnologies.orient.core.sql.command.OCommandFindReferences;
-import com.orientechnologies.orient.core.sql.command.OCommandGrant;
-import com.orientechnologies.orient.core.sql.command.OCommandInsert;
-import com.orientechnologies.orient.core.sql.command.OCommandRebuildIndex;
-import com.orientechnologies.orient.core.sql.command.OCommandRevoke;
-import com.orientechnologies.orient.core.sql.command.OCommandSelect;
-import com.orientechnologies.orient.core.sql.command.OCommandTruncateClass;
-import com.orientechnologies.orient.core.sql.command.OCommandTruncateCluster;
-import com.orientechnologies.orient.core.sql.command.OCommandTruncateRecord;
-import com.orientechnologies.orient.core.sql.command.OCommandUpdate;
+import com.orientechnologies.orient.core.sql.command.*;
 
 /**
  * Default command operator executor factory.
@@ -95,13 +66,9 @@ public class ODefaultCommandExecutorSQLFactory implements OCommandExecutorSQLFac
     commands.put(OCommandDeleteEdge.NAME, OCommandDeleteEdge.class);
     commands.put(OCommandDeleteVertex.NAME, OCommandDeleteVertex.class);
     commands.put(OCommandExplain.KEYWORD_EXPLAIN, OCommandExplain.class);
-    
-    // NEW ANTLR COMMANDS : still uncomplete
     commands.put(OCommandInsert.KEYWORD_INSERT, OCommandInsert.class);
     commands.put(OCommandSelect.KEYWORD_SELECT, OCommandSelect.class);
-        
-    // OLD MANUAL PARSING COMMANDS
-    commands.put(OCommandExecutorSQLTraverse.KEYWORD_TRAVERSE, OCommandExecutorSQLTraverse.class);
+    commands.put(OCommandTraverse.KEYWORD_TRAVERSE, OCommandTraverse.class);
 
     COMMANDS = Collections.unmodifiableMap(commands);
   }

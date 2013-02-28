@@ -82,6 +82,8 @@ WHILE : W H I L E ;
 BETWEEN : B E T W E E N ;
 VALUE : V A L U E ;
 KEY : K E Y ;
+ALL : A L L ;
+ANY : A N Y ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -204,7 +206,7 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | VALUE | KEY
+  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | VALUE | KEY | ALL | ANY
   ;
 
 anything        : .*? ;
@@ -214,6 +216,8 @@ numberOrWord    : number | reference ;
 reference       : WORD | ESCWORD | keywords;
 literal         : NULL | TEXT | number | TRUE | FALSE | DATE;
 orid            : ORID INT ':' INT;
+traverseAll     : ALL LPAREN RPAREN;
+traverseAny     : ANY LPAREN RPAREN;
 unset           : UNSET | (DOUBLEDOT reference);
 map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
@@ -298,7 +302,9 @@ projection    : (MULT
 source        : orid
               | collection 
               | commandSelect 
+              | commandTraverse
               | LPAREN commandSelect RPAREN
+              | LPAREN commandTraverse RPAREN
               | ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? expression //only reference or path are valid
               ;
 alias          : AS reference ;
@@ -342,7 +348,8 @@ commandDeleteEdge       : DELETE EDGE ((deleteEdgeFrom)? (deleteEdgeTo)? | sourc
 deleteEdgeFrom          : FROM orid;
 deleteEdgeTo            : TO orid;
 commandDeleteVertex     : DELETE VERTEX (source (WHERE filter)?)? ;
-commandTraverse         : TRAVERSE source reference(COMMA reference)* (WHILE filter)? limit?;
+commandTraverse         : TRAVERSE (traverseProjection (COMMA traverseProjection)*)? from (WHILE filter)? limit?;
+traverseProjection      : (MULT | reference | traverseAll | traverseAny) ;
 commandUpdate           : UPDATE source (updateGroup)* (WHERE filter)?;
 updateGroup             : updateSimpleGroup | updatePutGroup ;
 updateSimpleGroup       : (SET|ADD|REMOVE|INCREMENT) updateEntry (COMMA updateEntry)*;
@@ -350,8 +357,8 @@ updatePutGroup          : PUT updatePutEntry (COMMA updatePutEntry)*;
 updateEntry             : reference (COMPARE_EQL expression)? ;
 updatePutEntry          : reference COMPARE_EQL expression COMMA expression ;
 
-command
-	: (commandCreateClass
+command:
+  ( commandCreateClass
   | commandCreateCluster
   | commandCreateIndex
   | commandCreateProperty
@@ -380,6 +387,6 @@ command
   | commandDeleteEdge
   | commandDeleteVertex
   | commandTraverse
-  | commandUpdate)
-    DOTCOMMA? EOF
+  | commandUpdate
+  )  DOTCOMMA? EOF
   ;
