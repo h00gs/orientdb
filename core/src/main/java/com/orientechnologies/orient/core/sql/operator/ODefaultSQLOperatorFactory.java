@@ -16,6 +16,11 @@
 package com.orientechnologies.orient.core.sql.operator;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
+import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodContains;
+import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodContainsAll;
+import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodContainsKey;
+import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodContainsValue;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -31,11 +36,11 @@ public class ODefaultSQLOperatorFactory implements OSQLOperatorFactory{
   private static final Map<String, Class> OPERATORS = new HashMap<String, Class>();
   static {
     // MISC FUNCTIONS
-    OPERATORS.put(OSQLOperatorContains.NAME.toUpperCase(Locale.ENGLISH), OSQLOperatorContains.class);
-    OPERATORS.put(OSQLOperatorContainsAll.NAME.toUpperCase(Locale.ENGLISH), OSQLOperatorContainsAll.class);
-    OPERATORS.put(OSQLOperatorContainsKey.NAME.toUpperCase(Locale.ENGLISH), OSQLOperatorContainsKey.class);
-    OPERATORS.put(OSQLOperatorContainsValue.NAME.toUpperCase(Locale.ENGLISH), OSQLOperatorContainsValue.class);
-    OPERATORS.put(OSQLOperatorInstanceof.NAME.toUpperCase(Locale.ENGLISH), OSQLOperatorContains.class);
+    OPERATORS.put(OSQLMethodContains.NAME.toUpperCase(Locale.ENGLISH), OSQLMethodContains.class);
+    OPERATORS.put(OSQLMethodContainsAll.NAME.toUpperCase(Locale.ENGLISH), OSQLMethodContainsAll.class);
+    OPERATORS.put(OSQLMethodContainsKey.NAME.toUpperCase(Locale.ENGLISH), OSQLMethodContainsKey.class);
+    OPERATORS.put(OSQLMethodContainsValue.NAME.toUpperCase(Locale.ENGLISH), OSQLMethodContainsValue.class);
+    OPERATORS.put(OSQLOperatorInstanceof.NAME.toUpperCase(Locale.ENGLISH), OSQLMethodContains.class);
   }
 
   @Override

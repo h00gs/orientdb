@@ -17,6 +17,10 @@ package com.orientechnologies.orient.test.database.auto;
 
 import java.util.List;
 
+import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OExpressionAbstract;
+import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -216,10 +220,13 @@ public class TraverseTest {
   @Test
   public void traverseAPIIterating() {
     int cycles = 0;
-    for (OIdentifiable id : new OTraverse().target(database.browseClass("Movie").iterator()).predicate(new OCommandPredicate() {
-      public Object evaluate(ORecord<?> iRecord, ODocument iCurrentResult, OCommandContext iContext) {
-        return ((Integer) iContext.getVariable("depth")) <= 2;
-      }
+    for (OIdentifiable id : new OTraverse().target(database.browseClass("Movie").iterator()).predicate(new OExpressionAbstract() {
+
+        @Override
+        protected Object evaluateNow(OCommandContext context, Object candidate) {
+            return ((Integer) context.getVariable("depth")) <= 2;
+        }
+
     })) {
       cycles++;
     }
@@ -229,8 +236,8 @@ public class TraverseTest {
   @Test
   public void traverseAPIandSQLIterating() {
     int cycles = 0;
-    for (OIdentifiable id : new OTraverse().target(database.browseClass("Movie").iterator()).predicate(
-        new OSQLPredicate("$depth <= 2"))) {
+    for (OIdentifiable id : new OTraverse().target(database.browseClass("Movie").iterator())
+            .predicate(SQLGrammarUtils.parseExpression("$depth <= 2"))) {
       cycles++;
     }
     Assert.assertTrue(cycles > 0);

@@ -83,23 +83,21 @@ public class OSQLSynchQuery<T extends Object> extends OSQLAsynchQuery<T> impleme
     resetNextRIDIfParametersWereChanged(queryParams);
 
     final List res = super.run(iArgs);
-    
-    if(!result.isEmpty()){
-      ODocument candidate = (ODocument) result.get(result.size()-1);
+
+    if(res != null && !res.isEmpty()){
+      ODocument candidate = (ODocument) res.get(res.size()-1);
       if(candidate.getIdentity().getClusterId() == Integer.MIN_VALUE){
         //it's a state object
         iterationState = candidate;
-        result.remove(result.size()-1);
+        res.remove(res.size()-1);
       }
-    }
 
-    if (!result.isEmpty()) {
       previousQueryParams = new HashMap<Object, Object>(queryParams);
-      final ORID lastRid = ((OIdentifiable) result.get(result.size() - 1)).getIdentity();
-      nextPageRID = new ORecordId(lastRid.next());
+      //final ORID lastRid = ((OIdentifiable) res.get(res.size() - 1)).getIdentity();
+      //nextPageRID = new ORecordId(lastRid.next());
     }
 
-    return result;
+    return res;
   }
 
   public ODocument getIterationState() {

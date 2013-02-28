@@ -16,33 +16,8 @@
 package com.orientechnologies.orient.core.sql.method;
 
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAppend;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsBoolean;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsDate;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsDateTime;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsDecimal;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsFloat;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsInteger;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsLong;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodAsString;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodCharAt;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodField;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodFormat;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodIndexOf;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodKeys;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodLeft;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodLength;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodNormalize;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodPrefix;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodReplace;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodRight;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodSize;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodSubString;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodToJSON;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodToLowerCase;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodToUpperCase;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodTrim;
-import com.orientechnologies.orient.core.sql.method.misc.OSQLMethodValues;
+import com.orientechnologies.orient.core.sql.method.misc.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -84,6 +59,11 @@ public class ODefaultSQLMethodFactory implements OSQLMethodFactory{
         methods.put(OSQLMethodToUpperCase.NAME, OSQLMethodToUpperCase.class);
         methods.put(OSQLMethodTrim.NAME, OSQLMethodTrim.class);
         methods.put(OSQLMethodValues.NAME, OSQLMethodValues.class);
+        methods.put(OSQLMethodContains.NAME, OSQLMethodContains.class);
+        methods.put(OSQLMethodContainsAll.NAME, OSQLMethodContainsAll.class);
+        methods.put(OSQLMethodContainsKey.NAME, OSQLMethodContainsKey.class);
+        methods.put(OSQLMethodContainsValue.NAME, OSQLMethodContainsValue.class);
+        methods.put(OSQLMethodContainsText.NAME, OSQLMethodContainsText.class);
     }
         
     @Override

@@ -103,24 +103,38 @@ public final class SQLGrammarUtils {
   
   private SQLGrammarUtils() {
   }
-  
+
+  public static OExpression parseExpression(String osql) throws OCommandSQLParsingException{
+      final OSQLParser parser = getParser(osql);
+      final FilterContext context = parser.filter(0);
+      if(context != null){
+          return visit(context);
+      }else{
+          throw new OCommandSQLParsingException("Not a valid expression :"+osql);
+      }
+  }
   
   public static OCommandExecutor parse(String osql) throws OCommandSQLParsingException{
     final ParseTree tree = compileExpression(osql);
     return toOrient(tree);
   }
   
-  public static ParseTree compileExpression(String osql) {
+  public static CommandContext compileExpression(String osql) {
+      final OSQLParser parser = getParser(osql);
+      final CommandContext sentence = parser.command();
+      return sentence;
+  }
+
+  private static OSQLParser getParser(String osql){
       //lexer splits input into tokens
       final CharStream input = new ANTLRInputStream(osql);
       final TokenStream tokens = new CommonTokenStream(new OSQLLexer(input));
 
       //parser generates abstract syntax tree
       final OSQLParser parser = new OSQLParser(tokens);
-      final OSQLParser.CommandContext sentence = parser.command();
-      return sentence;
+      return parser;
   }
-  
+
   public static OCommandExecutor toOrient(ParseTree tree) throws OCommandSQLParsingException{
     return SQLGrammarUtils.visit((OSQLParser.CommandContext)tree);
   }
@@ -269,8 +283,7 @@ public final class SQLGrammarUtils {
     }
     return candidate;
   }
-  
-  
+
   public static <T extends ParserRuleContext> T getCommand(
           final OCommandRequest iRequest, final Class<T> c) throws OCommandSQLParsingException{
     
@@ -349,6 +362,8 @@ public final class SQLGrammarUtils {
       return visit((UnsetContext)candidate);
     }else if(candidate instanceof FilterContext){
       return visit((FilterContext)candidate);
+    }else if(candidate instanceof CommandContext){
+        return visit((CommandContext)candidate);
     }else{
       throw new OCommandSQLParsingException("Unexpected parse tree element :"+candidate.getClass()+" "+candidate);
     }

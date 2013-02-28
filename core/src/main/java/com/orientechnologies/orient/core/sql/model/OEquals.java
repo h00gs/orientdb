@@ -107,13 +107,13 @@ public class OEquals extends OExpressionWithChildren{
     
   }
 
-  static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
+  public static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
     final Object value1 = left.evaluate(context, candidate);
     final Object value2 = right.evaluate(context, candidate);
     return equals(value1, value2);
   }
   
-  static boolean equals(Object value1, Object value2){
+  public static boolean equals(Object value1, Object value2){
     
     if (value1 == value2) {
       // Includes the (value1 == null && value2 == null) case.

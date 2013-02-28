@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql.operator;
+package com.orientechnologies.orient.core.sql.method.misc;
 
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+
+import java.util.Map;
 
 /**
  * CONTAINS KEY operator.
@@ -25,37 +28,35 @@ import com.orientechnologies.orient.core.sql.model.OExpression;
  * @author Luca Garulli
  * 
  */
-public class OSQLOperatorContainsKey extends OSQLOperator {
+public class OSQLMethodContainsKey extends OSQLMethod {
 
   public static final String NAME = "CONTAINSKEY";
   
-  public OSQLOperatorContainsKey() {
-    super(NAME);
+  public OSQLMethodContainsKey() {
+    super(NAME,1);
   }
   
-  public OSQLOperatorContainsKey(OExpression left, OExpression right) {
-    super(NAME, left, right);
+  public OSQLMethodContainsKey(OExpression left, OExpression right) {
+    super(NAME,1);
+    children.add(left);
+    children.add(right);
   }
 
   @Override
-  protected Object evaluateNow(OCommandContext context, Object candidate) {    
-    throw new UnsupportedOperationException("Not supported yet.");
+  protected Object evaluateNow(OCommandContext context, Object candidate) {
+    final Object iLeft = children.get(0).evaluate(context,candidate);
+    final Object iRight = children.get(1).evaluate(context,candidate);
 
-//    if (iLeft instanceof Map<?, ?>) {
-//
-//      final Map<String, ?> map = (Map<String, ?>) iLeft;
-//      return map.containsKey(iRight);
-//    } else if (iRight instanceof Map<?, ?>) {
-//
-//      final Map<String, ?> map = (Map<String, ?>) iRight;
-//      return map.containsKey(iLeft);
-//    }
-//    return false;
+    if (iLeft instanceof Map<?, ?>) {
+      final Map<String, ?> map = (Map<String, ?>) iLeft;
+      return map.containsKey(iRight);
+    }
+    return false;
   }
 
   @Override
-  public OSQLOperatorContainsKey copy() {
-    final OSQLOperatorContainsKey cp = new OSQLOperatorContainsKey();
+  public OSQLMethodContainsKey copy() {
+    final OSQLMethodContainsKey cp = new OSQLMethodContainsKey();
     cp.getArguments().addAll(getArguments());
     cp.setAlias(getAlias());
     return cp;

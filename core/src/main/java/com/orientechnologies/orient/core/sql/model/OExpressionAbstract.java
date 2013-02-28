@@ -16,6 +16,7 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
@@ -125,13 +126,33 @@ public abstract class OExpressionAbstract implements OExpression{
     return false;
   }
 
-  protected abstract String thisToString();
-  
+  /**
+   * Subclass should override this method when needed.
+   * @return false
+   */
+  @Override
+  public boolean isContextFree() {
+    return false;
+  }
+
+  /**
+   * Subclass should override this method when needed.
+   * @return false
+   */
+  @Override
+  public boolean isDocumentFree() {
+    return false;
+  }
+
   @Override
   public final String toString() {
     return toString(this);
   }
-  
+
+  protected String thisToString() {
+    return this.getClass().getSimpleName() + ((alias!=null)? " AS "+alias : "");
+  }
+
   private static String toString(OExpression candidate){
     if(candidate instanceof OExpressionAbstract){
       final OExpressionAbstract exp = (OExpressionAbstract) candidate;
@@ -180,5 +201,18 @@ public abstract class OExpressionAbstract implements OExpression{
   protected ODatabaseRecord getDatabase() {
     return ODatabaseRecordThreadLocal.INSTANCE.get();
   }
-  
+
+  @Override
+  public OExpression copy() {
+    try {
+      return (OExpression)this.clone();
+    } catch (CloneNotSupportedException e) {
+      throw new OException(e.getMessage(),e);
+    }
+  }
+
+  @Override
+  public Object accept(OExpressionVisitor visitor, Object data) {
+    return visitor.visit(this,data);
+  }
 }
