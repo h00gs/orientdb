@@ -16,31 +16,33 @@
 package com.orientechnologies.orient.core.sql.command;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
- * Test SQL Insert command.
+ * Test SQL Update command.
  *
  * @author Johann Sorel (Geomatys)
  */
 @Test
-public class InsertTest {
+public class UpdateTest {
 
   private static File folder;
   static {
@@ -53,13 +55,13 @@ public class InsertTest {
   }
 
   private ODatabaseDocumentTx db;
-  
+
   @BeforeMethod
   public void initMethod(){
     db = new ODatabaseDocumentTx("local:"+folder.getPath());
     db = db.open("admin", "admin");
   }
-    
+
   @AfterMethod
   public void endMethod(){
     if(db != null){
@@ -72,8 +74,8 @@ public class InsertTest {
       db.close();
     }
   }
-  
-  public InsertTest(){
+
+  public UpdateTest(){
     ODatabaseDocumentTx db = new ODatabaseDocumentTx("local:"+folder.getPath());
     db = db.create();
     
@@ -104,49 +106,30 @@ public class InsertTest {
     seaClass.createProperty("name", OType.STRING);
     seaClass.createProperty("navigator", OType.EMBEDDED,boatClass);
     seaClass.createProperty("docks", OType.EMBEDDEDLIST,dockClass);
+    seaClass.createProperty("dockmap", OType.LINKMAP,OType.LINK);
         
     db.close();
   }
   
   @Test
-  public void insertSingle(){
-    final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES ('tempo',250)");
+  public void updateMap(){
+    final ODocument dock = db.newInstance("dock");
+    dock.save();
+    final String dockid = dock.getIdentity().toString();
+
+    final ODocument sea = db.newInstance("sea");
+    sea.save();
+    final String seaid = sea.getIdentity().toString();
+
+    final OCommandSQL query = new OCommandSQL("UPDATE "+seaid+" put dockmap = 'palerm', "+dockid);
     db.command(query).execute();
-    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
+    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM sea"));
     assertEquals(docs.size(), 1);
-    assertEquals(docs.get(0).fieldNames().length, 2);
-  }
-  
-  @Test
-  public void insertEscapeSequences(){
-    final OCommandSQL query = new OCommandSQL("INSERT INTO \"car\"(\"name\",\"size\") VALUES ('tem''po',250)");
-    db.command(query).execute();
-    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
-    assertEquals(docs.size(), 1);
-    assertEquals(docs.get(0).fieldNames().length, 2);
-    assertEquals(docs.get(0).field("name"), "tem'po");
-    assertEquals(docs.get(0).field("size"), 250d);
-  }
-  
-  @Test
-  public void insertMultiple(){
-    final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES ('tempo',250),('fiesta',160),(null,260),('supreme',310)");
-    db.command(query).execute();
-    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
-    assertEquals(docs.size(), 4);
-    assertEquals(docs.get(0).fieldNames().length, 2);
+    final Map m = docs.get(0).field("dockmap");
+    assertNotNull(m);
+    assertEquals(m.keySet().size(),1);
+    assertEquals(m.keySet().iterator().next(),"palerm");
+    assertEquals(m.get("palerm"),dock);
   }
 
-    @Test
-    public void insertDoubleQuoteEscapeForValue(){
-        final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES (\"tempo\",250)");
-        db.command(query).execute();
-        final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
-        assertEquals(docs.size(), 1);
-        assertEquals(docs.get(0).fieldNames().length, 2);
-        assertEquals(docs.get(0).field("name"), "tempo");
-        assertEquals(docs.get(0).field("size"), 250d);
-    }
-  
-  
 }

@@ -82,7 +82,7 @@ public class OSQLSynchQuery<T extends Object> extends OSQLAsynchQuery<T> impleme
     queryParams = fetchQueryParams(iArgs);
     resetNextRIDIfParametersWereChanged(queryParams);
 
-    final List result = super.run(iArgs);
+    final List res = super.run(iArgs);
     
     if(!result.isEmpty()){
       ODocument candidate = (ODocument) result.get(result.size()-1);

@@ -32,6 +32,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import java.util.ArrayList;
@@ -105,11 +106,21 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
       }else if(groupp.updatePutGroup() != null){
         final OSQLParser.UpdatePutGroupContext group = groupp.updatePutGroup();
         for(OSQLParser.UpdatePutEntryContext entry : group.updatePutEntry()){
-            final String fieldName = visitAsString(entry.reference(0));
-            final String keyName = visitAsString(entry.reference(1));
-            final OExpression value = visit(entry.expression());
-            putEntries.put(fieldName, new OPair<String, OExpression>(keyName,value));
+          final String fieldName = visitAsString(entry.reference());
+          final String keyName;
+          final OExpression expKey = visit(entry.expression(0));
+          // literal or reference
+          if(expKey instanceof OLiteral){
+            keyName = String.valueOf(((OLiteral) expKey).getValue());
+          }else if(expKey instanceof OName){
+            keyName = String.valueOf(((OName) expKey).getName());
+          }else{
+              throw new OCommandSQLParsingException("unvalid PUT key :"+expKey);
           }
+
+          final OExpression value = visit(entry.expression(1));
+          putEntries.put(fieldName, new OPair<String, OExpression>(keyName,value));
+        }
       }
     }
     

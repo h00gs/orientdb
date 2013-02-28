@@ -348,7 +348,7 @@ updateGroup             : updateSimpleGroup | updatePutGroup ;
 updateSimpleGroup       : (SET|ADD|REMOVE|INCREMENT) updateEntry (COMMA updateEntry)*;
 updatePutGroup          : PUT updatePutEntry (COMMA updatePutEntry)*;
 updateEntry             : reference (COMPARE_EQL expression)? ;
-updatePutEntry          : reference COMPARE_EQL reference expression ;
+updatePutEntry          : reference COMPARE_EQL expression COMMA expression ;
 
 command
 	: (commandCreateClass
