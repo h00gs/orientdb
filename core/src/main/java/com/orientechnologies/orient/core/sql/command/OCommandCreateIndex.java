@@ -117,7 +117,7 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
             final List<OType> keyTypes = new ArrayList<OType>();
             for(;i<candidate.reference().size();i++){
                 final String text = visitAsString(candidate.reference(i));
-                keyTypes.add(OType.valueOf(text));
+                keyTypes.add(OType.valueOf(text.toUpperCase()));
             }
             this.keyTypes = (keyTypes.isEmpty()) ? null : keyTypes.toArray(new OType[0]);
             if (this.keyTypes != null && (this.fields.length != this.keyTypes.length)) {

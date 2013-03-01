@@ -151,8 +151,7 @@ public class FullTextIndexTest {
 
     Set<ODocument> allDocs = new HashSet<ODocument>();
     for (int i = 0; i < words.length - 1; ++i) {
-      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text containstext \"" + words[i]
-          + "\""));
+      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text.containstext('" + words[i] + "'"));
       allDocs.addAll(docs);
     }
 
@@ -163,8 +162,7 @@ public class FullTextIndexTest {
     allDocs.clear();
 
     for (int i = 0; i < words.length - 1; ++i) {
-      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text containstext \"" + words[i]
-          + "\""));
+      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text.containstext('" + words[i] + "'"));
       allDocs.addAll(docs);
     }
 
@@ -198,8 +196,7 @@ public class FullTextIndexTest {
 
     Set<ODocument> allDocs = new HashSet<ODocument>();
     for (int i = 0; i < words.length - 1; ++i) {
-      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text containstext \"" + words[i]
-          + "\""));
+      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text.containstext('" + words[i] + "'"));
       allDocs.addAll(docs);
     }
 
@@ -218,8 +215,7 @@ public class FullTextIndexTest {
     allDocs.clear();
 
     for (int i = 0; i < words.length - 1; ++i) {
-      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text containstext \"" + words[i]
-          + "\""));
+      List<ODocument> docs = database.query(new OSQLSynchQuery<Object>("SELECT FROM Whiz WHERE text.containstext('" + words[i]+ "'"));
       allDocs.addAll(docs);
     }
 

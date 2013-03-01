@@ -505,10 +505,14 @@ public final class SQLGrammarUtils {
 
   public static OMap visit(MapContext candidate) throws OCommandSQLParsingException {
     final LinkedHashMap map = new LinkedHashMap();
-    final List<LiteralContext> keys = candidate.literal();
-    final List<ExpressionContext> values = candidate.expression();
-    for (int i = 0, n = keys.size(); i < n; i++) {
-      map.put(visit(keys.get(i)), visit(values.get(i)));
+    for(MapEntryContext entry : candidate.mapEntry()){
+      OExpression key = null;
+      if(entry.literal() != null){
+        key = visit(entry.literal());
+      }else{
+        key = new OLiteral(visitAsString(entry.reference()));
+      }
+      map.put(key, visit(entry.expression()));
     }
     return new OMap(map);
   }

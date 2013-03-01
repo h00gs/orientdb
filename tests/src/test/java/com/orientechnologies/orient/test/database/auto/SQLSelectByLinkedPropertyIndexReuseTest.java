@@ -303,7 +303,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where diploma.thesis CONTAINSTEXT 'student'"));
+				"select from lpirtStudent where diploma.thesis.CONTAINSTEXT('student')"));
 		assertEquals(result.size(), 2);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "John Smith"), 1);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "James Bell"), 1);
@@ -320,7 +320,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where diploma.thesis CONTAINSTEXT 'student' limit 1"));
+				"select from lpirtStudent where diploma.thesis.CONTAINSTEXT('student') limit 1"));
 		assertEquals(result.size(), 1);
 		final List<String> expectedNames = Arrays.asList("John Smith", "James Bell");
 		for (ODocument aResult : result) {

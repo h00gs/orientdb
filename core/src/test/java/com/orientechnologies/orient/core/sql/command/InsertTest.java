@@ -137,16 +137,45 @@ public class InsertTest {
     assertEquals(docs.get(0).fieldNames().length, 2);
   }
 
-    @Test
-    public void insertDoubleQuoteEscapeForValue(){
-        final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES (\"tempo\",250)");
-        db.command(query).execute();
-        final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
-        assertEquals(docs.size(), 1);
-        assertEquals(docs.get(0).fieldNames().length, 2);
-        assertEquals(docs.get(0).field("name"), "tempo");
-        assertEquals(docs.get(0).field("size"), 250d);
-    }
+  @Test
+  public void insertDoubleQuoteEscapeForValue(){
+    final OCommandSQL query = new OCommandSQL("INSERT INTO car(name,size) VALUES (\"tempo\",250)");
+    db.command(query).execute();
+    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM car"));
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "tempo");
+    assertEquals(docs.get(0).field("size"), 250d);
+  }
+
+  @Test
+  public void insertFlatJSON(){
+    final OCommandSQL query = new OCommandSQL("INSERT INTO sea(name,navigator) VALUES ('tempo',{name:'hourra'})");
+    db.command(query).execute();
+    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM sea"));
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "tempo");
+    final ODocument nav = docs.get(0).field("navigator");
+    assertNotNull(nav);
+    assertEquals(nav.field("name"), "hourra");
+  }
+
+//  @Test
+//  public void insertTreeJSON(){
+//    final OCommandSQL query = new OCommandSQL("INSERT INTO sea(name,navigator) VALUES ('tempo',{name:'hourra',freight:{name:'lote'}})");
+//    db.command(query).execute();
+//    final List<ODocument> docs = db.query(new OSQLSynchQuery("SELECT FROM sea"));
+//    assertEquals(docs.size(), 1);
+//    assertEquals(docs.get(0).fieldNames().length, 2);
+//    assertEquals(docs.get(0).field("name"), "tempo");
+//    final ODocument nav = docs.get(0).field("navigator");
+//    assertNotNull(nav);
+//    assertEquals(nav.field("name"), "hourra");
+//    final ODocument fish = nav.field("freight");
+//    assertNotNull(fish);
+//    assertEquals(fish.field("name"), "lote");
+//  }
   
   
 }

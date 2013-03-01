@@ -18,6 +18,8 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 
+import java.util.Date;
+
 /**
  *
  * @author Johann Sorel (Geomatys)
@@ -91,7 +93,14 @@ public class OInferior extends OExpressionWithChildren{
     if (objright == null) {
       return null;
     }
-    
+
+    if(objleft instanceof Date){
+      objleft = ((Date)objleft).getTime();
+    }
+    if(objright instanceof Date){
+      objright = ((Date)objright).getTime();
+    }
+
     if(objleft instanceof Number && objright instanceof Number){
       final Double dl = (Double)((Number)objleft).doubleValue();
       final Double dr = (Double)((Number)objright).doubleValue();

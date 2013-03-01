@@ -197,7 +197,7 @@ public class SQLSelectTest {
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
-    resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags[0-1]  CONTAINSALL ['smart','nice']"));
+    resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags[0-1].CONTAINSALL(['smart','nice'])"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
@@ -221,12 +221,12 @@ public class SQLSelectTest {
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
-    resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags[0,1] CONTAINSALL ['smart','nice']"));
+    resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags[0,1].CONTAINSALL(['smart','nice'])"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
-    resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags[0-1] CONTAINSALL ['smart','nice']"));
+    resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags[0-1].CONTAINSALL(['smart','nice'])"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
@@ -286,13 +286,13 @@ public class SQLSelectTest {
     doc.save();
 
     List<ODocument> resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select from Profile where customReferences CONTAINSKEY 'first'"));
+        "select from Profile where customReferences.CONTAINSKEY('first')"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
     resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select from Profile where customReferences CONTAINSVALUE ( name like 'Ja%')"));
+        "select from Profile where customReferences.CONTAINSVALUE( name like 'Ja%')"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
@@ -419,26 +419,26 @@ public class SQLSelectTest {
     Assert.assertTrue(found);
 
     result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races contains (name in ['aaa','bbb'])")).execute();
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races.contains(name in ['aaa','bbb'])")).execute();
     Assert.assertEquals(result.size(), 0);
 
     result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races containsall (name in ['European','Asiatic'])"))
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races.containsall(name in ['European','Asiatic'])"))
         .execute();
     Assert.assertEquals(result.size(), 0);
 
     result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races containsall (name in ['European','Siamese'])"))
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races.containsall(name in ['European','Siamese'])"))
         .execute();
     Assert.assertEquals(result.size(), 1);
 
     result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races containsall (age < 100) LIMIT 1000 SKIP 0"))
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races.containsall(age < 100) LIMIT 1000 SKIP 0"))
         .execute();
     Assert.assertEquals(result.size(), 0);
 
     result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where not ( races contains (age < 100) ) LIMIT 20 SKIP 0"))
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where not ( races.contains(age < 100) ) LIMIT 20 SKIP 0"))
         .execute();
     Assert.assertEquals(result.size(), 1);
 

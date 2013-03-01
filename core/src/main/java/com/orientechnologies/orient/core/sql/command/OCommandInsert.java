@@ -40,11 +40,9 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSetAware;
 import com.orientechnologies.orient.core.sql.OCommandParameters;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
-import com.orientechnologies.orient.core.sql.model.OExpression;
-import com.orientechnologies.orient.core.sql.model.OLiteral;
-import com.orientechnologies.orient.core.sql.model.OName;
-import com.orientechnologies.orient.core.sql.model.OUnset;
+import com.orientechnologies.orient.core.sql.model.*;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.OToSQLVisitor;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
@@ -185,7 +183,14 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
           Object value = evaluate(entry.getValue());
           final OProperty prop = fieldProperties.get(entry.getKey());
           if(prop != null){
-            doc.field(entry.getKey(), value, prop.getType());
+            if(prop.getLinkedClass() != null && entry.getValue() instanceof OMap){
+                //transform value in a document
+                ODocument subdoc = new ODocument(prop.getLinkedClass());
+                subdoc = subdoc.fromJSON( (String)((OMap)entry.getValue()).accept(OToSQLVisitor.INSTANCE,null) );
+                doc.field(entry.getKey(), subdoc);
+            }else{
+                doc.field(entry.getKey(), value, prop.getType());
+            }
           }else{
             doc.field(entry.getKey(), value);
           }

@@ -219,7 +219,8 @@ orid            : ORID INT ':' INT;
 traverseAll     : ALL LPAREN RPAREN;
 traverseAny     : ANY LPAREN RPAREN;
 unset           : UNSET | (DOUBLEDOT reference);
-map             : LACCOLADE (literal DOUBLEDOT expression (COMMA literal DOUBLEDOT expression)*)? RACCOLADE ;
+map             : LACCOLADE (mapEntry (COMMA mapEntry)*)? RACCOLADE ;
+mapEntry        : literal|reference DOUBLEDOT expression ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (MULT |expression (COMMA expression)*)? RPAREN ;
 functionCall    : reference arguments ;       // custom function

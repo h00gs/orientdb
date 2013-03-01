@@ -943,14 +943,14 @@ public class LinkMapIndexTest {
 		document.save();
 
 		final List<ODocument> resultByKey = database.query(
-						new OSQLSynchQuery<ODocument>("select * from LinkMapIndexTestClass where linkMap containskey ?"), "key1");
+						new OSQLSynchQuery<ODocument>("select * from LinkMapIndexTestClass where linkMap.containskey(?)"), "key1");
 		Assert.assertNotNull(resultByKey);
 		Assert.assertEquals(resultByKey.size(), 1);
 
 		Assert.assertEquals(map, document.field("linkMap"));
 
 		final List<ODocument> resultByValue = database.query(new OSQLSynchQuery<ODocument>(
-						"select * from LinkMapIndexTestClass where linkMap  containsvalue ?"), docOne.getIdentity());
+						"select * from LinkMapIndexTestClass where linkMap.containsvalue(?)"), docOne.getIdentity());
 		Assert.assertNotNull(resultByValue);
 		Assert.assertEquals(resultByValue.size(), 1);
 

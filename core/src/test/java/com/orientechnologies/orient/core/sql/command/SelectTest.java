@@ -25,11 +25,8 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -53,6 +50,8 @@ public class SelectTest {
     } catch (IOException ex) {
     }
   }
+
+  private static final Date BASE_DATE = new Date(1000);
 
   private ODatabaseDocumentTx db;
   
@@ -100,13 +99,15 @@ public class SelectTest {
     personClass.createProperty("name", OType.STRING);    
     personClass.createProperty("size", OType.DOUBLE);    
     personClass.createProperty("weight", OType.DOUBLE);    
-    personClass.createProperty("points", OType.INTEGER);   
-    personClass.createProperty("alive", OType.BOOLEAN);    
+    personClass.createProperty("points", OType.INTEGER);
+    personClass.createProperty("birthday", OType.DATETIME);
+    personClass.createProperty("alive", OType.BOOLEAN);
     final ODocument person1 = db.newInstance(personClass.getName());
     person1.field("name","chief");
     person1.field("size",1.8);
     person1.field("weight",60);
     person1.field("points",100);
+    person1.field("birthday",BASE_DATE);
     person1.field("alive",false);
     person1.save();    
     final ODocument person2 = db.newInstance(personClass.getName());
@@ -114,6 +115,7 @@ public class SelectTest {
     person2.field("size",1.3);
     person2.field("weight",52);
     person2.field("points",80);
+    person2.field("birthday",new Date(BASE_DATE.getTime()+100));
     person2.field("alive",false);
     person2.save();
     final ODocument person3 = db.newInstance(personClass.getName());
@@ -121,6 +123,7 @@ public class SelectTest {
     person3.field("size",1.7);
     person3.field("weight",34.5);
     person3.field("points",100);
+    person3.field("birthday",new Date(BASE_DATE.getTime()+50));
     person3.field("alive",false);
     person3.save();    
     final ODocument person4 = db.newInstance(personClass.getName());
@@ -128,6 +131,7 @@ public class SelectTest {
     person4.field("size",2.1);
     person4.field("weight",52);
     person4.field("points",100);
+    person4.field("birthday",new Date(BASE_DATE.getTime()-100));
     person4.field("alive",true);
     person4.save();    
     final ODocument person5 = db.newInstance(personClass.getName());
@@ -135,6 +139,7 @@ public class SelectTest {
     person5.field("size",1.55);
     person5.field("weight",52);
     person5.field("points",80);
+    person5.field("birthday",new Date(BASE_DATE.getTime()-50));
     person5.field("alive",false);
     person5.save();
     
@@ -420,7 +425,19 @@ public class SelectTest {
     assertEquals(docs.get(1).field("name"), null);
     assertEquals(docs.get(2).field("name"), "supreme");
   }
-  
+
+  @Test
+  public void selectWhereDate(){
+    final Date ref = new Date(BASE_DATE.getTime()+20);
+    OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM person WHERE birthday > ?");
+    List<ODocument> docs = db.query(query, ref);
+    assertEquals(docs.size(), 2);
+
+    query = new OSQLSynchQuery("SELECT FROM person WHERE birthday > ?");
+    docs = db.query(query, ref.getTime());
+    assertEquals(docs.size(), 2);
+  }
+
   @Test
   public void selectWhereComplex(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name IS NOT NULL AND (size < 200 OR name = 'tempo')");

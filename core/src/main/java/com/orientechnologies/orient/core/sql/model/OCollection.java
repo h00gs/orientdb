@@ -39,7 +39,7 @@ public class OCollection extends OExpressionAbstract {
   }
 
   public List<OExpression> getChildren() {
-    return Collections.unmodifiableList(children);
+    return children;
   }
   
   @Override

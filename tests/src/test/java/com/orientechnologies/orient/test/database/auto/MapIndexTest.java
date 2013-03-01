@@ -812,7 +812,7 @@ public class MapIndexTest {
 		mapper.setIntMap(map);
 		mapper = database.save(mapper);
 
-		final List<Mapper> resultByKey = database.query(new OSQLSynchQuery<Mapper>("select * from Mapper where intMap containskey ?"),
+		final List<Mapper> resultByKey = database.query(new OSQLSynchQuery<Mapper>("select * from Mapper where intMap.containskey(?)"),
 				"key1");
 		Assert.assertNotNull(resultByKey);
 		Assert.assertEquals(resultByKey.size(), 1);
@@ -820,7 +820,7 @@ public class MapIndexTest {
 		Assert.assertEquals(map, resultByKey.get(0).getIntMap());
 
 		final List<Mapper> resultByValue = database.query(new OSQLSynchQuery<Mapper>(
-				"select * from Mapper where intMap containsvalue ?"), 10);
+				"select * from Mapper where intMap.containsvalue(?)"), 10);
 		Assert.assertNotNull(resultByValue);
 		Assert.assertEquals(resultByValue.size(), 1);
 
