@@ -194,4 +194,13 @@ public class TraverseTest {
     assertEquals(docs.get(1).getClassName(), "boat");
   }
 
+  @Test
+  public void traverseTreeClass2(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("traverse any() from sea while $depth < 2");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 2 );
+    assertEquals(docs.get(0).getClassName(), "sea");
+    assertEquals(docs.get(1).getClassName(), "boat");
+  }
+
 }

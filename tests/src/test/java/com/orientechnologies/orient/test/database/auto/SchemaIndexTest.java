@@ -37,12 +37,14 @@ public class SchemaIndexTest {
 
 	@AfterMethod
 	public void tearDown() throws Exception {
-		database.command(new OCommandSQL("drop class SchemaIndexTest")).execute();
+		try{
+            database.command(new OCommandSQL("drop class SchemaIndexTest")).execute();
+        }catch (Exception ex){
+            //class is not always here
+        }
 		database.command(new OCommandSQL("drop class SchemaSharedIndexSuperTest")).execute();
 		database.getMetadata().getSchema().reload();
-    database.getLevel2Cache().clear();
-
-
+        database.getLevel2Cache().clear();
 		database.close();
 	}
 

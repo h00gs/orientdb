@@ -18,6 +18,10 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.command.OCommandTraverse;
+import com.orientechnologies.orient.core.sql.model.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -27,26 +31,9 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.sql.model.OExpression;
-import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.command.OCommandCustom;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.method.OSQLMethodFactory;
-import com.orientechnologies.orient.core.sql.model.OAnd;
-import com.orientechnologies.orient.core.sql.model.OCollection;
-import com.orientechnologies.orient.core.sql.model.OEquals;
-import com.orientechnologies.orient.core.sql.model.OIn;
-import com.orientechnologies.orient.core.sql.model.OInferior;
-import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
-import com.orientechnologies.orient.core.sql.model.OIsNotNull;
-import com.orientechnologies.orient.core.sql.model.OIsNull;
-import com.orientechnologies.orient.core.sql.model.OMap;
-import com.orientechnologies.orient.core.sql.model.ONot;
-import com.orientechnologies.orient.core.sql.model.ONotEquals;
-import com.orientechnologies.orient.core.sql.model.OOr;
-import com.orientechnologies.orient.core.sql.model.OSuperior;
-import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
-import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -55,22 +42,11 @@ import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.command.OCommandSelect;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionFactory;
-import com.orientechnologies.orient.core.sql.model.OLike;
 
 import static com.orientechnologies.orient.core.sql.parser.OSQLParser.*;
 import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.sql.model.OBetween;
-import com.orientechnologies.orient.core.sql.model.OFiltered;
-import com.orientechnologies.orient.core.sql.model.OName;
-import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
-import com.orientechnologies.orient.core.sql.model.OOperatorMinus;
-import com.orientechnologies.orient.core.sql.model.OOperatorModulo;
-import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
-import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
-import com.orientechnologies.orient.core.sql.model.OOperatorPower;
-import com.orientechnologies.orient.core.sql.model.OPath;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionClass;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionORID;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionSize;
@@ -344,6 +320,10 @@ public final class SQLGrammarUtils {
       return visit((ExpressionContext)candidate);
     }else if(candidate instanceof ReferenceContext){
       return visitAsExpression((ReferenceContext)candidate);
+    }else if(candidate instanceof CleanreferenceContext){
+      return visitAsExpression((CleanreferenceContext)candidate);
+    }else if(candidate instanceof ContextVariableContext){
+        return visit((ContextVariableContext) candidate);
     }else if(candidate instanceof ExpressionContext){
       return visit((ExpressionContext)candidate);
     }else if(candidate instanceof LiteralContext){
@@ -387,7 +367,7 @@ public final class SQLGrammarUtils {
     }
     
     if(nbChild == 1){
-      //can be a word, literal, functionCall
+      //can be a word, literal, functionCall, context variable
       return (OExpression)visit(candidate.getChild(0));
     }else if(nbChild == 2){
       //can be a method call, pathcall
@@ -461,7 +441,25 @@ public final class SQLGrammarUtils {
       return txt;
     }
   }
-  
+
+  public static OName visitAsExpression(CleanreferenceContext candidate) throws OCommandSQLParsingException {
+        return new OName(visitAsString(candidate));
+    }
+
+  public static String visitAsString(CleanreferenceContext candidate) throws OCommandSQLParsingException {
+        if(candidate.WORD() != null){
+            String txt = candidate.WORD().getText();
+            if(txt.startsWith("\"") && txt.endsWith("\"")){
+                txt = txt.substring(1, txt.length() - 1);
+            }
+            return txt;
+        }else{
+            String txt = candidate.ESCWORD().getText();
+            txt = txt.substring(1, txt.length() - 1);
+            return txt;
+        }
+    }
+
   public static Number visit(NumberContext candidate) throws OCommandSQLParsingException {
     if (candidate.INT() != null) {
       return Integer.valueOf(candidate.getText());
@@ -479,10 +477,14 @@ public final class SQLGrammarUtils {
       return text.substring(candidate.getStart().getStartIndex());
     }
   }
+
+  public static OContextVariable visit(ContextVariableContext candidate) throws OCommandSQLParsingException {
+    return new OContextVariable(candidate.WORD().getText());
+  }
   
   public static OUnset visit(UnsetContext candidate) throws OCommandSQLParsingException {
     if(candidate.UNSET() == null){
-      return new OUnset(visitAsString(candidate.reference()));
+      return new OUnset(visitAsString(candidate.cleanreference()));
     }else{
       return new OUnset();
     }
@@ -510,7 +512,7 @@ public final class SQLGrammarUtils {
       if(entry.literal() != null){
         key = visit(entry.literal());
       }else{
-        key = new OLiteral(visitAsString(entry.reference()));
+        key = new OLiteral(visitAsString(entry.cleanreference()));
       }
       map.put(key, visit(entry.expression()));
     }
@@ -571,7 +573,7 @@ public final class SQLGrammarUtils {
   }
 
   public static OSQLFunction visit(FunctionCallContext candidate) throws OCommandSQLParsingException {
-    final String name = visitAsString((ReferenceContext)candidate.getChild(0));
+    final String name = visitAsString((CleanreferenceContext)candidate.getChild(0));
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
     final OSQLFunction fct = createFunction(name);
     fct.getArguments().addAll(args);
@@ -580,13 +582,13 @@ public final class SQLGrammarUtils {
 
   public static OExpression visit(MethodOrPathCallContext candidate) throws OCommandSQLParsingException {
     if(candidate.arguments() != null){
-      final String name = visitAsString(candidate.reference());
+      final String name = visitAsString(candidate.cleanreference());
       final List<OExpression> args = visit(candidate.arguments());
       final OSQLMethod method = createMethod(name);
       method.getArguments().addAll(args);
       return method;
     }else{
-      final OName name = visitAsExpression(candidate.reference());
+      final OName name = visitAsExpression(candidate.cleanreference());
       final OPath path = new OPath(null,null,null);
       path.getChildren().clear();
       path.getChildren().add(name);
@@ -636,10 +638,8 @@ public final class SQLGrammarUtils {
       }else if(candidate.filterIn() != null){
         final OExpression left = (OExpression)visit(candidate.getChild(0));
         final OExpression right;
-        if(candidate.filterIn().literal() != null){
-          right = (OExpression)visit(candidate.filterIn().literal());
-        }else if(candidate.filterIn().collection() != null){
-          right = (OExpression)visit(candidate.filterIn().collection());
+        if(candidate.filterIn().expression() != null){
+          right = (OExpression)visit(candidate.filterIn().expression());
         }else{
           throw new OCommandSQLParsingException("Unexpected arguments");
         }
@@ -738,15 +738,49 @@ public final class SQLGrammarUtils {
         ids.add( ((ORecordId)obj).getIdentity() );
       }
       
-    }else if(candidate.commandSelect() != null){
+    }else if(candidate.sourceQuery() != null){
       //sub query
+      ids.addAll(visit(candidate.sourceQuery()));
+    }
+    return ids;
+  }
+
+  public static List<ORID> visit(SourceQueryContext candidate) throws OCommandSQLParsingException {
+    if(candidate.commandSelect() != null){
+      final List<ORID> ids = new ArrayList<ORID>();
       final OCommandSelect sub = new OCommandSelect();
       sub.parse(candidate.commandSelect());
       for(Object obj : sub){
-        ids.add( ((ORecordId)obj).getIdentity() );
+        final ORID cid;
+        if(obj instanceof ODocument){
+          cid = ((ODocument)obj).getIdentity();
+        }else{
+          cid = ((ORecordId)obj).getIdentity();
+        }
+        if(cid.getClusterId()>=0){
+          ids.add(cid);
+        }
       }
+      return ids;
+    }else if(candidate.commandTraverse() != null){
+      final List<ORID> ids = new ArrayList<ORID>();
+      final OCommandTraverse sub = new OCommandTraverse();
+      sub.parse(candidate.commandTraverse());
+      for(Object obj : sub){
+        final ORID cid;
+        if(obj instanceof ODocument){
+          cid = ((ODocument)obj).getIdentity();
+        }else{
+          cid = ((ORecordId)obj).getIdentity();
+        }
+        if(cid.getClusterId()>=0){
+          ids.add(cid);
+        }
+      }
+      return ids;
+    }else{
+      return visit(candidate.sourceQuery());
     }
-    return ids;
   }
   
   public static OSQLMethod createMethod(String name) throws OCommandSQLParsingException{

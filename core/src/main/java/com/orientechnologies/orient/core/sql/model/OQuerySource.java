@@ -190,18 +190,10 @@ public class OQuerySource {
       targetRecords = new TreeSet<OIdentifiable>();
       ((TreeSet)targetRecords).addAll(c);
       
-    }else if(candidate.commandSelect() != null){
+    }else if(candidate.sourceQuery() != null){
       //sub query
-      final OCommandSelect sub = new OCommandSelect();
-      sub.parse(candidate.commandSelect());
-      targetRecords = sub;
+      targetRecords = (List)SQLGrammarUtils.visit(candidate.sourceQuery());
       
-    }else if(candidate.commandTraverse() != null){
-        //sub query
-        final OCommandTraverse sub = new OCommandTraverse();
-        sub.parse(candidate.commandTraverse());
-        targetRecords = sub;
-
     }else if(candidate.CLUSTER() != null){
       //cluster
       final OExpression exp = visit(candidate.expression());

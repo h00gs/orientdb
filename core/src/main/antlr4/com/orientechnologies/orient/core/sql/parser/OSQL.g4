@@ -80,8 +80,6 @@ PUT : P U T ;
 INCREMENT : I N C R E M E N T ;
 WHILE : W H I L E ;
 BETWEEN : B E T W E E N ;
-VALUE : V A L U E ;
-KEY : K E Y ;
 ALL : A L L ;
 ANY : A N Y ;
 
@@ -136,7 +134,7 @@ fragment X: ('x'|'X');
 fragment Y: ('y'|'Y');
 fragment Z: ('z'|'Z');
 fragment DIGIT : '0'..'9' ;
-fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '{' | '}' | '[' | ']'| '=' | '.'| ':' | '#' | '%' | '^');
+fragment LETTER : ~('0'..'9' | ' ' | '\t' | '\r'| '\n' | ',' | '-' | '+' | '*' | '/' | '(' | ')' | '{' | '}' | '[' | ']'| '=' | '.'| ':' | '#' | '%' | '^' | '$');
 
 LPAREN : '(';
 RPAREN : ')';
@@ -151,6 +149,7 @@ RACCOLADE : '}';
 UNSET : '?';
 NULL : N U L L ;
 ORID : '#';
+CVAR : '$';
 
 TEXT : ('\'' ( ESC_SEQ | '\'\'' | ~('\\'|'\'') )* '\'') ;
 
@@ -206,25 +205,27 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | VALUE | KEY | ALL | ANY
+  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | ALL | ANY
   ;
 
 anything        : .*? ;
 number          : (UNARY^)? (INT|FLOAT)	;
 cword           : anything | NULL ;
-numberOrWord    : number | reference ;
-reference       : WORD | ESCWORD | keywords;
+numberOrWord    : number | cleanreference ;
+contextVariable : CVAR WORD;
+reference       : WORD | ESCWORD | keywords;  // unclean reference which allow keywords
+cleanreference  : WORD | ESCWORD;             // clean reference, ban keywords
 literal         : NULL | TEXT | number | TRUE | FALSE | DATE;
-orid            : ORID INT ':' INT;
+orid            : ORID? INT DOUBLEDOT INT;
 traverseAll     : ALL LPAREN RPAREN;
 traverseAny     : ANY LPAREN RPAREN;
-unset           : UNSET | (DOUBLEDOT reference);
+unset           : UNSET | (DOUBLEDOT cleanreference);
 map             : LACCOLADE (mapEntry (COMMA mapEntry)*)? RACCOLADE ;
-mapEntry        : literal|reference DOUBLEDOT expression ;
+mapEntry        : literal|cleanreference DOUBLEDOT expression ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (MULT |expression (COMMA expression)*)? RPAREN ;
-functionCall    : reference arguments ;       // custom function
-methodOrPathCall: DOT reference arguments? ;  // custom method
+functionCall    : cleanreference arguments ;       // custom function
+methodOrPathCall: DOT cleanreference arguments? ;  // custom method
 
 expression
   : OTHIS
@@ -236,9 +237,10 @@ expression
   | literal
   | map
   | collection
+  | contextVariable
   | orid
   | unset
-  | reference
+  | cleanreference
   | LPAREN expression RPAREN
   | expression DIV<assoc=left>    expression
   | expression MULT<assoc=left>   expression
@@ -253,7 +255,7 @@ expression
 
 filterAnd     : AND filter ;
 filterOr      : OR filter ;
-filterIn      : IN (literal|collection|commandSelect) ;
+filterIn      : IN (expression|sourceQuery) ;
 filterBetween : BETWEEN expression AND expression ;
 filter
   : LPAREN filter RPAREN
@@ -289,7 +291,7 @@ insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
 insertSet     : reference COMPARE_EQL expression ;
 insertFields  : LPAREN reference(COMMA reference)* RPAREN ;
 
-commandSelect : SELECT (projection (COMMA projection)*)? from (WHERE filter)? groupBy? orderBy? skip? limit? ;
+commandSelect : SELECT (projection (COMMA projection)*)? from? (WHERE filter)? groupBy? orderBy? (skip|limit)* ;
 projection    : (MULT
               | expression
               | filter
@@ -302,11 +304,12 @@ projection    : (MULT
               ;
 source        : orid
               | collection 
-              | commandSelect 
-              | commandTraverse
-              | LPAREN commandSelect RPAREN
-              | LPAREN commandTraverse RPAREN
+              | sourceQuery
               | ((CLUSTER|INDEX|DICTIONARY) DOUBLEDOT)? expression //only reference or path are valid
+              ;
+sourceQuery   : commandSelect
+              | commandTraverse
+              | LPAREN sourceQuery RPAREN
               ;
 alias          : AS reference ;
 from           : FROM source ; 
@@ -321,7 +324,7 @@ commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER n
 commandCreateCluster    : CREATE CLUSTER reference reference (DATASEGMENT reference)? (LOCATION reference)? (POSITION reference)? ;
 commandCreateIndex      : CREATE INDEX ((reference DOT reference reference) | reference (indexOn)? reference (NULL | RUNTIME INT | (reference (COMMA reference)*))?);
 indexOn                 : ON reference LPAREN indexField (COMMA indexField)* RPAREN ;
-indexField              : reference (BY (VALUE|KEY) )? ;
+indexField              : reference (BY WORD )? ;
 commandCreateProperty   : CREATE PROPERTY reference DOT reference reference reference?;
 commandCreateEdge       : CREATE EDGE reference? (edgeCluster)? FROM source TO source (SET insertSet (COMMA insertSet)*)?;
 edgeCluster             : CLUSTER reference ;
@@ -349,7 +352,7 @@ commandDeleteEdge       : DELETE EDGE ((deleteEdgeFrom)? (deleteEdgeTo)? | sourc
 deleteEdgeFrom          : FROM orid;
 deleteEdgeTo            : TO orid;
 commandDeleteVertex     : DELETE VERTEX (source (WHERE filter)?)? ;
-commandTraverse         : TRAVERSE (traverseProjection (COMMA traverseProjection)*)? from (WHILE filter)? limit?;
+commandTraverse         : TRAVERSE (traverseProjection (COMMA traverseProjection)*)? from ((WHILE|WHERE) filter)? limit?;
 traverseProjection      : (MULT | reference | traverseAll | traverseAny) ;
 commandUpdate           : UPDATE source (updateGroup)* (WHERE filter)?;
 updateGroup             : updateSimpleGroup | updatePutGroup ;

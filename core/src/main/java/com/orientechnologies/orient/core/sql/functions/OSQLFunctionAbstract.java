@@ -47,6 +47,7 @@ public abstract class OSQLFunctionAbstract extends OSQLFunction {
     this.name = name;
     this.minParams = minparams;
     this.maxParams = maxparams;
+    this.alias = name; //use name as default alias
   }
   
   @Override

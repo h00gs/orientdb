@@ -250,6 +250,15 @@ public class SelectTest {
     assertEquals(docs.get(0).fieldNames().length, 2);
     assertEquals(docs.get(0).field("name"), "fiesta");
   }
+
+  @Test
+  public void selectSkip2(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car LIMIT 1 SKIP 1");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+  }
   
   @Test
   public void selectMethod(){    
@@ -261,10 +270,10 @@ public class SelectTest {
     assertEquals(docs.get(1).field("letter"), "e");
     assertEquals(docs.get(2).field("letter"), null);
     assertEquals(docs.get(3).field("letter"), "p");
-    assertEquals(docs.get(0).field("0"), "250 length");
-    assertEquals(docs.get(1).field("0"), "160 length");
-    assertEquals(docs.get(2).field("0"), "260 length");
-    assertEquals(docs.get(3).field("0"), "310 length");
+    assertEquals(docs.get(0).field("append"), "250 length");
+    assertEquals(docs.get(1).field("append"), "160 length");
+    assertEquals(docs.get(2).field("append"), "260 length");
+    assertEquals(docs.get(3).field("append"), "310 length");
   }
   
   @Test
@@ -314,6 +323,42 @@ public class SelectTest {
   @Test
   public void selectUsingReflectionExpression(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE @rid IN [#8:1] ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+    assertEquals(docs.get(0).field("size"), 160d);
+  }
+
+  @Test
+  public void selectUsingReflectionExpression2(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE @rid in 8:1 ");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+    assertEquals(docs.get(0).field("size"), 160d);
+  }
+
+  @Test
+  public void selectFromOrid1(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM #8:1");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+    assertEquals(docs.get(0).field("size"), 160d);
+  }
+
+  @Test
+  public void selectFromOrid2(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM 8:1");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "fiesta");
+    assertEquals(docs.get(0).field("size"), 160d);
+  }
+
+  @Test
+  public void selectFromOrid3(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM [#8:1]");
     final List<ODocument> docs = db.query(query);
     assertEquals(docs.size(), 1);
     assertEquals(docs.get(0).field("name"), "fiesta");
@@ -596,6 +641,15 @@ public class SelectTest {
     final List<ODocument> docs = db.query(query,parameters);
     assertEquals(docs.size(), 1);
     assertEquals(docs.get(0).field("name"), "fiesta");
+  }
+
+  @Test
+  public void selectNoFrom(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT ifnull('a', 'b')");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("ifnull"), "a");
+
   }
   
 }

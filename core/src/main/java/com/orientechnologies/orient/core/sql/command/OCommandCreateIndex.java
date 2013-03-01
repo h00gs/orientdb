@@ -97,10 +97,14 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
             for(int k=0,n=ifields.size();k<n;k++){
                 final OSQLParser.IndexFieldContext ifield = ifields.get(k);
                 String str = visitAsString(ifield.reference());
-                if(ifield.KEY() != null){
-                    str += " by key";
-                }else if(ifield.VALUE() != null){
-                    str += " by value";
+                if(ifield.WORD() != null){
+                    final String bytype = ifield.WORD().getText().toLowerCase();
+                    if("value".equals(bytype) || "key".equals(bytype)){
+                        str += " by "+bytype;
+                    }else{
+                        throw new OCommandSQLParsingException("Unvalid BY TYPE : "+bytype);
+                    }
+
                 }
                 this.fields[k] = str;
             }

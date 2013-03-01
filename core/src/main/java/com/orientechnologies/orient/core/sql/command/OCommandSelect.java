@@ -161,8 +161,18 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     //parse source
     final OSQLParser.FromContext from = candidate.from();
-    source = new OQuerySource();
-    source.parse(from);
+    if(from != null){
+      source = new OQuerySource();
+      source.parse(from);
+    }else{
+      //no source, we expect all projections to be document free
+      for(OExpression exp : projections){
+        if(!exp.isDocumentFree()){
+          throw new OCommandSQLParsingException("Projections must be document free when source is not defined.");
+        }
+      }
+    }
+
     
     //parse filter
     if(candidate.filter()!= null){
@@ -187,13 +197,19 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }
         
     //parse skip
-    if(candidate.skip() != null){
-      skip = Integer.valueOf(candidate.skip().INT().getText());
+    if(candidate.skip().size() > 1){
+     throw new OCommandSQLParsingException("Multiple Skip elements");
+    }
+    for(OSQLParser.SkipContext cskip : candidate.skip()){
+        skip = Integer.valueOf(cskip.INT().getText());
     }
     
     //parse limit
-    if(candidate.limit() != null){
-      setLimit(Integer.valueOf(candidate.limit().INT().getText()));
+    if(candidate.limit().size() > 1){
+      throw new OCommandSQLParsingException("Multiple Limit elements");
+    }
+   for(OSQLParser.LimitContext climit : candidate.limit()){
+      setLimit(Integer.valueOf(climit.INT().getText()));
     }
     
     //check aggregation projections is there is no groupby
@@ -319,58 +335,66 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     //Optimize research using indexes
     final OExpression simplifiedFilter;
     final Iterable<? extends OIdentifiable> target;
-    
-    final OSearchContext searchContext = new OSearchContext();
-    searchContext.setSource(source);
-    final OSearchResult searchResult = filter.searchIndex(searchContext);
-    //clip the results we are looking for
-    removeOutOfRange(searchResult.getIncluded());
-    removeOutOfRange(searchResult.getCandidates());
-    removeOutOfRange(searchResult.getExcluded());
-    
-    if(searchResult.getState() == OSearchResult.STATE.EVALUATE){
-      // undeterministe, we need to evaluate each record one by one
-      target = source.createIterator(rangeStart,rangeEnd);
-      simplifiedFilter = filter; //no simplification
-    }else{
-      //merge safe and candidates list
-      Collection<OIdentifiable> included = searchResult.getIncluded();
-      Collection<OIdentifiable> candidates = searchResult.getCandidates();
-      Collection<OIdentifiable> excluded = searchResult.getExcluded();
-      //sort ids
-      if(included != null && included != OSearchResult.ALL){
-          included = new TreeSet(included);
-      }
-      if(candidates != null && candidates != OSearchResult.ALL){
-          candidates = new TreeSet(candidates);
-      }
-      
-      if(included == OSearchResult.ALL){
-        //guarantee all result match, we can safely ignore the filter
+
+    if(source != null){
+      final OSearchContext searchContext = new OSearchContext();
+      searchContext.setSource(source);
+      final OSearchResult searchResult = filter.searchIndex(searchContext);
+      //clip the results we are looking for
+      removeOutOfRange(searchResult.getIncluded());
+      removeOutOfRange(searchResult.getCandidates());
+      removeOutOfRange(searchResult.getExcluded());
+
+      if(searchResult.getState() == OSearchResult.STATE.EVALUATE){
+        // undeterministe, we need to evaluate each record one by one
         target = source.createIterator(rangeStart,rangeEnd);
-        simplifiedFilter = OExpression.INCLUDE;
-      }else if(excluded == OSearchResult.ALL){
-        //guarantee no result match, we can complete skip the search
-        target = Collections.EMPTY_LIST;
-        simplifiedFilter = OExpression.EXCLUDE;
-      }else if(included != null && (candidates==null || candidates.isEmpty()) ){
-        //we have only included results, filter can be skipped
-        target = createIteratorFilterCandidates(included);
-        simplifiedFilter = OExpression.INCLUDE;
-      }else{
-        //reduce the search
-        if(included != null || candidates != null){
-          //combine included and candidates to obtain our search list
-          final Set<OIdentifiable> ids = new TreeSet<OIdentifiable>();
-          if(included != null){ids.addAll(included);}
-          if(candidates != null){ids.addAll(candidates);}
-          target = createIteratorFilterCandidates(ids);
-        }else{
-          //we are only sure of an exclude list
-          target = createIteratorFilterExcluded(excluded);
-        }
         simplifiedFilter = filter; //no simplification
+      }else{
+        //merge safe and candidates list
+        Collection<OIdentifiable> included = searchResult.getIncluded();
+        Collection<OIdentifiable> candidates = searchResult.getCandidates();
+        Collection<OIdentifiable> excluded = searchResult.getExcluded();
+        //sort ids
+        if(included != null && included != OSearchResult.ALL){
+          included = new TreeSet(included);
+        }
+        if(candidates != null && candidates != OSearchResult.ALL){
+          candidates = new TreeSet(candidates);
+        }
+
+        if(included == OSearchResult.ALL){
+          //guarantee all result match, we can safely ignore the filter
+          target = source.createIterator(rangeStart,rangeEnd);
+          simplifiedFilter = OExpression.INCLUDE;
+        }else if(excluded == OSearchResult.ALL){
+          //guarantee no result match, we can complete skip the search
+          target = Collections.EMPTY_LIST;
+          simplifiedFilter = OExpression.EXCLUDE;
+        }else if(included != null && (candidates==null || candidates.isEmpty()) ){
+          //we have only included results, filter can be skipped
+          target = createIteratorFilterCandidates(included);
+          simplifiedFilter = OExpression.INCLUDE;
+        }else{
+          //reduce the search
+          if(included != null || candidates != null){
+            //combine included and candidates to obtain our search list
+            final Set<OIdentifiable> ids = new TreeSet<OIdentifiable>();
+            if(included != null){ids.addAll(included);}
+            if(candidates != null){ids.addAll(candidates);}
+            target = createIteratorFilterCandidates(ids);
+          }else{
+            //we are only sure of an exclude list
+            target = createIteratorFilterExcluded(excluded);
+          }
+          simplifiedFilter = filter; //no simplification
+        }
       }
+    }else{
+      //query is document free, mostly function calls and stuff like that
+      final List<OIdentifiable> candidates = new ArrayList<OIdentifiable>();
+      candidates.add(new ODocument());
+      target = candidates;
+      simplifiedFilter = filter;
     }
     
     //iterate on candidates

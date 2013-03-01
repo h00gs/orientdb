@@ -78,7 +78,7 @@ public class SQLDropIndexTest {
 
 	@Test
 	public void testOldSyntax() throws Exception {
-		database.command(new OCommandSQL("CREATE INDEX SQLDropIndexTestClass.prop1 UNIQUE")).execute();
+		database.command(new OCommandSQL("CREATE INDEX \"SQLDropIndexTestClass.prop1\" UNIQUE")).execute();
 
 		database.getMetadata().getIndexManager().reload();
 
@@ -86,7 +86,7 @@ public class SQLDropIndexTest {
 				.getClassIndex("SQLDropIndexTestClass.prop1");
 		Assert.assertNotNull(index);
 
-		database.command(new OCommandSQL("DROP INDEX SQLDropIndexTestClass.prop1")).execute();
+		database.command(new OCommandSQL("DROP INDEX \"SQLDropIndexTestClass.prop1\"")).execute();
 		database.getMetadata().getIndexManager().reload();
 
 		index = database.getMetadata().getSchema().getClass("SQLDropIndexTestClass").getClassIndex("SQLDropIndexTestClass.prop1");
