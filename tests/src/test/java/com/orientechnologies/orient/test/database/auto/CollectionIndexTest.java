@@ -403,7 +403,7 @@ public class CollectionIndexTest {
 		collector = database.save(collector);
 
 		List<Collector> result = database.query(new OSQLSynchQuery<Collector>(
-				"select * from Collector where stringCollection contains ?"), "eggs");
+				"select * from Collector where stringCollection.contains(?)"), "eggs");
 		Assert.assertNotNull(result);
 		Assert.assertEquals(result.size(), 1);
 		Assert.assertEquals(Arrays.asList("spam", "eggs"), result.get(0).getStringCollection());

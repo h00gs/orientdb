@@ -16,8 +16,11 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 
+import java.util.Collection;
 import java.util.Date;
 
 /**
@@ -86,12 +89,11 @@ public class OInferior extends OExpressionWithChildren{
   
   static Integer compare(Object objleft, Object objright) {
 
-    if (!(objleft instanceof Comparable)) {
-      return null;
-    }
-
-    if (objright == null) {
-      return null;
+    if(objleft == null && objright == null){
+        return 0;
+    }else if(objleft == null || objright == null){
+        //can't compare
+        return null;
     }
 
     if(objleft instanceof Date){
@@ -106,8 +108,39 @@ public class OInferior extends OExpressionWithChildren{
       final Double dr = (Double)((Number)objright).doubleValue();
       return dl.compareTo(dr);
     }
-    
-    return ((Comparable) objleft).compareTo(objright);
+
+    if(objleft instanceof OCompositeKey){
+        //try to convert right to Compositekey
+        final OCompositeKey lkey = (OCompositeKey) objleft;
+        OCompositeKey rkey = null;
+        if(objright instanceof Collection){
+            rkey = new OCompositeKey( ((Collection)objright).toArray() );
+        }else{
+            rkey = new OCompositeKey( objright );
+        }
+        return lkey.compareTo(rkey);
+    }else if(objright instanceof OCompositeKey){
+        //try to convert left to Compositekey
+        final OCompositeKey rkey = (OCompositeKey) objright;
+        OCompositeKey lkey = null;
+        if(objleft instanceof Collection){
+            lkey = new OCompositeKey( ((Collection)objleft).toArray() );
+        }else{
+            lkey = new OCompositeKey( objleft );
+        }
+        return lkey.compareTo(rkey);
+    }
+
+    if(objleft instanceof Comparable && objright instanceof Comparable){
+        try{
+            return ((Comparable) objleft).compareTo(objright);
+        }catch(Exception ex){
+            // we tried
+            return null;
+        }
+    }
+
+    return null;
   }
 
   @Override

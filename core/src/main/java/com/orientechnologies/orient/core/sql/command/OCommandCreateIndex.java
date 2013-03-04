@@ -124,7 +124,7 @@ public class OCommandCreateIndex extends OCommandAbstract implements OCommandDis
                 keyTypes.add(OType.valueOf(text.toUpperCase()));
             }
             this.keyTypes = (keyTypes.isEmpty()) ? null : keyTypes.toArray(new OType[0]);
-            if (this.keyTypes != null && (this.fields.length != this.keyTypes.length)) {
+            if (this.fields != null && this.keyTypes != null && (this.fields.length != this.keyTypes.length)) {
                 throw new OCommandSQLParsingException("Count of fields doesn't match with count of property types. " + "Fields: "
                         + Arrays.toString(this.fields) + "; Types: " + Arrays.toString(this.keyTypes));
             }

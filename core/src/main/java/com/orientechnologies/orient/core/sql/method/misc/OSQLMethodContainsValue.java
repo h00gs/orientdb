@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class OSQLMethodContainsValue extends OSQLMethod {
 
-  public static final String NAME = "CONTAINSVALUE";
+  public static final String NAME = "containsvalue";
 
   public OSQLMethodContainsValue() {
     super(NAME, 1);

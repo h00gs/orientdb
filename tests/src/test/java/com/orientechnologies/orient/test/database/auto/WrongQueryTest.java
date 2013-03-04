@@ -15,6 +15,7 @@
  */
 package com.orientechnologies.orient.test.database.auto;
 
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
@@ -38,7 +39,7 @@ public class WrongQueryTest {
 		database.open("admin", "admin");
 	}
 
-	@Test(dependsOnMethods = "queryOpen", expectedExceptions = OQueryParsingException.class)
+	@Test(dependsOnMethods = "queryOpen", expectedExceptions = OCommandSQLParsingException.class)
 	public void queryFieldOperatorNotSupported() {
 		database.command(new OSQLSynchQuery<ODocument>("select * from Account where name.not() like 'G%'")).execute();
 	}

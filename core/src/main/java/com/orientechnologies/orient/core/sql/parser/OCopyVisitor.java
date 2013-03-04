@@ -123,11 +123,9 @@ public class OCopyVisitor implements OExpressionVisitor {
   
   @Override
   public Object visit(OSQLMethod candidate, Object data) {
-    final List<OExpression> args = candidate.getMethodArguments();
-    final OExpression source = (OExpression)candidate.getSource().accept(this, data);
-    args.add(source);
+    final List<OExpression> args = new ArrayList<OExpression>(candidate.getArguments());
     for(int i=0;i<args.size();i++){
-      args.set(i, (OExpression)args.get(i).accept(this, data));
+        args.set(i, (OExpression)args.get(i).accept(this, data));
     }
     final OSQLMethod copy = candidate.copy();
     copy.getArguments().clear();

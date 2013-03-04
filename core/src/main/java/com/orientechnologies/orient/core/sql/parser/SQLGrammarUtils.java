@@ -319,9 +319,9 @@ public final class SQLGrammarUtils {
     if(candidate instanceof ExpressionContext){
       return visit((ExpressionContext)candidate);
     }else if(candidate instanceof ReferenceContext){
-      return visitAsExpression((ReferenceContext)candidate);
+      return visitAsExpression((ReferenceContext) candidate);
     }else if(candidate instanceof CleanreferenceContext){
-      return visitAsExpression((CleanreferenceContext)candidate);
+      return visitAsExpression((CleanreferenceContext) candidate);
     }else if(candidate instanceof ContextVariableContext){
         return visit((ContextVariableContext) candidate);
     }else if(candidate instanceof ExpressionContext){
@@ -330,8 +330,6 @@ public final class SQLGrammarUtils {
       return visit((LiteralContext)candidate);
     }else if(candidate instanceof FunctionCallContext){
       return visit((FunctionCallContext)candidate);
-    }else if(candidate instanceof MethodOrPathCallContext){
-      return visit((MethodOrPathCallContext)candidate);
     }else if(candidate instanceof OridContext){
       return visit((OridContext)candidate);
     }else if(candidate instanceof MapContext){
@@ -381,12 +379,13 @@ public final class SQLGrammarUtils {
       return right;
     }else if(nbChild == 3){
       //can be '(' exp ')'
-      //can be exp (+|-|/|*) exp
+      //can be exp (+|-|/|*|^) exp
+      //can be exp . exp = path
       final ParseTree left = candidate.getChild(0);
       final ParseTree center = candidate.getChild(1);
       final ParseTree right = candidate.getChild(2);
       if(center instanceof TerminalNode){
-        //(+|-|/|*|.) exp
+        //(+|-|/|*|^) exp
         final String operator = center.getText();
         final OExpression leftExp = (OExpression)visit(left);
         final OExpression rightExp = (OExpression)visit(right);
@@ -402,6 +401,13 @@ public final class SQLGrammarUtils {
           return new OOperatorModulo(leftExp, rightExp);
         }else if("^".equals(operator)){
           return new OOperatorPower(leftExp, rightExp);
+        }else if(".".equals(operator)){
+            if(rightExp instanceof OSQLMethod){
+                ((OSQLMethod)rightExp).getArguments().add(0,leftExp);
+                return rightExp;
+            }else{
+                return new OPath(leftExp, rightExp);
+            }
         }else{
           throw new OCommandSQLParsingException("Unexpected operator "+operator);
         }
@@ -572,29 +578,22 @@ public final class SQLGrammarUtils {
     return txt;
   }
 
-  public static OSQLFunction visit(FunctionCallContext candidate) throws OCommandSQLParsingException {
+  public static OExpressionWithChildren visit(FunctionCallContext candidate) throws OCommandSQLParsingException {
     final String name = visitAsString((CleanreferenceContext)candidate.getChild(0));
     final List<OExpression> args = visit( ((ArgumentsContext)candidate.getChild(1)) );
-    final OSQLFunction fct = createFunction(name);
-    fct.getArguments().addAll(args);
-    return fct;
-  }
-
-  public static OExpression visit(MethodOrPathCallContext candidate) throws OCommandSQLParsingException {
-    if(candidate.arguments() != null){
-      final String name = visitAsString(candidate.cleanreference());
-      final List<OExpression> args = visit(candidate.arguments());
-      final OSQLMethod method = createMethod(name);
-      method.getArguments().addAll(args);
-      return method;
-    }else{
-      final OName name = visitAsExpression(candidate.cleanreference());
-      final OPath path = new OPath(null,null,null);
-      path.getChildren().clear();
-      path.getChildren().add(name);
-      return path;
+    OExpressionWithChildren fct = null;
+    try{
+        fct = createFunction(name);
+    }catch (OCommandSQLParsingException ex1){
+        try{
+            fct = createMethod(name);
+        }catch (OCommandSQLParsingException ex2){
+            throw new OCommandSQLParsingException("No function or method for name : "+name);
+        }
     }
 
+    fct.getChildren().addAll(args);
+    return fct;
   }
 
   public static OExpression visit(ProjectionContext candidate) throws OCommandSQLParsingException {
@@ -607,14 +606,22 @@ public final class SQLGrammarUtils {
     }else{
       throw new OCommandSQLParsingException("Unknowned command " + candidate.getClass()+" "+candidate);
     }
-    
+
     if(candidate.alias() != null){
-      exp.setAlias(visitAsString(candidate.alias().reference()));
+      exp.setAlias(visit(candidate.alias()));
     }
-    
+
     return exp;
   }
-  
+
+  public static String visit(AliasContext candidate) throws OCommandSQLParsingException{
+    if(candidate.literal() != null){
+      return String.valueOf(visit(candidate.literal()).getValue());
+    }else{
+      return visitAsString(candidate.reference());
+    }
+  }
+
   public static OExpression visit(FilterContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
     if(nbChild == 1){
@@ -660,6 +667,7 @@ public final class SQLGrammarUtils {
       // '(' filter ')'
       //filter COMPARE_X filter
       //filter IS NULL
+      //filter IS DEFINED
       //filter LIKE filter
       if(candidate.COMPARE_EQL()!= null){
         return new OEquals(
@@ -689,6 +697,9 @@ public final class SQLGrammarUtils {
         return new OLike(
                 (OExpression) visit(candidate.getChild(0)),
                 (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.DEFINED()!= null){
+          return new OIsNotNull(
+                  (OExpression) visit(candidate.getChild(0)));
       }else if(candidate.IS()!= null){
         return new OIsNull(
               (OExpression) visit(candidate.getChild(0)));
@@ -804,5 +815,5 @@ public final class SQLGrammarUtils {
     }
     throw new OCommandSQLParsingException("No function for name : "+name);
   }
-  
+
 }

@@ -56,7 +56,7 @@ public class OSQLFunctionDijkstra extends OSQLFunctionPathFinder<Float> {
       paramDirection = DIRECTION.valueOf(children.get(3).evaluate(context, candidate).toString().toUpperCase());
     }
 
-    return super.evaluate(context, candidate);
+    return super.evaluateNow(context, candidate);
   }
   
   public String getSyntax() {

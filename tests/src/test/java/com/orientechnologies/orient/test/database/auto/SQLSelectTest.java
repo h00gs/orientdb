@@ -837,7 +837,7 @@ public class SQLSelectTest {
   @Test
   public void queryWrongOperator() {
     try {
-      database.query(new OSQLSynchQuery<ODocument>("select from Profile where name like.toLowerCase() '%Jay%'"));
+      database.query(new OSQLSynchQuery<ODocument>("select from Profile where name.toLowerCase() like '%Jay%'"));
       Assert.assertFalse(true);
     } catch (Exception e) {
       Assert.assertTrue(true);
@@ -1269,7 +1269,7 @@ public class SQLSelectTest {
 
   @Test
   public void testSquareBracketsOnWhere() {
-    List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>("select from V where out.in.label is not null"));
+    List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>("select from V where out.\"in\".label is not null"));
     Assert.assertFalse(result.isEmpty());
   }
 

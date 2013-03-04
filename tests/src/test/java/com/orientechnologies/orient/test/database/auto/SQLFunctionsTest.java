@@ -167,7 +167,7 @@ public class SQLFunctionsTest {
 
   @Test
   public void querySet() {
-    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select set(name) as names from City")).execute();
+    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select \"set\"(name) as names from City")).execute();
 
     Assert.assertFalse(result.isEmpty());
 
@@ -192,7 +192,7 @@ public class SQLFunctionsTest {
 
   @Test
   public void queryUnionAsInline() {
-    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select union(out, in) as edges from OGraphVertex"))
+    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select union(out, \"in\") as edges from OGraphVertex"))
         .execute();
 
     Assert.assertTrue(result.size() > 1);
@@ -227,7 +227,7 @@ public class SQLFunctionsTest {
   @Test
   public void queryFormat() {
     List<ODocument> result = database.command(
-        new OSQLSynchQuery<ODocument>("select format('%d - %s (%s)', nr, street, type, dummy ) as output from Account")).execute();
+        new OSQLSynchQuery<ODocument>("select format('%d - %s (%s)', nr, street, \"type\", dummy ) as output from Account")).execute();
 
     Assert.assertTrue(result.size() > 1);
     for (ODocument d : result) {
@@ -282,7 +282,7 @@ public class SQLFunctionsTest {
 
     result = database.command(
         new OSQLSynchQuery<ODocument>("select from Account where created <= date('" + dateFormat.format(new Date()) + "', '"
-            + pattern + "')")).execute();
+            + esc(pattern) + "')")).execute();
 
     Assert.assertEquals(result.size(), tot);
     for (ODocument d : result) {
@@ -355,4 +355,10 @@ public class SQLFunctionsTest {
   public void closeDatabase() {
     database.close();
   }
+
+
+    private static String esc(String candidate){
+        return candidate.replaceAll("'","''");
+    }
+
 }

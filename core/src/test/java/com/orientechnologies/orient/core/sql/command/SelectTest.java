@@ -97,8 +97,8 @@ public class SelectTest {
     //person test type
     final OClass personClass = schema.createClass("person");
     personClass.createProperty("name", OType.STRING);    
-    personClass.createProperty("size", OType.DOUBLE);    
-    personClass.createProperty("weight", OType.DOUBLE);    
+    personClass.createProperty("size", OType.FLOAT);
+    personClass.createProperty("weight", OType.DOUBLE);
     personClass.createProperty("points", OType.INTEGER);
     personClass.createProperty("birthday", OType.DATETIME);
     personClass.createProperty("alive", OType.BOOLEAN);
@@ -501,7 +501,15 @@ public class SelectTest {
     assertEquals(docs.get(0).fieldNames().length, 2);
     assertEquals(docs.get(0).field("name"), "fiesta");
   }
-  
+
+  @Test
+  public void selectWhereDoubleFloatCompare(){
+    final OSQLSynchQuery query = new OSQLSynchQuery("select * from person where size = 1.3");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).field("name"), "joe");
+  }
+
   @Test
   public void selectWhereInCollection(){
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car WHERE name IN ['tempo','fiesta']");
@@ -580,15 +588,15 @@ public class SelectTest {
     assertEquals(docs.size(), 3);
     assertEquals(docs.get(0).field("w"), 34.5d);
     assertEquals(docs.get(0).field("nb"), 1l);
-    assertEquals(docs.get(0).field("min"), 1.7d);
+    assertEquals(docs.get(0).field("min"), 1.7f);
     assertEquals(docs.get(0).field("sum"), 100);
     assertEquals(docs.get(1).field("w"), 52d);
     assertEquals(docs.get(1).field("nb"), 3l);
-    assertEquals(docs.get(1).field("min"), 1.3d);
+    assertEquals(docs.get(1).field("min"), 1.3f);
     assertEquals(docs.get(1).field("sum"), 260d);
     assertEquals(docs.get(2).field("w"), 60d);
     assertEquals(docs.get(2).field("nb"), 1l);
-    assertEquals(docs.get(2).field("min"), 1.8d);
+    assertEquals(docs.get(2).field("min"), 1.8f);
     assertEquals(docs.get(2).field("sum"), 100);
   }
   
@@ -603,25 +611,25 @@ public class SelectTest {
     assertEquals(docs.get(0).field("w"), 34.5d);
     assertEquals(docs.get(0).field("p"), 100);
     assertEquals(docs.get(0).field("nb"), 1l);
-    assertEquals(docs.get(0).field("min"), 1.7d);
+    assertEquals(docs.get(0).field("min"), 1.7f);
     assertEquals(docs.get(0).field("sum"), 100);
     
     assertEquals(docs.get(1).field("w"), 52d);
     assertEquals(docs.get(1).field("p"), 80);
     assertEquals(docs.get(1).field("nb"), 2l);
-    assertEquals(docs.get(1).field("min"), 1.3d);
+    assertEquals(docs.get(1).field("min"), 1.3f);
     assertEquals(docs.get(1).field("sum"), 160d);
     
     assertEquals(docs.get(2).field("w"), 52d);
     assertEquals(docs.get(2).field("p"), 100);
     assertEquals(docs.get(2).field("nb"), 1l);
-    assertEquals(docs.get(2).field("min"), 2.1d);
+    assertEquals(docs.get(2).field("min"), 2.1f);
     assertEquals(docs.get(2).field("sum"), 100);
     
     assertEquals(docs.get(3).field("w"), 60d);
     assertEquals(docs.get(3).field("p"), 100);
     assertEquals(docs.get(3).field("nb"), 1l);
-    assertEquals(docs.get(3).field("min"), 1.8d);
+    assertEquals(docs.get(3).field("min"), 1.8f);
     assertEquals(docs.get(3).field("sum"), 100);
   }
   

@@ -76,7 +76,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.name = 'Someone'"));
+				"select from lpirtStudent where \"group\".curator.name = 'Someone'"));
 		assertEquals(result.size(), 1);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "John Smith"), 1);
 
@@ -92,7 +92,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.salary = 2000"));
+				"select from lpirtStudent where \"group\".curator.salary = 2000"));
 		assertEquals(result.size(), 1);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "John Smith"), 1);
 
@@ -108,7 +108,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.name = 'Someone else' limit 1"));
+				"select from lpirtStudent where \"group\".curator.name = 'Someone else' limit 1"));
 		assertEquals(result.size(), 1);
 		assertTrue(Arrays.asList("Jane Smith", "James Bell", "Roger Connor").contains((String) result.get(0).field("name")));
 
@@ -124,7 +124,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.salary < 1000"));
+				"select from lpirtStudent where \"group\".curator.salary < 1000"));
 		assertEquals(result.size(), 3);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "Jane Smith"), 1);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "James Bell"), 1);
@@ -142,7 +142,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.salary < 1000 limit 2"));
+				"select from lpirtStudent where \"group\".curator.salary < 1000 limit 2"));
 		assertEquals(result.size(), 2);
 
 		final List<String> expectedNames = Arrays.asList("Jane Smith", "James Bell", "Roger Connor");
@@ -194,7 +194,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.salary > 1000"));
+				"select from lpirtStudent where \"group\".curator.salary > 1000"));
 		assertEquals(result.size(), 1);
 		assertEquals(containsDocumentWithFieldValue(result, "name", "John Smith"), 1);
 
@@ -210,7 +210,7 @@ public class SQLSelectByLinkedPropertyIndexReuseTest extends AbstractIndexReuseT
 		}
 
 		List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-				"select from lpirtStudent where group.curator.salary > 550 limit 1"));
+				"select from lpirtStudent where \"group\".curator.salary > 550 limit 1"));
 		assertEquals(result.size(), 1);
 		final List<String> expectedNames = Arrays.asList("John Smith", "James Bell", "Roger Connor");
 		for (ODocument aResult : result) {

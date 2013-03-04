@@ -221,7 +221,7 @@ public class ObjectTreeTest {
 
   @Test(dependsOnMethods = "testCitySaving")
   public void testCityEquality() {
-    List<Profile> resultset = database.query(new OSQLSynchQuery<Object>("select from profile where location.city.name = 'Rome'"));
+    List<Profile> resultset = database.query(new OSQLSynchQuery<Object>("select from profile where \"location\".city.name = 'Rome'"));
     Assert.assertEquals(resultset.size(), 2);
 
     Profile p1 = resultset.get(0);

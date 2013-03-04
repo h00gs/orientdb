@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class OSQLMethodContainsKey extends OSQLMethod {
 
-  public static final String NAME = "CONTAINSKEY";
+  public static final String NAME = "containskey";
   
   public OSQLMethodContainsKey() {
     super(NAME,1);

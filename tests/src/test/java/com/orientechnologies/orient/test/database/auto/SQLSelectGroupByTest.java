@@ -63,7 +63,7 @@ public class SQLSelectGroupByTest {
     database.open("admin", "admin");
 
     try {
-      List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select count(*) from Account group by location"))
+      List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select count(*) from Account group by \"location\""))
           .execute();
 
       Assert.assertTrue(result.size() > 1);
@@ -78,7 +78,7 @@ public class SQLSelectGroupByTest {
 
     try {
       List<ODocument> result = database.command(
-          new OSQLSynchQuery<ODocument>("select location from Account group by location order by location")).execute();
+          new OSQLSynchQuery<ODocument>("select \"location\" from Account group by \"location\" order by \"location\"")).execute();
 
       Assert.assertTrue(result.size() > 1);
       String last = null;
@@ -89,7 +89,7 @@ public class SQLSelectGroupByTest {
       }
 
       result = database.command(
-          new OSQLSynchQuery<ODocument>("select location from Account group by location order by location desc")).execute();
+          new OSQLSynchQuery<ODocument>("select \"location\" from Account group by \"location\" order by \"location\" desc")).execute();
 
       Assert.assertTrue(result.size() > 1);
       last = null;

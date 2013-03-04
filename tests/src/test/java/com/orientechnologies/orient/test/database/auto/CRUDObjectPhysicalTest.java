@@ -26,9 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import javassist.util.proxy.Proxy;
 
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
@@ -75,6 +77,18 @@ public class CRUDObjectPhysicalTest {
   @Parameters(value = "url")
   public CRUDObjectPhysicalTest(String iURL) {
     url = iURL;
+  }
+
+  @AfterMethod
+  public void afterMethod() {
+    //ensure we close the databse for other tests
+    if(database!= null){
+      try{
+        database.close();
+      }catch (Exception ex){
+          //we tried
+      }
+    }
   }
 
   @Test
@@ -1626,7 +1640,7 @@ public class CRUDObjectPhysicalTest {
     database.getMetadata().getSchema().reload();
 
     final List<Profile> result = database.query(new OSQLSynchQuery<Profile>(
-        "select from Profile where location.city.country.name = 'Spain'"));
+        "select from Profile where \"location\".city.country.name = 'Spain'"));
 
     Assert.assertTrue(result.size() > 0);
 
@@ -1744,7 +1758,7 @@ public class CRUDObjectPhysicalTest {
     database.close();
   }
 
-  @Test(expectedExceptions = OQueryParsingException.class)
+  @Test(expectedExceptions = OCommandSQLParsingException.class)
   public void commandWithWrongNamedParameters() {
     database = OObjectDatabasePool.global().acquire(url, "admin", "admin");
 

@@ -51,7 +51,12 @@ public final class OFiltered extends OExpressionWithChildren {
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object left = getSource().evaluate(context, candidate);
-    
+
+    if(left instanceof Map && getFilter() instanceof OLiteral){
+        //it's not a filter but a Map accessor
+        return ((Map)left).get(((OLiteral) getFilter()).evaluateNow(context,candidate));
+    }
+
     final List<ODocument> result = new ArrayList<ODocument>();
     
     test(context,left,result);

@@ -442,7 +442,7 @@ public class SQLSelectIndexReuseTest extends AbstractIndexReuseTest {
 
     final List<ODocument> result = database.command(
         new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass "
-            + "where prop8 = 1 and fEmbeddedSetTwo contains 12")).execute();
+            + "where prop8 = 1 and fEmbeddedSetTwo.contains(12)")).execute();
 
     final Set<Integer> embeddedSet = new HashSet<Integer>();
     embeddedSet.add(10);
@@ -490,7 +490,7 @@ public class SQLSelectIndexReuseTest extends AbstractIndexReuseTest {
 
     final List<ODocument> result = database.command(
         new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass "
-            + "where prop9 = 0 and fEmbeddedSetTwo contains 92 and prop8 > 2")).execute();
+            + "where prop9 = 0 and fEmbeddedSetTwo.contains(92) and prop8 > 2")).execute();
 
     final Set<Integer> embeddedSet = new HashSet<Integer>(3);
     embeddedSet.add(90);
@@ -536,7 +536,7 @@ public class SQLSelectIndexReuseTest extends AbstractIndexReuseTest {
       oldcompositeIndexUsed21 = 0;
 
     final List<ODocument> result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass where fEmbeddedListTwo contains 4")).execute();
+        new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass where fEmbeddedListTwo.contains(4)")).execute();
 
     Assert.assertEquals(result.size(), 10);
 
@@ -580,7 +580,7 @@ public class SQLSelectIndexReuseTest extends AbstractIndexReuseTest {
 
     final List<ODocument> result = database.command(
         new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass where"
-            + " prop8 = 1 and fEmbeddedListTwo contains 4")).execute();
+            + " prop8 = 1 and fEmbeddedListTwo.contains(4)")).execute();
 
     Assert.assertEquals(result.size(), 1);
 
@@ -2322,7 +2322,7 @@ public class SQLSelectIndexReuseTest extends AbstractIndexReuseTest {
     }
 
     final List<ODocument> result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass where fEmbeddedList contains 7")).execute();
+        new OSQLSynchQuery<ODocument>("select * from sqlSelectIndexReuseTestClass where fEmbeddedList.contains(7)")).execute();
 
     final List<Integer> embeddedList = new ArrayList<Integer>(3);
     embeddedList.add(6);

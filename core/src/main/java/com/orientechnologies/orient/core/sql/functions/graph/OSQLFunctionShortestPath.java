@@ -49,7 +49,7 @@ public class OSQLFunctionShortestPath extends OSQLFunctionPathFinder<Integer> {
     if (children.size() > 2){
       paramDirection = DIRECTION.valueOf(children.get(2).evaluate(context, candidate).toString().toUpperCase());
     }
-    return super.evaluate(context, candidate);
+    return super.evaluateNow(context, candidate);
   }
 
   public String getSyntax() {

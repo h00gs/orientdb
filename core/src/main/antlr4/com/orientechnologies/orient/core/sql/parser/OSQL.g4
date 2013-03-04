@@ -82,6 +82,7 @@ WHILE : W H I L E ;
 BETWEEN : B E T W E E N ;
 ALL : A L L ;
 ANY : A N Y ;
+DEFINED : D E F I N E D;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -214,18 +215,17 @@ cword           : anything | NULL ;
 numberOrWord    : number | cleanreference ;
 contextVariable : CVAR WORD;
 reference       : WORD | ESCWORD | keywords;  // unclean reference which allow keywords
-cleanreference  : WORD | ESCWORD;             // clean reference, ban keywords
+cleanreference  : WORD | ESCWORD ;             // clean reference, ban keywords
 literal         : NULL | TEXT | number | TRUE | FALSE | DATE;
 orid            : ORID? INT DOUBLEDOT INT;
 traverseAll     : ALL LPAREN RPAREN;
 traverseAny     : ANY LPAREN RPAREN;
 unset           : UNSET | (DOUBLEDOT cleanreference);
 map             : LACCOLADE (mapEntry (COMMA mapEntry)*)? RACCOLADE ;
-mapEntry        : literal|cleanreference DOUBLEDOT expression ;
+mapEntry        : (literal|cleanreference) DOUBLEDOT expression ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (MULT |expression (COMMA expression)*)? RPAREN ;
-functionCall    : cleanreference arguments ;       // custom function
-methodOrPathCall: DOT cleanreference arguments? ;  // custom method
+functionCall    : cleanreference arguments ; // custom function
 
 expression
   : OTHIS
@@ -249,8 +249,8 @@ expression
   | expression UNARY<assoc=right> expression
   | expression WORD               expression // custom operators
   | functionCall
-  | expression methodOrPathCall
-  | expression LBRACKET filter RBRACKET
+  | expression DOT expression
+  | expression LBRACKET (expression|filter) RBRACKET
   ;
 
 filterAnd     : AND filter ;
@@ -272,7 +272,7 @@ filter
   | expression COMPARE_DIF     expression
   | expression LIKE            expression
   | filter     WORD            filter     // custom operators
-  | expression (IS NULL | IS NOT NULL)?
+  | expression (IS (DEFINED | NULL | NOT NULL))?
   ;
 
 // COMMANDS
@@ -311,7 +311,7 @@ sourceQuery   : commandSelect
               | commandTraverse
               | LPAREN sourceQuery RPAREN
               ;
-alias          : AS reference ;
+alias          : AS (reference|literal) ;
 from           : FROM source ; 
 groupBy        : GROUP BY expression (COMMA expression)* ;
 orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;

@@ -22,6 +22,8 @@ import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -161,20 +163,16 @@ public class OEquals extends OExpressionWithChildren{
     final Number n1 = (Number) value1;
     final Number n2 = (Number) value2;
 
-    if (   (n1 instanceof Float) || (n1 instanceof Double)
-        || (n2 instanceof Float) || (n2 instanceof Double)) {
-      final double d1 = n1.doubleValue();
-      final double d2 = n2.doubleValue();
-      if (Double.doubleToLongBits(d1) == Double.doubleToLongBits(d2)) {
-        return true;
-      }
-      if (Math.abs(d1 - d2) < EPS * Math.max(Math.abs(d1), Math.abs(d2))) {
-        return true;
-      }
-    } else {
-      return n1.longValue() == n2.longValue();
+    //compare using less precise format
+    if(n1.getClass() == n2.getClass()){
+        return n1.equals(n2);
+    }else if(n1 instanceof Float || n2 instanceof Double){
+        return n1.floatValue() == n2.floatValue();
+    }else if(n1 instanceof Double || n2 instanceof Double){
+        return n1.doubleValue() == n2.doubleValue();
     }
-    return false;
+
+    return n1.longValue() == n2.longValue();
   }
 
   @Override
