@@ -105,8 +105,10 @@ public class OSQLSynchQuery<T extends Object> extends OSQLAsynchQuery<T> impleme
   }
 
   private void resetNextRIDIfParametersWereChanged(final Map<Object, Object> queryParams) {
-    if (!queryParams.equals(previousQueryParams))
+    if (!queryParams.equals(previousQueryParams)){
       nextPageRID = null;
+      iterationState = null;
+    }
   }
 
   private Map<Object, Object> fetchQueryParams(Object... iArgs) {

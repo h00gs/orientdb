@@ -34,10 +34,16 @@ public final class OFiltered extends OExpressionWithChildren {
 
   public OFiltered(OExpression source, OExpression filter) {
     this(null,source,filter);
+    if(source.getAlias() != null){
+        setAlias(source.getAlias());
+    }
   }
   
   public OFiltered(String alias, OExpression source, OExpression filter) {
     super(alias,source,filter);
+    if(alias == null && source.getAlias() != null){
+        setAlias(source.getAlias());
+    }
   }
 
   public OExpression getSource() {

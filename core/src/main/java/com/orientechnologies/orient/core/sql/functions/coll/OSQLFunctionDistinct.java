@@ -42,9 +42,10 @@ public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
 
     if (value != null && !set.contains(value)) {
       set.add(value);
+      return value;
     }
 
-    return set;
+    return null;
   }
 
   public boolean filterResult() {

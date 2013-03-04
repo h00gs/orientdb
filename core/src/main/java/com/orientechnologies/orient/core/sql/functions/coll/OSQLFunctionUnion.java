@@ -20,6 +20,7 @@ import java.util.HashSet;
 
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.index.OFlattenIterator;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 
@@ -38,11 +39,17 @@ public class OSQLFunctionUnion extends OSQLFunctionAbstract {
   public OSQLFunctionUnion() {
     super(NAME, 1, -1);
   }
+  
+  @Override
+  public boolean isAgregation() {
+    //aggregation mode
+    return children.size() == 1;
+  }
 
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     
-    if (children.size() == 1) {
+      if (children.size() == 1) {
       // AGGREGATION MODE (STATEFULL)
       Object value = children.get(0).evaluate(context, candidate);
       if (value != null) {

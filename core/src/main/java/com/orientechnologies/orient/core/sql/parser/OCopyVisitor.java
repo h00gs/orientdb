@@ -29,6 +29,7 @@ import com.orientechnologies.orient.core.sql.model.OFiltered;
 import com.orientechnologies.orient.core.sql.model.OIn;
 import com.orientechnologies.orient.core.sql.model.OInferior;
 import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
+import com.orientechnologies.orient.core.sql.model.OIsDefined;
 import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OIsNotNull;
 import com.orientechnologies.orient.core.sql.model.OIsNull;
@@ -194,6 +195,12 @@ public class OCopyVisitor implements OExpressionVisitor {
   public Object visit(OIsNotNull candidate, Object data) {
     return new OIsNotNull(candidate.getAlias(), 
             (OExpression)candidate.getExpression().accept(this,data));
+  }
+
+  @Override
+  public Object visit(OIsDefined candidate, Object data) {
+    return new OIsDefined(candidate.getAlias(), 
+            (OName)candidate.getExpression().accept(this,data));
   }
 
   @Override

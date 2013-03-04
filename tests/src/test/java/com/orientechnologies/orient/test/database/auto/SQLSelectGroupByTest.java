@@ -44,7 +44,7 @@ public class SQLSelectGroupByTest {
     database.open("admin", "admin");
 
     try {
-      List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select location from Account group by location"))
+      List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select \"location\" from Account group by \"location\""))
           .execute();
 
       Assert.assertTrue(result.size() > 1);

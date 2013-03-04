@@ -119,6 +119,11 @@ public class OToSQLVisitor implements OExpressionVisitor{
     }
 
     @Override
+    public String visit(OIsDefined candidate, Object data) {
+        return candidate.getExpression().accept(this,data) +" IS DEFINED ";
+    }
+
+    @Override
     public String visit(OLike candidate, Object data) {
         return candidate.getLeft().accept(this,data) +" LIKE "+ candidate.getRight().accept(this,data);
     }

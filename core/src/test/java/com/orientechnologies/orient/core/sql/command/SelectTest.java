@@ -233,7 +233,7 @@ public class SelectTest {
   
   @Test
   public void selectAllPaging(){
-    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car LIMIT 1");
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM car LIMIT 1 BY PAGE");
     final List<ODocument> docs = new ArrayList<ODocument>();
     for (List<ODocument> resultset = db.query(query); !resultset.isEmpty(); resultset = db.query(query)) {
       docs.addAll(resultset);

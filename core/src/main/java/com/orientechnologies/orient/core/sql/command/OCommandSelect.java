@@ -57,6 +57,7 @@ import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.xml.crypto.dsig.spec.XPathType;
 
 /**
  * Executes the SQL SELECT statement. the parse() method compiles the query and 
@@ -84,7 +85,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   //result list
   private final List<ODocument> result = new ArrayList<ODocument>();
   //iteration state
-  private boolean isPaging = false;
+  private boolean paging = false;
   private ODocument previousPagingState = null;
   private ODocument currentPagingState = null;
   private ORID rangeStart = null;
@@ -102,7 +103,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     sortBys.clear();
     groupBys.clear();
     hasAggregate = false;
-    isPaging = false;
+    paging = false;
     previousPagingState = null;
     currentPagingState = null;
     rangeStart = null;
@@ -125,8 +126,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }
     
     //check if there is a restart orid
-    isPaging = iRequest instanceof OSQLSynchQuery;
-    if (isPaging) {
+    if (paging && iRequest instanceof OSQLSynchQuery) {
       final OSQLSynchQuery request = (OSQLSynchQuery)iRequest;
       previousPagingState = request.getIterationState();
     }
@@ -210,6 +210,9 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }
    for(OSQLParser.LimitContext climit : candidate.limit()){
       setLimit(Integer.valueOf(climit.INT().getText()));
+      if(climit.PAGE() != null){
+          paging = true;
+      }
     }
     
     //check aggregation projections is there is no groupby
@@ -263,6 +266,11 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   
   @Override
   public Collection execute(final Map<Object, Object> iArgs) {
+      
+    //copy references, parameters change on each execution.
+    OExpression filter = this.filter;
+    List<OExpression> projections = new ArrayList<OExpression>(this.projections);
+    
     if(iArgs != null && !iArgs.isEmpty()){
       //we need to set value where we have OUnknowned
       final OUnknownResolverVisitor visitor = new OUnknownResolverVisitor(iArgs);
@@ -281,26 +289,27 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     result.clear();
     
-    currentPagingState = new ODocument();
-    currentPagingState.setIdentity(Integer.MIN_VALUE, OClusterPosition.INVALID_POSITION);
-    
-    //see if paging already tell us that we have finish
-    if(previousPagingState != null){
-        Boolean finished = previousPagingState.field(PAGING_FINISHED);
-        if(Boolean.TRUE.equals(finished)){
-            currentPagingState.field(PAGING_FINISHED,Boolean.TRUE);
-            result.add(currentPagingState);
-            return result;
+    if(paging){
+        currentPagingState = new ODocument();
+        currentPagingState.setIdentity(Integer.MIN_VALUE, OClusterPosition.INVALID_POSITION);
+
+        //see if paging already tell us that we have finish
+        if(previousPagingState != null){
+            Boolean finished = previousPagingState.field(PAGING_FINISHED);
+            if(Boolean.TRUE.equals(finished)){
+                currentPagingState.field(PAGING_FINISHED,Boolean.TRUE);
+                result.add(currentPagingState);
+                return result;
+            }
         }
     }
     
-    
     if(groupBys.isEmpty() && sortBys.isEmpty() && !hasAggregate){
       //normal query
-      search(projections, skip, limit, true);
+      search(projections, filter, skip, limit, true);
     }else{
       //groupby or sort by search, we must collect all results first
-      search(null, -1, -1, false);
+      search(null, OExpression.INCLUDE, -1, -1, false);
       applyGroups();
       applySort();
       
@@ -311,15 +320,16 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }
     
     //we can store paging if there is no groupby or orderby
-    if(sortBys.isEmpty() && groupBys.isEmpty()){
+    if(paging && sortBys.isEmpty() && groupBys.isEmpty()){
         result.add(currentPagingState);
     }
     return result;
   }
   
-  private void search(final List<OExpression> projections, final long skip, final long limit, boolean notifyListeners){
+  private void search(final List<OExpression> projections, OExpression filter, 
+          final long skip, final long limit, boolean notifyListeners){
     
-    if(previousPagingState != null){
+    if(paging && previousPagingState != null){
         rangeStart = previousPagingState.field(PAGING_LINEAR_ORID,ORID.class);
         if(rangeStart!= null){
             //we move to the next record.
@@ -409,7 +419,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
           continue;
       }
       
-      currentPagingState.field(PAGING_LINEAR_ORID, candidate.getIdentity());
+      if(paging){
+        //store paging state
+        currentPagingState.field(PAGING_LINEAR_ORID, candidate.getIdentity());
+      }
 
       //filter
       final Object valid = simplifiedFilter.evaluate(context, candidate);
@@ -452,8 +465,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       }
     }
     
-    //we have finish
-    currentPagingState.field(PAGING_FINISHED,Boolean.TRUE);    
+    if(paging){
+        //we have finish
+        currentPagingState.field(PAGING_FINISHED,Boolean.TRUE);    
+    }
   }
   
   private Iterable<OIdentifiable> createIteratorFilterCandidates(Collection<OIdentifiable> ids) {

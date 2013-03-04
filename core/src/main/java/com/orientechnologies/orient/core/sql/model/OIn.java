@@ -17,6 +17,8 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import java.util.Collection;
+import java.util.List;
 
 /**
  *
@@ -48,19 +50,39 @@ public class OIn extends OExpressionWithChildren{
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object left = getLeft().evaluate(context, candidate);
+    
+    final Object[] rights;
     if(getRight() instanceof OCollection){
-      for(OExpression exp : ((OCollection)getRight()).getChildren() ){
-        final Object right = exp.evaluate(context, candidate);
-        if(OEquals.equals(left, right)){
-          return true;
+        final List<OExpression> col = ((OCollection) getRight()).getChildren();
+        rights = new Object[col.size()];
+        for(int i=0;i<rights.length;i++){
+            rights[i] = col.get(i).evaluate(context, candidate);
         }
+    }else{
+        rights = new Object[]{getRight().evaluate(context, candidate)};
+    }
+    
+    if(left instanceof Collection){
+        //act as if it was : any value IN <right>
+        final Collection col = (Collection) left;
+        for(Object l : col){
+            if(evaluateOne(l, rights)){
+                return true;
+            }
+        }
+        return false;
+    }else{
+        return evaluateOne(left, rights);
+    }
+  }
+  
+  private boolean evaluateOne(Object left, Object[] rights){
+      for(Object r : rights){
+          if(OEquals.equals(left, r)){
+              return true;
+          }
       }
       return false;
-    }else{
-      //single value compare
-      final Object right = getRight().evaluate(context, candidate);
-      return OEquals.equals(left, right);
-    }
   }
 
   @Override

@@ -56,6 +56,8 @@ public interface OExpressionVisitor {
   
   Object visit(OIsNull candidate, Object data);
   
+  Object visit(OIsDefined candidate, Object data);
+  
   Object visit(OLike candidate, Object data);
     
   Object visit(OLiteral candidate, Object data);

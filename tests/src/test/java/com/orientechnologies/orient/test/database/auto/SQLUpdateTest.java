@@ -41,7 +41,7 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 @Test(groups = "sql-update", sequential = true)
 public class SQLUpdateTest {
   private ODatabaseDocument database;
-  private int               updatedRecords;
+  private Number               updatedRecords;
 
   @Parameters(value = "url")
   public SQLUpdateTest(String iURL) {
@@ -54,7 +54,7 @@ public class SQLUpdateTest {
 
     List<OClusterPosition> positions = getValidPositions(4);
 
-    Integer records = (Integer) database.command(
+    Number records = (Number) database.command(
         new OCommandSQL("update Profile set salary = 120.30, location = 4:" + positions.get(2)
             + ", salary_cloned = salary where surname = 'Obama'")).execute();
 
@@ -71,7 +71,7 @@ public class SQLUpdateTest {
 
     Assert.assertEquals(result.size(), 3);
 
-    Integer records = (Integer) database.command(new OCommandSQL("update Profile set salary = 133.00 where @rid = ?")).execute(
+    Number records = (Number) database.command(new OCommandSQL("update Profile set salary = 133.00 where @rid = ?")).execute(
         result.get(0).field("rid"));
 
     Assert.assertEquals(records.intValue(), 1);
@@ -83,7 +83,7 @@ public class SQLUpdateTest {
   public void updateCollectionsAddWithWhereOperator() {
     database.open("admin", "admin");
 
-    updatedRecords = (Integer) database.command(new OCommandSQL("update Account add addresses = #13:0")).execute();
+    updatedRecords = (Number) database.command(new OCommandSQL("update Account add addresses = #13:0")).execute();
 
     database.close();
   }
@@ -92,7 +92,7 @@ public class SQLUpdateTest {
   public void updateCollectionsRemoveWithWhereOperator() {
     database.open("admin", "admin");
 
-    final int records = (Integer) database.command(new OCommandSQL("update Account remove addresses = #13:0")).execute();
+    final Number records = (Number) database.command(new OCommandSQL("update Account remove addresses = #13:0")).execute();
 
     Assert.assertEquals(records, updatedRecords);
 
@@ -257,9 +257,9 @@ public class SQLUpdateTest {
     List<ODocument> result1 = database.command(new OCommandSQL("select salary from Account where salary is defined")).execute();
     Assert.assertFalse(result1.isEmpty());
 
-    updatedRecords = (Integer) database.command(new OCommandSQL("update Account increment salary = 10 where salary is defined"))
+    updatedRecords = (Number) database.command(new OCommandSQL("update Account increment salary = 10 where salary is defined"))
         .execute();
-    Assert.assertTrue(updatedRecords > 0);
+    Assert.assertTrue(updatedRecords.longValue() > 0);
 
     List<ODocument> result2 = database.command(new OCommandSQL("select salary from Account where salary is defined")).execute();
     Assert.assertFalse(result2.isEmpty());
@@ -271,9 +271,9 @@ public class SQLUpdateTest {
       Assert.assertEquals(salary2, salary1 + 10);
     }
 
-    updatedRecords = (Integer) database.command(new OCommandSQL("update Account increment salary = -10 where salary is defined"))
+    updatedRecords = (Number) database.command(new OCommandSQL("update Account increment salary = -10 where salary is defined"))
         .execute();
-    Assert.assertTrue(updatedRecords > 0);
+    Assert.assertTrue(updatedRecords.longValue() > 0);
 
     List<ODocument> result3 = database.command(new OCommandSQL("select salary from Account where salary is defined")).execute();
     Assert.assertFalse(result3.isEmpty());
@@ -293,9 +293,9 @@ public class SQLUpdateTest {
     List<ODocument> result1 = database.command(new OCommandSQL("select salary from Account where salary is defined")).execute();
     Assert.assertFalse(result1.isEmpty());
 
-    updatedRecords = (Integer) database.command(
+    updatedRecords = (Number) database.command(
         new OCommandSQL("update Account set salary2 = salary, checkpoint = true where salary is defined")).execute();
-    Assert.assertTrue(updatedRecords > 0);
+    Assert.assertTrue(updatedRecords.longValue() > 0);
 
     List<ODocument> result2 = database.command(new OCommandSQL("select from Account where salary is defined")).execute();
     Assert.assertFalse(result2.isEmpty());
@@ -316,7 +316,7 @@ public class SQLUpdateTest {
 
     updatedRecords = ((Number) (database.command(new OCommandSQL("update Account add myCollection = 1, myCollection = 2 "))
         .execute())).intValue();
-    Assert.assertTrue(updatedRecords > 0);
+    Assert.assertTrue(updatedRecords.longValue() > 0);
 
     List<ODocument> result2 = database.command(new OCommandSQL("select from Account where myCollection is defined")).execute();
     Assert.assertEquals(result2.size(), 1);

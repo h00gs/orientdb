@@ -17,7 +17,10 @@
 package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import java.util.Iterator;
 import java.util.Map;
@@ -48,6 +51,22 @@ public class OUnknownResolverVisitor extends OCopyVisitor{
         throw new OException("Unmapped ? parameter");
       }
       value = entries.next().getValue();
+    }
+    
+    if(value instanceof String){
+        //evaluate it as an expression
+        try{
+            OExpression exp = SQLGrammarUtils.parseExpression((String)value);
+            if(exp instanceof OName){
+                //named are not allowed in parameters, this must be a writing mistake
+                //convert it to a literal
+                return new OLiteral(((OName)exp).getName() );
+            }else if(exp != null){
+                return exp;
+            }
+        }catch(Exception ex){
+            //we have try
+        }
     }
     
     return new OLiteral(value);

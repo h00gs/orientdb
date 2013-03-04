@@ -82,7 +82,8 @@ WHILE : W H I L E ;
 BETWEEN : B E T W E E N ;
 ALL : A L L ;
 ANY : A N Y ;
-DEFINED : D E F I N E D;
+DEFINED : D E F I N E D ;
+PAGE : P A G E ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -206,10 +207,11 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | ALL | ANY
+  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | ALL | ANY | PAGE
   ;
 
 anything        : .*? ;
+nint            : (UNARY^)? INT ;
 number          : (UNARY^)? (INT|FLOAT)	;
 cword           : anything | NULL ;
 numberOrWord    : number | cleanreference ;
@@ -226,6 +228,7 @@ mapEntry        : (literal|cleanreference) DOUBLEDOT expression ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (MULT |expression (COMMA expression)*)? RPAREN ;
 functionCall    : cleanreference arguments ; // custom function
+traverse        : (cleanreference|traverseAll|traverseAny) TRAVERSE LPAREN nint (COMMA nint (COMMA cleanreference)*)? RPAREN LPAREN  filter RPAREN;
 
 expression
   : OTHIS
@@ -234,11 +237,11 @@ expression
   | OVERSION_ATTR
   | OSIZE_ATTR
   | OTYPE_ATTR
+  | orid
   | literal
   | map
   | collection
   | contextVariable
-  | orid
   | unset
   | cleanreference
   | LPAREN expression RPAREN
@@ -263,6 +266,7 @@ filter
   | filter filterOr
   | expression filterIn
   | expression filterBetween
+  | traverse
   | NOT filter
   | expression COMPARE_EQL     expression
   | expression COMPARE_INF     expression
@@ -317,7 +321,7 @@ groupBy        : GROUP BY expression (COMMA expression)* ;
 orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;
 orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
-limit          : LIMIT INT ;
+limit          : LIMIT INT (BY PAGE)? ;
 
 
 commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
@@ -354,12 +358,14 @@ deleteEdgeTo            : TO orid;
 commandDeleteVertex     : DELETE VERTEX (source (WHERE filter)?)? ;
 commandTraverse         : TRAVERSE (traverseProjection (COMMA traverseProjection)*)? from ((WHILE|WHERE) filter)? limit?;
 traverseProjection      : (MULT | reference | traverseAll | traverseAny) ;
-commandUpdate           : UPDATE source (updateGroup)* (WHERE filter)?;
+commandUpdate           : UPDATE source (updateGroup)* (WHERE filter)? limit? ;
 updateGroup             : updateSimpleGroup | updatePutGroup ;
 updateSimpleGroup       : (SET|ADD|REMOVE|INCREMENT) updateEntry (COMMA updateEntry)*;
 updatePutGroup          : PUT updatePutEntry (COMMA updatePutEntry)*;
 updateEntry             : reference (COMPARE_EQL expression)? ;
 updatePutEntry          : reference COMPARE_EQL expression COMMA expression ;
+
+singleexp : filter;
 
 command:
   ( commandCreateClass

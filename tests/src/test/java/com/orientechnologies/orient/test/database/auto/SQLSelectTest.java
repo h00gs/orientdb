@@ -986,7 +986,7 @@ public class SQLSelectTest {
   @Test
   public void queryWithAutomaticPaginationWithWhereAndBindingVar() {
     final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(
-        "select from Profile where followers.length() > ? LIMIT 3");
+        "select from Profile where followers.length() > ? LIMIT 3 BY PAGE");
     ORID last = new ORecordId();
 
     List<ODocument> resultset = database.query(query, 0);
@@ -1013,7 +1013,7 @@ public class SQLSelectTest {
   @Test
   public void queryWithAutomaticPaginationWithWhereAndBindingVarAtTheFirstQueryCall() {
     final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(
-        "select from Profile where followers.length() > ? LIMIT 3");
+        "select from Profile where followers.length() > ? LIMIT 3 BY PAGE");
     ORID last = new ORecordId();
 
     List<ODocument> resultset = database.query(query, 0);
@@ -1040,7 +1040,7 @@ public class SQLSelectTest {
   @Test
   public void queryWithAbsenceOfAutomaticPaginationBecauseOfBindingVarReset() {
     final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(
-        "select from Profile where followers.length() > ? LIMIT 3");
+        "select from Profile where followers.length() > ? LIMIT 3 BY PAGE");
 
     List<ODocument> resultset = database.query(query, -1);
 

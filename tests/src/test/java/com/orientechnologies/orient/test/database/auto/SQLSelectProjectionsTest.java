@@ -136,7 +136,7 @@ public class SQLSelectProjectionsTest {
     List<ODocument> result = database
         .command(
             new OSQLSynchQuery<ODocument>(
-                "select location.city.country.name, address.city.country.name from Profile where location.city.country.name is not null"))
+                "select \"location\".city.country.name, address.city.country.name from Profile where \"location\".city.country.name is not null"))
         .execute();
 
     Assert.assertTrue(result.size() != 0);
@@ -281,7 +281,7 @@ public class SQLSelectProjectionsTest {
     try {
       database.command(
           new OSQLSynchQuery<ODocument>(
-              "SELECT FLATTEN( out ), in FROM OGraphVertex WHERE out TRAVERSE(1,1) (@class = 'OGraphEdge')")).execute();
+              "SELECT FLATTEN( out ), \"in\" FROM OGraphVertex WHERE out TRAVERSE(1,1) (@class = 'OGraphEdge')")).execute();
 
     } finally {
       database.close();

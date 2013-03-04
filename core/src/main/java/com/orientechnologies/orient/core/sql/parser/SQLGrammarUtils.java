@@ -82,9 +82,9 @@ public final class SQLGrammarUtils {
 
   public static OExpression parseExpression(String osql) throws OCommandSQLParsingException{
       final OSQLParser parser = getParser(osql);
-      final FilterContext context = parser.filter(0);
+      final SingleexpContext context = parser.singleexp();
       if(context != null){
-          return visit(context);
+          return visit(context.filter());
       }else{
           throw new OCommandSQLParsingException("Not a valid expression :"+osql);
       }

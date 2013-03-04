@@ -62,7 +62,7 @@ public class DateTest {
     Assert.assertTrue(doc2.field("date", Date.class) instanceof Date);
 
     List<ODocument> result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from Order where date >= ? and context = 'test'")).execute(begin);
+        new OSQLSynchQuery<ODocument>("select * from \"Order\" where date >= ? and context = 'test'")).execute(begin);
 
     Assert.assertEquals(result.size(), 2);
     database.close();
