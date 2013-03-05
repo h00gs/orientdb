@@ -208,10 +208,10 @@ public class SQLUpdateTest {
   public void updateWithWildcards() {
     database.open("admin", "admin");
 
-    int updated = (Integer) database.command(new OCommandSQL("update Profile set sex = ? where sex = 'male' limit 1")).execute(
-        "male");
+    Number updated = (Number) database.command(
+            new OCommandSQL("update Profile set sex = ? where sex = 'male' limit 1")).execute("male");
 
-    Assert.assertEquals(updated, 1);
+    Assert.assertEquals(updated.intValue(), 1);
 
     database.close();
   }

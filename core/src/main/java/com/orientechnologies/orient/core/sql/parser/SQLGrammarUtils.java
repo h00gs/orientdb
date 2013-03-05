@@ -747,8 +747,8 @@ public final class SQLGrammarUtils {
                 (OExpression) visit(candidate.getChild(0)),
                 (OExpression) visit(candidate.getChild(2)));
       }else if(candidate.DEFINED()!= null){
-          return new OIsNotNull(
-                  (OExpression) visit(candidate.getChild(0)));
+          return new OIsDefined(
+                  (OName)visit(candidate.getChild(0)));
       }else if(candidate.IS()!= null){
         return new OIsNull(
               (OExpression) visit(candidate.getChild(0)));

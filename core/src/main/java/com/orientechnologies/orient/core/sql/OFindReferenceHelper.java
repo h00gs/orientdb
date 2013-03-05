@@ -52,7 +52,7 @@ import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
  */
 public class OFindReferenceHelper {
 
-  public static List<ODocument> findReferences(final Set<ORID> iRecordIds, final String classList) {
+  public static List<ODocument> findReferences(final Set<ORID> iRecordIds, final Collection<String> classes) {
     final ODatabaseRecord db = ODatabaseRecordThreadLocal.INSTANCE.get();
 
     final Map<ORID, Set<ORID>> map = new HashMap<ORID, Set<ORID>>();
@@ -60,12 +60,11 @@ public class OFindReferenceHelper {
       map.put(rid, new HashSet<ORID>());
     }
 
-    if (classList == null || classList.isEmpty()) {
+    if (classes == null || classes.isEmpty()) {
       for (String clusterName : db.getClusterNames()) {
         browseCluster(db, iRecordIds, map, clusterName);
       }
     } else {
-      final List<String> classes = OStringSerializerHelper.smartSplit(classList, ',');
       for (String clazz : classes) {
         if (clazz.startsWith("CLUSTER:")) {
           browseCluster(db, iRecordIds, map, clazz.substring(clazz.indexOf("CLUSTER:") + "CLUSTER:".length()));

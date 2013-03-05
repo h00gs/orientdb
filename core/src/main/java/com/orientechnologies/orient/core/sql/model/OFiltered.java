@@ -76,6 +76,8 @@ public final class OFiltered extends OExpressionWithChildren {
       for(Object c : col){
         test(context, c, result);
       }
+    }else{
+        test(context,left,result);
     }
     
     final int size = result.size();

@@ -18,10 +18,13 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OUnset;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -67,6 +70,13 @@ public class OUnknownResolverVisitor extends OCopyVisitor{
         }catch(Exception ex){
             //we have try
         }
+    }else if(value instanceof Collection){
+        final OCollection col = new OCollection(new ArrayList<OExpression>());
+        final Collection c = (Collection) value;
+        for(Object o : c){
+            col.getChildren().add(new OLiteral(o));
+        }
+        return col;
     }
     
     return new OLiteral(value);

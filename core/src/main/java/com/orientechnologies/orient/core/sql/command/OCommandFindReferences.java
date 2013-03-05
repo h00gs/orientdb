@@ -28,7 +28,9 @@ import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityReso
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.sql.OFindReferenceHelper;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
+import java.util.Collection;
 
 /**
  * FIND REFERENCES command: Finds references to records in all or part of database
@@ -41,7 +43,7 @@ public class OCommandFindReferences extends OCommandAbstract implements OCommand
   public static final String KEYWORD_REFERENCES = "REFERENCES";
 
   private OSQLParser.SourceContext source;
-  private String classList;
+  private Collection classList;
 
   
   public OCommandFindReferences() {
@@ -54,7 +56,7 @@ public class OCommandFindReferences extends OCommandAbstract implements OCommand
     final OSQLParser.CommandFindReferencesContext candidate = getCommand(iRequest, OSQLParser.CommandFindReferencesContext.class);
     
     source = candidate.source();
-    classList = candidate.cword().getText();
+    classList = (Collection)SQLGrammarUtils.visit(candidate.collection()).evaluate(null,null);
     
     return this;
   }

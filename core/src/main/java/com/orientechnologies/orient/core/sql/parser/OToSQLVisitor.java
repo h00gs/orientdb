@@ -45,7 +45,7 @@ public class OToSQLVisitor implements OExpressionVisitor{
     }
 
     private String visitAlias(String alias){
-        if(printAlias || alias == null){
+        if(!printAlias || alias == null){
             return "";
         }else{
             return " AS "+alias;
@@ -223,7 +223,7 @@ public class OToSQLVisitor implements OExpressionVisitor{
 
     @Override
     public String visit(OPath candidate, Object data) {
-        return candidate.getLeft().accept(this,data) +" . "+ candidate.getRight().accept(this,data)+visitAlias(candidate.getAlias());
+        return candidate.getLeft().accept(this,data) +"."+ candidate.getRight().accept(this,data)+visitAlias(candidate.getAlias());
     }
 
     @Override

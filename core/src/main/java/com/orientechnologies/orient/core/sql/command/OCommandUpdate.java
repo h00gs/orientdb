@@ -242,7 +242,7 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
     // REMOVE FIELD IF ANY
     for (OPair<String, OExpression> entry : removeEntries) {
       v = entry.getValue().evaluate(ctx, record);
-      if (v == EMPTY_VALUE) {
+      if (v == EMPTY_VALUE || v == null) {
         record.removeField(entry.getKey());
         recordUpdated = true;
       } else {

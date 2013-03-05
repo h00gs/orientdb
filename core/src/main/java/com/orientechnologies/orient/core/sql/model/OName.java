@@ -66,6 +66,11 @@ public final class OName extends OExpressionAbstract {
         for(Object o : (Collection)candidate){
             res.add(evaluateNow(context, o));
         }
+        if(res.size() == 1){
+            //extract result
+            return res.get(0);
+        }
+        
         return res;
     }
     return null;

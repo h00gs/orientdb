@@ -151,7 +151,7 @@ public class TraverseTest {
   }
 
   @Test
-  public void traverseSQLPerClassFields() {
+  public void traverseSQLPerClassFields() {      
     List<ODocument> result1 = database.command(
         new OSQLSynchQuery<ODocument>("select from ( traverse V.out, E.\"in\" from " + tomCruise.getIdentity()
             + ") where @class = 'Movie'")).execute();

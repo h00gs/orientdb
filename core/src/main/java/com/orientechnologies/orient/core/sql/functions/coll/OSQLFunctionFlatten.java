@@ -16,6 +16,7 @@
 package com.orientechnologies.orient.core.sql.functions.coll;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
 import java.util.Collection;
 import java.util.Iterator;
@@ -35,13 +36,17 @@ public class OSQLFunctionFlatten extends OSQLFunctionAbstract {
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object value = children.get(0).evaluate(context, candidate);
 
-    if(value instanceof Collection){
-        final Collection col = (Collection) value;
-        final Iterator ite = col.iterator();
-        if(ite.hasNext()){
-            return ite.next();
-        }
-    }
+//    if(value instanceof Collection){
+//        final Collection col = (Collection) value;
+//        final Iterator ite = col.iterator();
+//        if(ite.hasNext()){
+//            Object obj = ite.next();
+//            if(obj instanceof ORID){
+//                obj = ((ORID)candidate).getRecord();
+//            }
+//            return obj;
+//        }
+//    }
     
     return value;
   }

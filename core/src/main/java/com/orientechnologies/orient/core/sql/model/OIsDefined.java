@@ -50,6 +50,10 @@ public class OIsDefined extends OExpressionWithChildren{
     if(candidate instanceof ODocument){
         final ODocument doc = (ODocument) candidate;
         final String className = doc.getClassName();
+        final Object ob = doc.field(name.getName());
+        if(ob != null){
+            return true;
+        }
         if(className != null){
             final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
             return clazz.existsProperty(name.getName());

@@ -18,6 +18,8 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.id.ORID;
+import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import java.text.ParseException;
@@ -157,10 +159,30 @@ public class OInferior extends OExpressionWithChildren{
             return null;
         }
     }
+    
+    //check if we are dealing with orid
+    try{
+        final ORID ol = toORID(objleft);
+        final ORID or = toORID(objright);
+        return ol.compareTo(or);
+    }catch(Exception ex){
+        //we tryed
+    }
 
     return null;
   }
 
+  private static ORID toORID(Object candidate) throws Exception{
+      if(candidate instanceof ORID){
+          return (ORID) candidate;
+      }else if (candidate instanceof String){
+          return new ORecordId((String)candidate);
+      }else if (candidate instanceof ODocument){
+          return ((ODocument)candidate).getIdentity();
+      }
+      throw new Exception("Not an ORID");
+  }
+  
   @Override
   public OInferior copy() {
     return new OInferior(alias, getLeft(),getRight());

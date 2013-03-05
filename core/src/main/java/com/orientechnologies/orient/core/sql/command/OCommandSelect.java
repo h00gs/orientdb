@@ -42,6 +42,7 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
+import com.orientechnologies.orient.core.sql.functions.coll.OSQLFunctionFlatten;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.model.OSearchContext;
@@ -55,6 +56,7 @@ import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.sun.org.apache.xpath.internal.functions.Function;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.xml.crypto.dsig.spec.XPathType;
@@ -81,6 +83,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   private final List<OSortBy> sortBys = new ArrayList<OSortBy>();
   private long skip;
   private boolean hasAggregate = false;
+  private boolean flatten = false;
   
   //result list
   private final List<ODocument> result = new ArrayList<ODocument>();
@@ -108,6 +111,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     currentPagingState = null;
     rangeStart = null;
     rangeEnd = null;
+    flatten = false;
   }
   
   @Override
@@ -145,6 +149,11 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     //parse projections
     for(OSQLParser.ProjectionContext proj : candidate.projection()){
+      if(flatten){
+          //no projections allowed with a flatten
+          throw new OCommandSQLParsingException("No projections allowed with flatten function.");
+      }
+        
       if(proj.MULT() != null){
         //all values requested
         projections.clear();
@@ -156,6 +165,13 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
         hasAggregate = true;
       }else{
         allAggregate = false;
+      }
+      
+      if(exp instanceof OSQLFunctionFlatten){
+          flatten = true;
+          if(projections.size()>1){
+              throw new OCommandSQLParsingException("No projections allowed with flatten function.");
+          }
       }
     }
     
@@ -313,10 +329,30 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       applyGroups();
       applySort();
       
-      //notify listeners
-      for(OIdentifiable r : result){
+      //apply skip and limit
+      long nbtested = 0;
+      long nbvalid = 0;
+      final List<ODocument> clipped = new ArrayList<ODocument>();
+      
+      for(ODocument r : result){
+        nbtested++;
+        if (nbtested <= skip) {
+          continue;
+        }
+        nbvalid++;
+        clipped.add(r);
+        //notify listeners
         fireResult(r);
+        
+        //check limit
+        if (limit >= 0 && nbvalid == limit) {
+          //reached the limit
+          break;
+        }
       }
+      
+      result.clear();
+      result.addAll(clipped);      
     }
     
     //we can store paging if there is no groupby or orderby
@@ -437,32 +473,44 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       }
 
       nbvalid++;
-
-      //projections
-      final ODocument record;
+      
+      if(flatten){
+          //flatten
+          Object res = projections.get(0).evaluate(context, candidate);
+          if(res instanceof Collection){
+              final Collection c = (Collection) res;
+              result.addAll(c);
+          }else{
+              result.add((ODocument)res);
+          }
+          
+      }else{
+          //projections
+        final ODocument record;
       if (projections != null && !projections.isEmpty()) {
-        record = new ODocument();
-        record.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
-        evaluate(context, candidate, projections, record);
-      } else {
-        record = (ODocument) candidate;
-      }
-
-      result.add(record);
-
-      //notify listener
-      if(notifyListeners){
-        if (!fireResult(record)){
-          //stop search requested
-          break;
+          record = new ODocument();
+          record.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
+          evaluate(context, candidate, projections, record);
+        } else {
+          record = (ODocument) candidate;
         }
-      }
 
-      //check limit
-      if (limit >= 0 && nbvalid == limit) {
-        //reached the limit
-        return;
-      }
+        result.add(record);
+
+        //notify listener
+        if(notifyListeners){
+          if (!fireResult(record)){
+            //stop search requested
+            break;
+          }
+        }
+
+        //check limit
+        if (limit >= 0 && nbvalid == limit) {
+          //reached the limit
+          return;
+        }
+      }      
     }
     
     if(paging){

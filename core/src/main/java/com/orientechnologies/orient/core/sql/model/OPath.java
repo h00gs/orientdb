@@ -17,9 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
  *
@@ -33,6 +30,9 @@ public class OPath extends OExpressionWithChildren{
 
   public OPath(String alias, OExpression left, OExpression right) {
     super(alias,left,right);
+    if(alias == null){
+        setAlias(left.getAlias());
+    }
   }
   
   public OExpression getLeft(){
