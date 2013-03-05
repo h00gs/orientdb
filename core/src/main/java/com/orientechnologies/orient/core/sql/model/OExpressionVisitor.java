@@ -98,6 +98,8 @@ public interface OExpressionVisitor {
           
   Object visit(OSQLOperator candidate, Object data);
   
+  Object visit(OExpressionTraverse candidate, Object data);
+  
   Object visit(OExpressionClass candidate, Object data);
   
   Object visit(OExpressionORID candidate, Object data);

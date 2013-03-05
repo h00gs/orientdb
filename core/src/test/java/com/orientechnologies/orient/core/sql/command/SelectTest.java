@@ -156,6 +156,7 @@ public class SelectTest {
     seaClass.createProperty("name", OType.STRING);
     seaClass.createProperty("navigator", OType.EMBEDDED,boatClass);
     seaClass.createProperty("docks", OType.EMBEDDEDLIST,dockClass);
+    seaClass.createProperty("docks2", OType.EMBEDDEDLIST,dockClass);
     
     final ODocument fish = db.newInstance(fishClass.getName());
     fish.field("name","thon");
@@ -176,6 +177,7 @@ public class SelectTest {
     sea.field("name","atlantic");
     sea.field("navigator",boat);
     sea.field("docks", Arrays.asList(dock1,dock2,dock3));
+    sea.field("docks2", Arrays.asList(dock1));
     sea.save();
     
     db.close();
@@ -306,6 +308,27 @@ public class SelectTest {
     assertEquals(docs.size(), 1);
     assertEquals(docs.get(0).fieldNames().length, 1);
     assertEquals(docs.get(0).field("name"), "alex");
+  }
+  
+  @Test
+  public void selectFlatten(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT flatten(docks2) FROM sea");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 1);
+    assertTrue(docs.get(0).field("flatten") instanceof ODocument);
+  }
+  
+  @Test
+  public void selectTranverse(){    
+    OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM sea WHERE any() traverse(0,-1) (name = 'palerme')");
+    List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+    assertEquals(docs.get(0).fieldNames().length, 4);
+    
+    query = new OSQLSynchQuery("SELECT FROM sea WHERE any() traverse(0,-1) (name = 'notfound')");
+    docs = db.query(query);
+    assertEquals(docs.size(), 0);
   }
   
   @Test

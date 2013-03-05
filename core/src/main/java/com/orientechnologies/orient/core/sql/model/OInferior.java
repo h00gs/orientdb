@@ -19,6 +19,8 @@ package com.orientechnologies.orient.core.sql.model;
 import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
+import java.text.ParseException;
 
 import java.util.Collection;
 import java.util.Date;
@@ -98,9 +100,25 @@ public class OInferior extends OExpressionWithChildren{
 
     if(objleft instanceof Date){
       objleft = ((Date)objleft).getTime();
+      //if right is a String, try to convert it to a Date
+      if(objright instanceof String){
+        try{
+            objright = SQLGrammarUtils.toDate((String)objright);
+        }catch(ParseException ex){ 
+            //we tryed 
+        }
+      }
     }
     if(objright instanceof Date){
       objright = ((Date)objright).getTime();
+      //if left is a String, try to convert it to a Date
+      if(objleft instanceof String){
+        try{
+            SQLGrammarUtils.toDate((String)objleft).getTime();
+        }catch(ParseException ex){ 
+            //we tryed 
+        }
+      }
     }
 
     if(objleft instanceof Number && objright instanceof Number){

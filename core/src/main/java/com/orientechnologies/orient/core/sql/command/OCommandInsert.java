@@ -57,7 +57,8 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     OCommandDistributedConditionalReplicateRequest, OCommandListener {
   
   public static final String KEYWORD_INSERT = "INSERT";
-
+  private static final OToSQLVisitor TOSQL = new OToSQLVisitor(true, true);
+  
   private String target;
   private String[] fields;
   private final Map<String,OProperty> fieldProperties = new HashMap<String, OProperty>();
@@ -186,7 +187,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
             if(prop.getLinkedClass() != null && entry.getValue() instanceof OMap){
                 //transform value in a document
                 ODocument subdoc = new ODocument(prop.getLinkedClass());
-                subdoc = subdoc.fromJSON( (String)((OMap)entry.getValue()).accept(OToSQLVisitor.INSTANCE,null) );
+                subdoc = subdoc.fromJSON( (String)((OMap)entry.getValue()).accept(TOSQL,null) );
                 doc.field(entry.getKey(), subdoc);
             }else{
                 doc.field(entry.getKey(), value, prop.getType());

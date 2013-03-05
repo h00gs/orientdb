@@ -109,11 +109,11 @@ public class SQLUpdateTest {
 
     for (ODocument doc : docs) {
 
-      final int records = (Integer) database.command(
+      final Number records = (Number) database.command(
           new OCommandSQL("update Account set addresses = [#13:" + positions.get(0) + ", #13:" + positions.get(1) + ",#13:"
               + positions.get(2) + "] where @rid = " + doc.getIdentity())).execute();
 
-      Assert.assertEquals(records, 1);
+      Assert.assertEquals(records.intValue(), 1);
 
       ODocument loadedDoc = database.load(doc.getIdentity(), "*:-1", true);
       Assert.assertEquals(((List<?>) loadedDoc.field("addresses")).size(), 3);
@@ -136,7 +136,7 @@ public class SQLUpdateTest {
                 "insert into cluster:default (equaledges, name, properties) values ('no', 'circleUpdate', {'round':'eeee', 'blaaa':'zigzag'} )"))
         .execute();
 
-    Integer records = (Integer) database.command(
+    Number records = (Number) database.command(
         new OCommandSQL("update " + doc.getIdentity()
             + " set properties = {'roundOne':'ffff', 'bla':'zagzig','testTestTEST':'okOkOK'}")).execute();
 

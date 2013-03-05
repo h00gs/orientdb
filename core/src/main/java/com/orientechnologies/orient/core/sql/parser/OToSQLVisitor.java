@@ -32,12 +32,20 @@ import java.util.Set;
  */
 public class OToSQLVisitor implements OExpressionVisitor{
 
-    public static final OToSQLVisitor INSTANCE = new OToSQLVisitor();
+    private final boolean printAlias;
+    private final boolean printIdEscape;
+    
+    private OToSQLVisitor(){
+        this(false,true);
+    }
 
-    private OToSQLVisitor(){}
+    public OToSQLVisitor(boolean printAlias, boolean printIdEscape) {
+        this.printAlias = printAlias;
+        this.printIdEscape = printIdEscape;
+    }
 
     private String visitAlias(String alias){
-        if(alias == null){
+        if(printAlias || alias == null){
             return "";
         }else{
             return " AS "+alias;
@@ -161,7 +169,11 @@ public class OToSQLVisitor implements OExpressionVisitor{
 
     @Override
     public String visit(OName candidate, Object data) {
-        return "\""+candidate.getName()+"\""+visitAlias(candidate.getAlias());
+        if(printIdEscape){
+            return "\""+candidate.getName()+"\""+visitAlias(candidate.getAlias());
+        }else{
+            return candidate.getName()+visitAlias(candidate.getAlias());
+        }
     }
 
     @Override
@@ -312,5 +324,36 @@ public class OToSQLVisitor implements OExpressionVisitor{
     @Override
     public String visit(OExpression.Exclude candidate, Object data) {
         return "1<>1"+ visitAlias(candidate.getAlias());
+    }
+
+    @Override
+    public Object visit(OExpressionTraverse candidate, Object data) {
+        final Object source = candidate.getSource();
+        final StringBuilder sb = new StringBuilder();
+        if(source == OExpressionTraverse.SOURCE.ALL){
+            sb.append("all()");
+        }else if(source == OExpressionTraverse.SOURCE.ANY){
+            sb.append("any()");
+        }else{
+            sb.append(((OExpression)source).accept(this, data));
+        }
+        
+        sb.append(" traverse(");
+        sb.append(candidate.getStartDepth());
+        sb.append(",");
+        sb.append(candidate.getEndDepth());
+        for(OExpression ex : candidate.getSubfields()){
+            sb.append(",");
+            sb.append(ex.accept(this, data));
+        }
+        sb.append(") ");
+        
+        if(candidate.getFilter() != OExpression.INCLUDE){
+            sb.append(" (");
+            sb.append(candidate.getFilter().accept(this, data));
+            sb.append(" )");
+        }
+        
+        return sb.toString();
     }
 }

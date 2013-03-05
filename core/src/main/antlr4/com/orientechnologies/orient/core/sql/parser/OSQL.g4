@@ -264,9 +264,9 @@ filter
   : LPAREN filter RPAREN
   | filter filterAnd
   | filter filterOr
+  | traverse
   | expression filterIn
   | expression filterBetween
-  | traverse
   | NOT filter
   | expression COMPARE_EQL     expression
   | expression COMPARE_INF     expression
@@ -357,7 +357,7 @@ deleteEdgeFrom          : FROM orid;
 deleteEdgeTo            : TO orid;
 commandDeleteVertex     : DELETE VERTEX (source (WHERE filter)?)? ;
 commandTraverse         : TRAVERSE (traverseProjection (COMMA traverseProjection)*)? from ((WHILE|WHERE) filter)? limit?;
-traverseProjection      : (MULT | reference | traverseAll | traverseAny) ;
+traverseProjection      : (MULT | expression | traverseAll | traverseAny) ;
 commandUpdate           : UPDATE source (updateGroup)* (WHERE filter)? limit? ;
 updateGroup             : updateSimpleGroup | updatePutGroup ;
 updateSimpleGroup       : (SET|ADD|REMOVE|INCREMENT) updateEntry (COMMA updateEntry)*;

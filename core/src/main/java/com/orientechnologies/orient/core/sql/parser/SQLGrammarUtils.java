@@ -74,8 +74,8 @@ public final class SQLGrammarUtils {
   private static ClassLoader CLASSLOADER = SQLGrammarUtils.class.getClassLoader();
   
   private static final DateFormat DF1 = new SimpleDateFormat("yyyy-MM-dd");
-    private static final SimpleDateFormat DF2 = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final SimpleDateFormat DF3 = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+  private static final SimpleDateFormat DF2 = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+  private static final SimpleDateFormat DF3 = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
   
   private SQLGrammarUtils() {
   }
@@ -474,6 +474,10 @@ public final class SQLGrammarUtils {
     }
   }
   
+  public static int visit(NintContext candidate) throws OCommandSQLParsingException {
+    return Integer.valueOf(candidate.getText());
+  }
+  
   public static String visit(CwordContext candidate, final OCommandRequest iRequest) throws OCommandSQLParsingException {
     if(candidate.NULL() != null){
       return null;
@@ -546,21 +550,7 @@ public final class SQLGrammarUtils {
       final String datetxt = candidate.DATE().getText();
       Date date = null;
       try{
-        if(datetxt.contains("T")){
-          synchronized(DF1){
-            date = DF1.parse(datetxt);
-          }
-        }else{
-          if(datetxt.contains("Z")){
-            synchronized(DF2){
-              date = DF2.parse(datetxt);
-            }
-          }else{
-            synchronized(DF3){
-              date = DF3.parse(datetxt);
-            }
-          }
-        }
+        date = toDate(datetxt);
       }catch(ParseException ex){
         throw new OCommandSQLParsingException("Invalid date format : "+ datetxt);
       }
@@ -571,6 +561,28 @@ public final class SQLGrammarUtils {
     }
   }
   
+  public static Date toDate(String datetxt) throws ParseException {
+    if (datetxt == null) {
+      throw new ParseException("Null Date string", -1);
+    }
+
+    if (!datetxt.contains("T")) {
+      synchronized (DF1) {
+        return DF1.parse(datetxt);
+      }
+    } else {
+      if (datetxt.contains("Z")) {
+        synchronized (DF2) {
+          return DF2.parse(datetxt);
+        }
+      } else {
+        synchronized (DF3) {
+          return DF3.parse(datetxt);
+        }
+      }
+    }
+  }
+
   public static String visitText(TerminalNode candidate) {
     String txt = candidate.getText();
     txt = txt.substring(1, txt.length() - 1);
@@ -624,6 +636,43 @@ public final class SQLGrammarUtils {
 
   public static OExpression visit(FilterContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
+    
+    if(candidate.traverse() != null){
+        final TraverseContext tc = candidate.traverse();
+        final OExpressionTraverse trs = new OExpressionTraverse();
+        int i=0;
+        
+        //parse source
+        if(tc.traverseAll() != null){
+            trs.setSource(OExpressionTraverse.SOURCE.ALL);
+        }else if(tc.traverseAny() != null){
+            trs.setSource(OExpressionTraverse.SOURCE.ANY);
+        }else{
+            final OExpression source = visitAsExpression(tc.cleanreference(i++));
+            trs.setSource(source);
+        }
+        
+        //parse depths
+        if(tc.nint().size()==1){
+            trs.setStartDepth(visit(tc.nint(0)));
+            trs.setEndDepth(-1);
+        }else{
+            trs.setStartDepth(visit(tc.nint(0)));
+            trs.setEndDepth(visit(tc.nint(1)));
+        }
+        
+        //parse subfields
+        final List<CleanreferenceContext> refs = tc.cleanreference();
+        for(int k=i,n=refs.size();k<n;k++){
+            trs.getSubfields().add(visitAsExpression(refs.get(k)));
+        }
+        
+        //parse condition
+        trs.setFilter(visit(tc.filter()));
+        
+        return trs;
+    }
+    
     if(nbChild == 1){
       //can be a word, literal, functionCall, expression
       return (OExpression) visit(candidate.getChild(0));

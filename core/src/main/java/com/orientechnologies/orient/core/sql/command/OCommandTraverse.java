@@ -18,23 +18,17 @@ package com.orientechnologies.orient.core.sql.command;
 
 import java.util.*;
 
-import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.command.traverse.OTraverse;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.exception.OCommandExecutionException;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OClass.ATTRIBUTES;
-import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
-import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
-import com.orientechnologies.orient.core.sql.model.OSortBy;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.OToSQLVisitor;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 
@@ -62,6 +56,7 @@ import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 public class OCommandTraverse extends OCommandAbstract implements Iterable {
 
   public static final String KEYWORD_TRAVERSE = "TRAVERSE";
+  private static final OToSQLVisitor TOSQL = new OToSQLVisitor(false, false);
 
   private final List<String> projections = new ArrayList<String>();
   private OQuerySource source;
@@ -102,7 +97,8 @@ public class OCommandTraverse extends OCommandAbstract implements Iterable {
             }else if(proj.traverseAny() != null){
                 p = "all()";
             }else{
-                p = SQLGrammarUtils.visitAsString(proj.reference());
+                final OExpression exp = SQLGrammarUtils.visit(proj.expression());
+                p = String.valueOf(exp.accept(TOSQL,null));
             }
             projections.add(p);
         }

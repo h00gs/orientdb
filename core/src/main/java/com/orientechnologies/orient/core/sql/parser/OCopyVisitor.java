@@ -24,6 +24,7 @@ import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OContextVariable;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OExpressionTraverse;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
 import com.orientechnologies.orient.core.sql.model.OFiltered;
 import com.orientechnologies.orient.core.sql.model.OIn;
@@ -347,7 +348,21 @@ public class OCopyVisitor implements OExpressionVisitor {
   }
 
   @Override
-  public Object visit(OExpressionVersion candidate, Object data) {
+  public OExpressionVersion visit(OExpressionVersion candidate, Object data) {
     return candidate.copy();
+  }
+
+  @Override
+  public OExpressionTraverse visit(OExpressionTraverse candidate, Object data) {
+    final OExpressionTraverse cp = new OExpressionTraverse();
+    cp.setAlias(candidate.getAlias());
+    cp.setSource(candidate.getSource());
+    for(OExpression e : candidate.getSubfields()){
+        cp.getSubfields().add((OExpression)visit(e,data));
+    }
+    cp.setStartDepth(candidate.getStartDepth());
+    cp.setEndDepth(candidate.getEndDepth());
+    cp.setFilter((OExpression)visit(candidate.getFilter(),data));
+    return cp;
   }
 }
