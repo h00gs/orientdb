@@ -169,7 +169,7 @@ public class SQLUpdateTest {
             "insert into cluster:default (equaledges, name, properties) values ('no', 'updateMapsWithPutOperatorAndWhere', {} )"))
         .execute();
 
-    Integer records = (Integer) database.command(
+    Number records = (Number) database.command(
         new OCommandSQL("update " + doc.getIdentity()
             + " put properties = 'one', 'two' where name = 'updateMapsWithPutOperatorAndWhere'")).execute();
 
@@ -197,7 +197,7 @@ public class SQLUpdateTest {
 
     Long total = database.countClass("Profile");
 
-    Integer records = (Integer) database.command(new OCommandSQL("update Profile set sex = 'male'")).execute();
+    Number records = (Number) database.command(new OCommandSQL("update Profile set sex = 'male'")).execute();
 
     Assert.assertEquals(records.intValue(), total.intValue());
 

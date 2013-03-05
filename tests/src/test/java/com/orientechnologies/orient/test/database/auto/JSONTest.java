@@ -526,7 +526,7 @@ public class JSONTest {
     }
   }
 
-  public void testNestedEmbeddedJson() {
+  public void testNestedEmbeddedJson() {      
     ODatabaseDocumentTx database = new ODatabaseDocumentTx(url);
     database.open("admin", "admin");
 
@@ -537,7 +537,7 @@ public class JSONTest {
       database.command(new OCommandSQL("insert into device (resource_id, domainset) VALUES (1, { 'domain' : 'eee' })")).execute();
 
       List<ODocument> result = database
-          .query(new OSQLSynchQuery<Object>("select from device where domainset.domain[name] in 'eee'"));
+          .query(new OSQLSynchQuery<Object>("select from device where domainset.domain in 'eee'"));
       Assert.assertTrue(result.size() > 0);
 
     } finally {

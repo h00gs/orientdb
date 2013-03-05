@@ -91,17 +91,22 @@ public final class OFiltered extends OExpressionWithChildren {
   private void test(OCommandContext context, Object candidate, List result){
     if(candidate == null) return;
     
-    if(candidate instanceof ORID){
-      candidate = ((ORID)candidate).getRecord();
+    if(Boolean.TRUE.equals(getFilter().evaluate(context, candidate))){
+      //single valid element
+      result.add(candidate);
     }
-  
-    if(candidate instanceof ODocument){
-      final ODocument doc = (ODocument) candidate;
-      if(Boolean.TRUE.equals(getFilter().evaluate(context, candidate))){
-        //single valid element
-        result.add(doc);
-      }
-    }
+    
+//    if(candidate instanceof ORID){
+//      candidate = ((ORID)candidate).getRecord();
+//    }
+//  
+//    if(candidate instanceof ODocument){
+//      final ODocument doc = (ODocument) candidate;
+//      if(Boolean.TRUE.equals(getFilter().evaluate(context, candidate))){
+//        //single valid element
+//        result.add(doc);
+//      }
+//    }
   }
   
   @Override

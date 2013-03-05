@@ -82,7 +82,7 @@ public class DateTest {
     doc.save();
 
     List<ODocument> result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from Order where date >= ? and context = 'testPrecision'")).execute(dateAsString);
+        new OSQLSynchQuery<ODocument>("select * from \"Order\" where date >= ? and context = 'testPrecision'")).execute(dateAsString);
 
     Assert.assertEquals(result.size(), 1);
     database.close();

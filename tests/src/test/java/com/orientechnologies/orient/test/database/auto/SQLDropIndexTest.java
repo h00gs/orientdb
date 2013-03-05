@@ -78,7 +78,7 @@ public class SQLDropIndexTest {
 
 	@Test
 	public void testOldSyntax() throws Exception {
-		database.command(new OCommandSQL("CREATE INDEX \"SQLDropIndexTestClass.prop1\" UNIQUE")).execute();
+		database.command(new OCommandSQL("CREATE INDEX SQLDropIndexTestClass.prop1 UNIQUE")).execute();
 
 		database.getMetadata().getIndexManager().reload();
 

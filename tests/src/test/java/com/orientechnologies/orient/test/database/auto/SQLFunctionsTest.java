@@ -335,7 +335,7 @@ public class SQLFunctionsTest {
   public void queryAsLong() {
     long moreThanInteger = 1 + (long) Integer.MAX_VALUE;
     String sql = "select numberString.asLong() as value from ( select '" + moreThanInteger
-        + "' as numberString from Account ) limit 1";
+        + "' as numberString ) limit 1";
     List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>(sql)).execute();
 
     Assert.assertEquals(result.size(), 1);

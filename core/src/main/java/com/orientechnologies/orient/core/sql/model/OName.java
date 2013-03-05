@@ -19,6 +19,10 @@ package com.orientechnologies.orient.core.sql.model;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Reference to a document field value.
@@ -54,6 +58,15 @@ public final class OName extends OExpressionAbstract {
     if(candidate instanceof ODocument){
       final ODocument doc = (ODocument) candidate;
       return doc.field(name);
+    }else if(candidate instanceof Map){
+        return ((Map)candidate).get(name);
+    }else if(candidate instanceof Collection){
+        //regroup each elements in a list
+        final List res = new ArrayList();
+        for(Object o : (Collection)candidate){
+            res.add(evaluateNow(context, o));
+        }
+        return res;
     }
     return null;
   }

@@ -1257,7 +1257,7 @@ public class SQLSelectTest {
 
   @Test
   public void testSquareBracketsOnCondition() {
-    List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
+      List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
         "select from Account where addresses[@class='Address'][city.country.name] = 'Washington'"));
     Assert.assertFalse(result.isEmpty());
     for (ODocument d : result) {
