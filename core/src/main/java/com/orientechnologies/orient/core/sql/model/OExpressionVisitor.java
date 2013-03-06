@@ -20,6 +20,7 @@ import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionClass;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionORID;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionRaw;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionSize;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionThis;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionType;
@@ -59,6 +60,8 @@ public interface OExpressionVisitor {
   Object visit(OIsDefined candidate, Object data);
   
   Object visit(OLike candidate, Object data);
+  
+  Object visit(OInstanceOf candidate, Object data);
     
   Object visit(OLiteral candidate, Object data);
     
@@ -111,6 +114,8 @@ public interface OExpressionVisitor {
   Object visit(OExpressionType candidate, Object data);
   
   Object visit(OExpressionVersion candidate, Object data);
+  
+  Object visit(OExpressionRaw candidate, Object data);
   
   Object visit(OExpression.Include candidate, Object data);
   

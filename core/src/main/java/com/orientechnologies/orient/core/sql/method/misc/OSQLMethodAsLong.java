@@ -50,6 +50,7 @@ public class OSQLMethodAsLong extends OSQLMethod {
   public OSQLMethodAsLong copy() {
     final OSQLMethodAsLong method = new OSQLMethodAsLong();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

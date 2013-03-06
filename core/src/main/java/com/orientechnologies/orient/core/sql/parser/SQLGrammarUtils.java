@@ -49,6 +49,7 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionClass;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionORID;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionRaw;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionSize;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionThis;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionType;
@@ -362,6 +363,8 @@ public final class SQLGrammarUtils {
       return new OExpressionType();
     }else if(candidate.OVERSION_ATTR() != null){
       return new OExpressionVersion();
+    }else if(candidate.ORAW_ATTR() != null){
+      return new OExpressionRaw();
     }
     
     if(nbChild == 1){
@@ -416,11 +419,14 @@ public final class SQLGrammarUtils {
         // '(' exp ')'
         return (OExpression)visit(center);
       }
-    }else if(nbChild == 4){
-      // exp '[' filter ']'
-      final OExpression source = (OExpression)visit(candidate.getChild(0));
-      final OExpression filter = (OExpression)visit(candidate.getChild(2));
-      return new OFiltered(source, filter);
+    }else if(nbChild >= 4){
+      // exp '[' filter(,filter)* ']'
+      final OExpression source = visit((ExpressionContext)candidate.getChild(0));
+      final OFiltered filter = new OFiltered(source);
+      for(FilterContext fc : candidate.filter()){
+          filter.getChildren().add(visit(fc));
+      }
+      return filter;
     }else{
       throw new OCommandSQLParsingException("Unexpected number of arguments");
     }
@@ -718,6 +724,7 @@ public final class SQLGrammarUtils {
       //filter IS NULL
       //filter IS DEFINED
       //filter LIKE filter
+      //filter INSTANCEOF filter
       if(candidate.COMPARE_EQL()!= null){
         return new OEquals(
                 (OExpression) visit(candidate.getChild(0)),
@@ -744,6 +751,10 @@ public final class SQLGrammarUtils {
                 (OExpression) visit(candidate.getChild(2)));
       }else if(candidate.LIKE()!= null){
         return new OLike(
+                (OExpression) visit(candidate.getChild(0)),
+                (OExpression) visit(candidate.getChild(2)));
+      }else if(candidate.INSTANCEOF()!= null){
+        return new OInstanceOf(
                 (OExpression) visit(candidate.getChild(0)),
                 (OExpression) visit(candidate.getChild(2)));
       }else if(candidate.DEFINED()!= null){
@@ -782,20 +793,20 @@ public final class SQLGrammarUtils {
     return elements;
   }
     
-  public static List<ORID> visit(SourceContext candidate) throws OCommandSQLParsingException {
-    List<ORID> ids = new ArrayList<ORID>();
+  public static List<OIdentifiable> visit(SourceContext candidate) throws OCommandSQLParsingException {
+    List<OIdentifiable> ids = new ArrayList<OIdentifiable>();
     if(candidate.orid() != null){
       //single identifier
       final OLiteral literal = visit(candidate.orid());
       final OIdentifiable id = (OIdentifiable) literal.evaluate(null, null);
-      ids.add(id.getIdentity());
+      ids.add(id);
       
     }else if(candidate.collection() != null){
       //collection of identifier
       final OCollection col = visit(candidate.collection());
       List lst = (List) col.evaluate(null, null);
       for(Object obj : lst){
-        ids.add( ((ORecordId)obj).getIdentity() );
+        ids.add( ((ORecordId)obj));
       }
       
     }else if(candidate.sourceQuery() != null){
@@ -805,25 +816,20 @@ public final class SQLGrammarUtils {
     return ids;
   }
 
-  public static List<ORID> visit(SourceQueryContext candidate) throws OCommandSQLParsingException {
+  public static List<OIdentifiable> visit(SourceQueryContext candidate) throws OCommandSQLParsingException {
     if(candidate.commandSelect() != null){
-      final List<ORID> ids = new ArrayList<ORID>();
+      final List<OIdentifiable> ids = new ArrayList<OIdentifiable>();
       final OCommandSelect sub = new OCommandSelect();
       sub.parse(candidate.commandSelect());
       for(Object obj : sub){
-        final ORID cid;
-        if(obj instanceof ODocument){
-          cid = ((ODocument)obj).getIdentity();
-        }else{
-          cid = ((ORecordId)obj).getIdentity();
-        }
-        if(cid.getClusterId()>=0){
-          ids.add(cid);
+        final ORID cid = ((OIdentifiable)obj).getIdentity();
+        if(cid.getClusterId() != Integer.MIN_VALUE){
+          ids.add((OIdentifiable)obj);
         }
       }
       return ids;
     }else if(candidate.commandTraverse() != null){
-      final List<ORID> ids = new ArrayList<ORID>();
+      final List<OIdentifiable> ids = new ArrayList<OIdentifiable>();
       final OCommandTraverse sub = new OCommandTraverse();
       sub.parse(candidate.commandTraverse());
       for(Object obj : sub){

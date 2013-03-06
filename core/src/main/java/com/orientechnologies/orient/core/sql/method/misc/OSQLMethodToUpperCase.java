@@ -43,6 +43,7 @@ public class OSQLMethodToUpperCase extends OSQLMethod {
   public OSQLMethodToUpperCase copy() {
     final OSQLMethodToUpperCase method = new OSQLMethodToUpperCase();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

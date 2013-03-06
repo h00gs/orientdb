@@ -44,6 +44,7 @@ public class OSQLMethodKeys extends OSQLMethod {
   public OSQLMethodKeys copy() {
     final OSQLMethodKeys method = new OSQLMethodKeys();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

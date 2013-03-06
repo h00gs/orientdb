@@ -47,6 +47,7 @@ public class OSQLMethodAsInteger extends OSQLMethod {
   public OSQLMethodAsInteger copy() {
     final OSQLMethodAsInteger method = new OSQLMethodAsInteger();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

@@ -57,6 +57,7 @@ public class OSQLMethodAsBoolean extends OSQLMethod {
   public OSQLMethodAsBoolean copy() {
     final OSQLMethodAsBoolean method = new OSQLMethodAsBoolean();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

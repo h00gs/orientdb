@@ -43,6 +43,7 @@ public class OSQLMethodTrim extends OSQLMethod {
   public OSQLMethodTrim copy() {
     final OSQLMethodTrim method = new OSQLMethodTrim();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

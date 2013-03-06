@@ -46,6 +46,7 @@ import com.orientechnologies.orient.core.sql.parser.OToSQLVisitor;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
+import java.util.LinkedHashMap;
 
 /**
  * SQL INSERT command.
@@ -62,7 +63,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
   private String target;
   private String[] fields;
   private final Map<String,OProperty> fieldProperties = new HashMap<String, OProperty>();
-  private List<Map<String,Object>> newRecords;
+  private List<LinkedHashMap<String,Object>> newRecords;
   private OSQLParser.CommandSelectContext source;
   private final List<ODocument> results = new ArrayList<ODocument>();
   
@@ -72,7 +73,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
 
   public OCommandInsert(){}
   
-  public OCommandInsert(String target, String cluster, List<String> fields, List<Map<String,Object>> records) {
+  public OCommandInsert(String target, String cluster, List<String> fields, List<LinkedHashMap<String,Object>> records) {
     this.target = target;
     this.fields = fields.toArray(new String[fields.size()]);
     this.newRecords = records;
@@ -129,7 +130,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
     return fields;
   }
 
-  public List<Map<String,Object>> getRecords() {
+  public List<LinkedHashMap<String,Object>> getRecords() {
     return newRecords;
   }
   
@@ -263,7 +264,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       visit(candidate.insertSource());
     }else{
       //SET operations
-      final Map<String,Object> values = new HashMap<String,Object>();
+      final LinkedHashMap<String,Object> values = new LinkedHashMap<String,Object>();
       for(OSQLParser.InsertSetContext entry : candidate.insertSet()){
         final String att = visitAsString(entry.reference());
         fields.add(att);
@@ -271,7 +272,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
         values.put(att,SQLGrammarUtils.visit(exp));
       }
       this.fields = fields.toArray(new String[0]);
-      final List<Map<String,Object>> entries = new ArrayList<Map<String,Object>>();
+      final List<LinkedHashMap<String,Object>> entries = new ArrayList<LinkedHashMap<String,Object>>();
       entries.add(values);
       this.newRecords = entries;
     }
@@ -286,7 +287,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       return;
     }
     
-    final List<Map<String,Object>> entries = new ArrayList<Map<String,Object>>();
+    final List<LinkedHashMap<String,Object>> entries = new ArrayList<LinkedHashMap<String,Object>>();
     if(candidate.commandSelect() != null){
       this.source = candidate.commandSelect();
       //executed later
@@ -294,7 +295,7 @@ public class OCommandInsert extends OCommandExecutorSQLSetAware implements
       //entry serie
       for(OSQLParser.InsertEntryContext entry : candidate.insertEntry()){
         final List<OSQLParser.ExpressionContext> exps = entry.expression();
-        final Map<String,Object> values = new HashMap<String, Object>();
+        final LinkedHashMap<String,Object> values = new LinkedHashMap<String, Object>();
         for(int i=0;i<exps.size();i++){
           OExpression exp = SQLGrammarUtils.visit(exps.get(i));
           if(exp instanceof OName){

@@ -21,6 +21,10 @@ import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.model.OExpressionAbstract;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Reference to a document field class.
@@ -35,6 +39,9 @@ public final class OExpressionClass extends OExpressionAbstract {
   
   public OExpressionClass(String alias) {
     super(alias);
+    if(alias == null){
+        setAlias("class");
+    }
   }
   
   @Override
@@ -45,6 +52,21 @@ public final class OExpressionClass extends OExpressionAbstract {
     if(candidate instanceof ODocument){
       final ODocument doc = (ODocument) candidate;
       return doc.getClassName();
+    }else if(candidate instanceof Map){
+        candidate = ((Map)candidate).values();
+    }
+    
+    if(candidate instanceof Collection){
+        //regroup each elements in a list
+        final List res = new ArrayList();
+        for(Object o : (Collection)candidate){
+            res.add(evaluateNow(context, o));
+        }
+        if(res.size() == 1){
+            //extract result
+            return res.get(0);
+        }
+        return res;
     }
     return null;
   }

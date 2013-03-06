@@ -44,6 +44,7 @@ public class OSQLMethodCharAt extends OSQLMethod {
   public OSQLMethodCharAt copy() {
     final OSQLMethodCharAt method = new OSQLMethodCharAt();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

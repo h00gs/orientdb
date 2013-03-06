@@ -48,6 +48,7 @@ public class OSQLMethodRight extends OSQLMethod {
   public OSQLMethodRight copy() {
     final OSQLMethodRight method = new OSQLMethodRight();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

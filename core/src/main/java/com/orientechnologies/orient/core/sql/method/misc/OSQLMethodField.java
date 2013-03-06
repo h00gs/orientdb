@@ -66,6 +66,7 @@ public class OSQLMethodField extends OSQLMethod {
   public OSQLMethodField copy() {
     final OSQLMethodField method = new OSQLMethodField();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 

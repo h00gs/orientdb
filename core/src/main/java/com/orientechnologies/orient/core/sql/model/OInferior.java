@@ -156,7 +156,6 @@ public class OInferior extends OExpressionWithChildren{
             return ((Comparable) objleft).compareTo(objright);
         }catch(Exception ex){
             // we tried
-            return null;
         }
     }
     

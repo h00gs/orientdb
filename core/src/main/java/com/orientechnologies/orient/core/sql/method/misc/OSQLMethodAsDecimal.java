@@ -44,6 +44,7 @@ public class OSQLMethodAsDecimal extends OSQLMethod {
   public OSQLMethodAsDecimal copy() {
     final OSQLMethodAsDecimal method = new OSQLMethodAsDecimal();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

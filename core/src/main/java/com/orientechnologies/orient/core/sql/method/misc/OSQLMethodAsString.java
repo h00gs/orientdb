@@ -43,6 +43,7 @@ public class OSQLMethodAsString extends OSQLMethod {
   public OSQLMethodAsString copy() {
     final OSQLMethodAsString method = new OSQLMethodAsString();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

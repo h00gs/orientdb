@@ -20,6 +20,7 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OLiteral;
 
 /**
  * CONTAINS operator.
@@ -44,18 +45,38 @@ public class OSQLMethodContains extends OSQLMethod {
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
 
-    final Object iLeft = children.get(0).evaluate(context,candidate);
-    final Object iRight = children.get(1).evaluate(context,candidate);
+    final Object iLeft = children.get(0).evaluate(context,candidate);    
+    final OExpression filter = children.get(1);
 
-    if (iLeft instanceof Iterable<?>) {
-      final Iterable<Object> iterable = (Iterable<Object>) iLeft;
+      if (filter instanceof OLiteral) {
+          final Object iRight = filter.evaluate(context, candidate);
+          if (iLeft instanceof Iterable<?>) {
+              final Iterable<Object> iterable = (Iterable<Object>) iLeft;
 
-      // CHECK AGAINST A SINGLE VALUE
-      for (final Object o : iterable) {
-        if (OEquals.equals(iRight, o))
-          return true;
+              // CHECK AGAINST A SINGLE VALUE
+              for (final Object o : iterable) {
+                  if (OEquals.equals(o,iRight)) {
+                      return true;
+                  }
+              }
+          } else {
+              return OEquals.equals(iLeft,iRight);
+          }
+      }else{
+        //it's not a real contain, it's a filter test
+        if (iLeft instanceof Iterable<?>) {
+          final Iterable<Object> iterable = (Iterable<Object>) iLeft;
+
+          // CHECK AGAINST A SINGLE VALUE
+          for (final Object o : iterable) {
+            if(Boolean.TRUE.equals(filter.evaluate(context, o))){
+                return true;
+            }
+          }
+        }else{
+            return Boolean.TRUE.equals(filter.evaluate(context, iLeft));
+        }
       }
-    }
     return false;
   }
 

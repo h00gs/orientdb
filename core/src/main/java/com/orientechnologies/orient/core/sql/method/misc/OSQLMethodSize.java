@@ -53,6 +53,7 @@ public class OSQLMethodSize extends OSQLMethod {
   public OSQLMethodSize copy() {
     final OSQLMethodSize method = new OSQLMethodSize();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

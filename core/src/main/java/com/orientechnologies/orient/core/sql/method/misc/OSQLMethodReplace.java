@@ -48,6 +48,7 @@ public class OSQLMethodReplace extends OSQLMethod {
   public OSQLMethodReplace copy() {
     final OSQLMethodReplace method = new OSQLMethodReplace();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
     

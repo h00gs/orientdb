@@ -315,8 +315,8 @@ public class SelectTest {
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT flatten(docks2) FROM sea");
     final List<ODocument> docs = db.query(query);
     assertEquals(docs.size(), 1);
-    assertEquals(docs.get(0).fieldNames().length, 1);
-    assertTrue(docs.get(0).field("flatten") instanceof ODocument);
+    assertEquals(docs.get(0).fieldNames().length, 2);
+    assertTrue(docs.get(0).getClassName().equals("dock"));
   }
   
   @Test

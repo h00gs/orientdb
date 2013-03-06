@@ -53,6 +53,7 @@ public class OSQLMethodAppend extends OSQLMethod {
   public OSQLMethodAppend copy() {
     final OSQLMethodAppend method = new OSQLMethodAppend();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
   
