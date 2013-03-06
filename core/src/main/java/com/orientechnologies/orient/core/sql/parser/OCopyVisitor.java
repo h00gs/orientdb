@@ -30,6 +30,7 @@ import com.orientechnologies.orient.core.sql.model.OFiltered;
 import com.orientechnologies.orient.core.sql.model.OIn;
 import com.orientechnologies.orient.core.sql.model.OInferior;
 import com.orientechnologies.orient.core.sql.model.OInferiorEquals;
+import com.orientechnologies.orient.core.sql.model.OInstanceOf;
 import com.orientechnologies.orient.core.sql.model.OIsDefined;
 import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.model.OIsNotNull;
@@ -52,6 +53,7 @@ import com.orientechnologies.orient.core.sql.model.OSuperiorEquals;
 import com.orientechnologies.orient.core.sql.model.OUnset;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionClass;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionORID;
+import com.orientechnologies.orient.core.sql.model.reflect.OExpressionRaw;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionSize;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionThis;
 import com.orientechnologies.orient.core.sql.model.reflect.OExpressionType;
@@ -243,6 +245,13 @@ public class OCopyVisitor implements OExpressionVisitor {
             (OExpression)candidate.getLeft().accept(this,data), 
             (OExpression)candidate.getRight().accept(this,data));
   }
+  
+  @Override
+  public Object visit(OInstanceOf candidate, Object data) {
+    return new OInstanceOf(candidate.getAlias(), 
+            (OExpression)candidate.getLeft().accept(this,data), 
+            (OExpression)candidate.getRight().accept(this,data));
+  }
 
   @Override
   public Object visit(ONotEquals candidate, Object data) {
@@ -317,9 +326,14 @@ public class OCopyVisitor implements OExpressionVisitor {
   
   @Override
   public Object visit(OFiltered candidate, Object data) {
-    return new OFiltered(candidate.getAlias(), 
-            (OExpression)candidate.getSource().accept(this,data),
-            (OExpression)candidate.getFilter().accept(this,data));
+    final List<OExpression> args = new ArrayList<OExpression>(candidate.getChildren());
+    for(int i=0;i<args.size();i++){
+      args.set(i, (OExpression)args.get(i).accept(this, data));
+    }
+    final OFiltered copy = candidate.copy();
+    copy.getChildren().clear();
+    copy.getChildren().addAll(args);
+    return copy;
   }
 
   @Override
@@ -344,6 +358,11 @@ public class OCopyVisitor implements OExpressionVisitor {
 
   @Override
   public Object visit(OExpressionType candidate, Object data) {
+    return candidate.copy();
+  }
+  
+  @Override
+  public Object visit(OExpressionRaw candidate, Object data) {
     return candidate.copy();
   }
 

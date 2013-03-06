@@ -57,6 +57,7 @@ public class OSQLMethodSubString extends OSQLMethod {
   public OSQLMethodSubString copy() {
     final OSQLMethodSubString method = new OSQLMethodSubString();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
   

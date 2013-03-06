@@ -59,6 +59,7 @@ public class OSQLMethodNormalize extends OSQLMethod {
   public OSQLMethodNormalize copy() {
     final OSQLMethodNormalize method = new OSQLMethodNormalize();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

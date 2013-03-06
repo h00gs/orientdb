@@ -317,6 +317,11 @@ public class OToSQLVisitor implements OExpressionVisitor{
     }
 
     @Override
+    public Object visit(OExpressionRaw candidate, Object data) {
+        return "@raw"+ visitAlias(candidate.getAlias());
+    }
+    
+    @Override
     public String visit(OExpression.Include candidate, Object data) {
         return "1=1"+ visitAlias(candidate.getAlias());
     }
@@ -355,5 +360,10 @@ public class OToSQLVisitor implements OExpressionVisitor{
         }
         
         return sb.toString();
+    }
+
+    @Override
+    public Object visit(OInstanceOf candidate, Object data) {
+        return candidate.getLeft().accept(this,data) +" instanceof "+ candidate.getRight().accept(this,data);
     }
 }

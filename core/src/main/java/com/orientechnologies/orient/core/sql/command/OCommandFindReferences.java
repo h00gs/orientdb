@@ -23,6 +23,7 @@ import java.util.Set;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
@@ -66,7 +67,9 @@ public class OCommandFindReferences extends OCommandAbstract implements OCommand
    */
   public Object execute(final Map<Object, Object> iArgs) {    
     final Set<ORID> recordIds = new HashSet<ORID>();
-    recordIds.addAll(visit(source));    
+    for(OIdentifiable r : visit(source)){
+        recordIds.add(r.getIdentity());
+    }
     return OFindReferenceHelper.findReferences(recordIds, classList);
   }
 

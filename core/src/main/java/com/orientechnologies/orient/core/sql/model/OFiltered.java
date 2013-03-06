@@ -17,7 +17,6 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,9 +30,15 @@ import java.util.Map;
  */
 public final class OFiltered extends OExpressionWithChildren {
 
+  public OFiltered(OExpression source) {
+    super(null,source);
+    if(source.getAlias() != null){
+        setAlias(source.getAlias());
+    }
+  }
 
   public OFiltered(OExpression source, OExpression filter) {
-    this(null,source,filter);
+    super(null,source,filter);
     if(source.getAlias() != null){
         setAlias(source.getAlias());
     }
@@ -43,6 +48,20 @@ public final class OFiltered extends OExpressionWithChildren {
     super(alias,source,filter);
     if(alias == null && source.getAlias() != null){
         setAlias(source.getAlias());
+    }
+  }
+  
+  public OFiltered(String alias, OExpression source, OExpression r1, OExpression r2) {
+    super(alias,source,r1,r2);
+    if(alias == null && source!= null && source.getAlias() != null){
+        setAlias(source.getAlias());
+    }
+  }
+  
+  public OFiltered(String alias, OExpression ... exps) {
+    super(alias,exps);
+    if(alias == null && exps != null && exps.length>0){
+        setAlias(exps[0].getAlias());
     }
   }
 
@@ -61,6 +80,26 @@ public final class OFiltered extends OExpressionWithChildren {
     if(left instanceof Map && getFilter() instanceof OLiteral){
         //it's not a filter but a Map accessor
         return ((Map)left).get(((OLiteral) getFilter()).evaluateNow(context,candidate));
+    }else if(getChildren().size()==3){
+        //it's not a filter but a subcollection clip
+        if(!(left instanceof List)){
+            //invalid element
+            return null;
+        }
+        final List col = (List) left;
+        final Number startIndex = (Number)children.get(1).evaluate(context, candidate);
+        final Number endIndex = (Number)children.get(2).evaluate(context, candidate);
+        return col.subList(startIndex.intValue(), endIndex.intValue());
+        
+    }else if(left instanceof Collection && getFilter() instanceof OLiteral){
+        //it's not a filter but a List accessor
+        if(!(left instanceof List)){
+            //invalid element
+            return null;
+        }
+        final List col = (List) left;
+        final Number index = (Number)children.get(1).evaluate(context, candidate);
+        return col.get(index.intValue());
     }
 
     final List<ODocument> result = new ArrayList<ODocument>();
@@ -97,18 +136,6 @@ public final class OFiltered extends OExpressionWithChildren {
       //single valid element
       result.add(candidate);
     }
-    
-//    if(candidate instanceof ORID){
-//      candidate = ((ORID)candidate).getRecord();
-//    }
-//  
-//    if(candidate instanceof ODocument){
-//      final ODocument doc = (ODocument) candidate;
-//      if(Boolean.TRUE.equals(getFilter().evaluate(context, candidate))){
-//        //single valid element
-//        result.add(doc);
-//      }
-//    }
   }
   
   @Override
@@ -128,7 +155,7 @@ public final class OFiltered extends OExpressionWithChildren {
 
   @Override
   protected String thisToString() {
-    return "(Filtered) ";
+    return "(Filtered/Accessor) ";
   }
 
   @Override
@@ -145,7 +172,9 @@ public final class OFiltered extends OExpressionWithChildren {
   
   @Override
   public OFiltered copy() {
-    return new OFiltered(alias,getSource(),getFilter());
+    final OFiltered cp = new OFiltered(getAlias());
+    cp.getChildren().addAll(getChildren());
+    return cp;
   }
   
 }

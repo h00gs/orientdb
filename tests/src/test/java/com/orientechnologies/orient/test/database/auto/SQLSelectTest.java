@@ -113,16 +113,13 @@ public class SQLSelectTest {
   }
 
   @Test
-  public void querySingleAndDoubleQuotes() {
+  public void querySingleQuotes() {
     List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select from Profile where name = 'Giuseppe'"))
         .execute();
 
     final int count = result.size();
     Assert.assertTrue(result.size() != 0);
 
-    result = database.command(new OSQLSynchQuery<ODocument>("select from Profile where name = \"Giuseppe\"")).execute();
-    Assert.assertTrue(result.size() != 0);
-    Assert.assertEquals(result.size(), count);
   }
 
   @Test
@@ -192,7 +189,7 @@ public class SQLSelectTest {
 
     doc.save();
 
-    List<ODocument> resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags CONTAINS 'smart'"));
+    List<ODocument> resultset = database.query(new OSQLSynchQuery<ODocument>("select from Profile where tags.CONTAINS('smart')"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
@@ -325,13 +322,13 @@ public class SQLSelectTest {
     doc.save();
 
     List<ODocument> resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select from Profile where customReferences.keys() CONTAINS 'first'"));
+        "select from Profile where customReferences.keys().CONTAINS('first')"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
     resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select from Profile where customReferences.values() CONTAINS ( name like 'Ja%')"));
+        "select from Profile where customReferences.values().CONTAINS( name like 'Ja%')"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
@@ -343,7 +340,7 @@ public class SQLSelectTest {
   public void queryCollectionContainsLowerCaseSubStringIgnoreCase() {
     List<ODocument> result = database.command(
         new OSQLSynchQuery<ODocument>(
-            "select * from cluster:profile where races contains (name.toLowerCase().subString(0,1) = 'e')")).execute();
+            "select * from cluster:profile where races.contains(name.toLowerCase().subString(0,1) = 'e')")).execute();
 
     for (int i = 0; i < result.size(); ++i) {
       record = result.get(i);
@@ -377,7 +374,7 @@ public class SQLSelectTest {
     record.save();
 
     List<ODocument> result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races contains (name in ['European','Asiatic'])"))
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races.contains(name in ['European','Asiatic'])"))
         .execute();
 
     boolean found = false;
@@ -521,8 +518,10 @@ public class SQLSelectTest {
 
   @Test
   public void queryWhereInpreparred() {
-    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select * from OUser where name in [ :name ]"))
-        .execute("admin");
+    final Map params = new HashMap();
+    params.put("name", "admin");
+    final List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select * from OUser where name in [ :name ]"))
+        .execute(params);
 
     Assert.assertEquals(result.size(), 1);
     Assert.assertEquals(((ODocument) result.get(0).getRecord()).field("name"), "admin");
@@ -606,7 +605,7 @@ public class SQLSelectTest {
   public void queryTraverseEdges() {
     List<ODocument> result = database.command(
         new OSQLSynchQuery<ODocument>(
-            "select from Profile where any() traverse(0,-1,'followers,followings') ( followers.size() > 0 )")).execute();
+            "select from Profile where any() traverse(0,-1,followers,followings) ( followers.size() > 0 )")).execute();
 
     Assert.assertTrue(result.size() > 0);
   }
@@ -837,10 +836,10 @@ public class SQLSelectTest {
   @Test
   public void queryWrongOperator() {
     try {
-      database.query(new OSQLSynchQuery<ODocument>("select from Profile where name.toLowerCase() like '%Jay%'"));
-      Assert.assertFalse(true);
+      database.query(new OSQLSynchQuery<ODocument>("select from Profile where name like.toLowerCase() '%Jay%'"));
+      Assert.fail("should have fail");
     } catch (Exception e) {
-      Assert.assertTrue(true);
+      //ok
     }
   }
 
@@ -897,7 +896,7 @@ public class SQLSelectTest {
 
   @Test
   public void queryWithAutomaticPagination() {
-    final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>("select from Profile LIMIT 3");
+    final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>("select from Profile LIMIT 3 BY PAGE");
     ORID last = new ORecordId();
 
     List<ODocument> resultset = database.query(query);
@@ -928,7 +927,7 @@ public class SQLSelectTest {
     int clusterId = database.getClusterIdByName("profile");
 
     final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>("select from Profile where @rid between #" + clusterId
-        + ":2 and #" + clusterId + ":30 LIMIT 3");
+        + ":2 and #" + clusterId + ":30 LIMIT 3 BY PAGE");
     ORID last = new ORecordId();
 
     List<ODocument> resultset = database.query(query);
@@ -957,7 +956,7 @@ public class SQLSelectTest {
   @Test
   public void queryWithAutomaticPaginationWithWhere() {
     final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(
-        "select from Profile where followers.length() > 0 LIMIT 3");
+        "select from Profile where followers.length() > 0 LIMIT 3 BY PAGE");
     ORID last = new ORecordId();
 
     List<ODocument> resultset = database.query(query);

@@ -1814,7 +1814,7 @@ public class CRUDObjectPhysicalTest {
 
     Profile obama = result.get(0);
 
-    result = database.query(new OSQLSynchQuery<Profile>("select from Profile where followings contains ( @Rid = :who )"), obama);
+    result = database.query(new OSQLSynchQuery<Profile>("select from Profile where followings.contains( @Rid = :who )"), obama);
     Assert.assertTrue(result.size() != 0);
 
     database.close();

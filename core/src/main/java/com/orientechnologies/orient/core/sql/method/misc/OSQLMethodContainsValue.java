@@ -18,6 +18,7 @@ package com.orientechnologies.orient.core.sql.method.misc;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OLiteral;
 
 import java.util.Map;
 
@@ -43,14 +44,26 @@ public class OSQLMethodContainsValue extends OSQLMethod {
 
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
-    final Object iLeft = children.get(0).evaluate(context,candidate);
-    final Object iRight = children.get(1).evaluate(context,candidate);
-
-    if (iLeft instanceof Map<?, ?>) {
-      final Map<String, ?> map = (Map<String, ?>) iLeft;
-      return map.containsValue(iRight);
+    final Object iLeft = children.get(0).evaluate(context,candidate);    
+    final OExpression right = children.get(1);
+    
+    if (!(iLeft instanceof Map<?, ?>)) {
+      return false;
     }
-    return false;
+    final Map<?,?> map = (Map<String, ?>) iLeft;
+    
+    if(right instanceof OLiteral){
+        final Object iRight = right.evaluate(context,candidate);
+        return map.containsValue(iRight);
+    }else{
+        //it's not a contain but a filter test
+        for(Object o : map.values()){
+            if(Boolean.TRUE.equals(right.evaluate(context, o))){
+                return true;
+            }
+        }
+        return false;
+    }
   }
 
   @Override

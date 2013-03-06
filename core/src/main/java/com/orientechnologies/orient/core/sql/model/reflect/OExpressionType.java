@@ -16,11 +16,16 @@
  */
 package com.orientechnologies.orient.core.sql.model.reflect;
 
+import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.sql.model.OExpressionAbstract;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Reference to a document type.
@@ -35,6 +40,9 @@ public final class OExpressionType extends OExpressionAbstract {
   
   public OExpressionType(String alias) {
     super(alias);
+    if(alias == null){
+        setAlias("type");
+    }
   }
   
   @Override
@@ -42,9 +50,25 @@ public final class OExpressionType extends OExpressionAbstract {
     if(candidate instanceof ORID){
       candidate = ((ORID)candidate).getRecord();
     }
-    if(candidate instanceof ODocument){
-      final ODocument doc = (ODocument) candidate;
-      return doc.getClassName();
+    
+    if(candidate instanceof ORecordInternal){
+      return Orient.instance().getRecordFactoryManager()
+            .getRecordTypeName(((ORecordInternal<?>) candidate).getRecordType());
+    }else if(candidate instanceof Map){
+        candidate = ((Map)candidate).values();
+    }
+    
+    if(candidate instanceof Collection){
+        //regroup each elements in a list
+        final List res = new ArrayList();
+        for(Object o : (Collection)candidate){
+            res.add(evaluateNow(context, o));
+        }
+        if(res.size() == 1){
+            //extract result
+            return res.get(0);
+        }
+        return res;
     }
     return null;
   }

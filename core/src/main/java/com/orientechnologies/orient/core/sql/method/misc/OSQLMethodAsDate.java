@@ -57,6 +57,7 @@ public class OSQLMethodAsDate extends OSQLMethod {
   public OSQLMethodAsDate copy() {
     final OSQLMethodAsDate method = new OSQLMethodAsDate();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

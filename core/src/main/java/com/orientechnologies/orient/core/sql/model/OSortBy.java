@@ -49,19 +49,23 @@ public class OSortBy {
   }
   
   public Comparator createComparator(final OCommandContext context){
-    Comparator c = new OExpressionComparator(context, this.exp);
     if(direction == Direction.DESC){
-      c = Collections.reverseOrder(c);
+      //we can't do this, tests expect null values are always at the beginning
+      //using a simple inversion breaks the contract
+      //Comparator c = new OExpressionComparator(context, this.exp);
+      //return Collections.reverseOrder(c);
+      return new OExpressionComparatorDESC(context, this.exp);      
+    }else{
+      return new OExpressionComparatorASC(context, this.exp);
     }
-    return c;
   }
   
-  private static class OExpressionComparator implements Comparator{
+  private static class OExpressionComparatorASC implements Comparator{
 
     private final OCommandContext context;
     private final OExpression exp;
 
-    public OExpressionComparator(final OCommandContext context, final OExpression exp) {
+    public OExpressionComparatorASC(final OCommandContext context, final OExpression exp) {
       this.context = context;
       this.exp = exp;
     }
@@ -88,14 +92,58 @@ public class OSortBy {
       }
       
       int res = 0;
-      if(left instanceof Comparator && right instanceof Comparable){
+      if(left instanceof Comparable && right instanceof Comparable){
         try{
           res = ((Comparable)left).compareTo(right);
         }catch(Exception ex){ /* we tryed */ }
       }
       
       //not comparable
-      return 0;
+      return res;
+    }
+  
+  }
+  
+  private static class OExpressionComparatorDESC implements Comparator{
+
+    private final OCommandContext context;
+    private final OExpression exp;
+
+    public OExpressionComparatorDESC(final OCommandContext context, final OExpression exp) {
+      this.context = context;
+      this.exp = exp;
+    }
+    
+    @Override
+    public int compare(Object o1, Object o2) {
+      final Object left = exp.evaluate(context, o1);
+      final Object right = exp.evaluate(context, o2);
+      
+      if(left == null && right == null){
+        return 0;
+      }
+      
+      if(left == null){
+        return -1;
+      }else if(right == null){
+        return +1;
+      }
+      
+      if(left instanceof Number && right instanceof Number){
+        final Double dl = (Double)((Number)left).doubleValue();
+        final Double dr = (Double)((Number)right).doubleValue();
+        return dr.compareTo(dl);
+      }
+      
+      int res = 0;
+      if(left instanceof Comparable && right instanceof Comparable){
+        try{
+          res = ((Comparable)right).compareTo(left);
+        }catch(Exception ex){ /* we tryed */ }
+      }
+      
+      //not comparable
+      return res;
     }
   
   }

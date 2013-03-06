@@ -52,7 +52,7 @@ public class OCommandExecutorSQLDelegate extends OCommandExecutorSQLAbstract {
     return this;
   }
 
-  public Object execute(final Map<Object, Object> iArgs) {
+  public Object execute(final Map<Object, Object> iArgs) {      
     return delegate.execute(iArgs);
   }
 

@@ -53,6 +53,7 @@ public class OSQLMethodFormat extends OSQLMethod {
   public OSQLMethodFormat copy() {
     final OSQLMethodFormat method = new OSQLMethodFormat();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

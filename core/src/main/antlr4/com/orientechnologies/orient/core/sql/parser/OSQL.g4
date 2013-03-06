@@ -40,6 +40,7 @@ OCLASS_ATTR: '@' C L A S S ;
 OVERSION_ATTR: '@' V E R S I O N ;
 OSIZE_ATTR: '@' S I Z E ;
 OTYPE_ATTR: '@' T Y P E ;
+ORAW_ATTR: '@' R A W ;
 CLUSTER : C L U S T E R ;
 DATABASE : D A T A B A S E ;
 PROPERTY : P R O P E R T Y ;
@@ -84,6 +85,7 @@ ALL : A L L ;
 ANY : A N Y ;
 DEFINED : D E F I N E D ;
 PAGE : P A G E ;
+INSTANCEOF : I N S T A N C E O F ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -207,7 +209,7 @@ keywords
   | GRANT | REVOKE | IN | ON | TO | IS | NOT | GROUP | DATASEGMENT | LOCATION
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
-  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | ALL | ANY | PAGE
+  | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | ALL | ANY | PAGE | INSTANCEOF
   ;
 
 anything        : .*? ;
@@ -226,7 +228,7 @@ unset           : UNSET | (DOUBLEDOT cleanreference);
 map             : LACCOLADE (mapEntry (COMMA mapEntry)*)? RACCOLADE ;
 mapEntry        : (literal|cleanreference) DOUBLEDOT expression ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
-arguments       : LPAREN (MULT |expression (COMMA expression)*)? RPAREN ;
+arguments       : LPAREN (MULT |filter (COMMA filter)*)? RPAREN ;
 functionCall    : cleanreference arguments ; // custom function
 traverse        : (cleanreference|traverseAll|traverseAny) TRAVERSE LPAREN nint (COMMA nint (COMMA cleanreference)*)? RPAREN LPAREN  filter RPAREN;
 
@@ -237,6 +239,7 @@ expression
   | OVERSION_ATTR
   | OSIZE_ATTR
   | OTYPE_ATTR
+  | ORAW_ATTR
   | orid
   | literal
   | map
@@ -253,7 +256,7 @@ expression
   | expression WORD               expression // custom operators
   | functionCall
   | expression DOT expression
-  | expression LBRACKET (expression|filter) RBRACKET
+  | expression LBRACKET (filter (COMMA filter)? ) RBRACKET
   ;
 
 filterAnd     : AND filter ;
@@ -275,6 +278,7 @@ filter
   | expression COMPARE_SUP_EQL expression
   | expression COMPARE_DIF     expression
   | expression LIKE            expression
+  | expression INSTANCEOF      expression
   | filter     WORD            filter     // custom operators
   | expression (IS (DEFINED | NULL | NOT NULL))?
   ;

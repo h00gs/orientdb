@@ -44,6 +44,7 @@ public class OSQLMethodToJSON extends OSQLMethod {
   public OSQLMethodToJSON copy() {
     final OSQLMethodToJSON method = new OSQLMethodToJSON();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

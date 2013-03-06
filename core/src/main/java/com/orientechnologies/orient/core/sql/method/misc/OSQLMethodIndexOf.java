@@ -52,6 +52,7 @@ public class OSQLMethodIndexOf extends OSQLMethod {
   public OSQLMethodIndexOf copy() {
     final OSQLMethodIndexOf method = new OSQLMethodIndexOf();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

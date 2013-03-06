@@ -43,6 +43,7 @@ public class OSQLMethodLength extends OSQLMethod {
   public OSQLMethodLength copy() {
     final OSQLMethodLength method = new OSQLMethodLength();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
   

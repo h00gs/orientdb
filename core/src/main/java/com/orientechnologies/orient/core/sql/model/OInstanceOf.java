@@ -14,58 +14,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.orientechnologies.orient.core.sql.model.reflect;
+package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.id.ORID;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.model.OExpressionAbstract;
-import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
 
 /**
- * Reference to this document.
- * 
+ *
  * @author Johann Sorel (Geomatys)
  */
-public final class OExpressionThis extends OExpressionAbstract {
+public class OInstanceOf extends OExpressionWithChildren{
 
-  public OExpressionThis() {
-    this(null);
+
+  public OInstanceOf(OExpression left, OExpression right) {
+    this(null,left,right);
+  }
+
+  public OInstanceOf(String alias, OExpression left, OExpression right) {
+    super(alias,left,right);
   }
   
-  public OExpressionThis(String alias) {
-    super(alias);
-    if(alias == null){
-        setAlias("this");
-    }
+  public OExpression getLeft(){
+    return children.get(0);
   }
   
+  public OExpression getRight(){
+    return children.get(1);
+  }
+  
+  @Override
+  protected String thisToString() {
+    return "(InstanceOf)";
+  }
+
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
-    if(candidate instanceof ORID){
-      candidate = ((ORID)candidate).getRecord();
+    Object left = getLeft().evaluate(context, candidate);
+    Object right = getRight().evaluate(context, candidate);
+      
+    if(left instanceof ODocument){
+        left = ((ODocument)left).getClassName();
     }
-    return candidate;
-  }
-
-  @Override
-  public boolean isContextFree() {
-    return true;
-  }
-
-  @Override
-  public boolean isDocumentFree() {
-    return false;
+    if(right instanceof ODocument){
+        right = ((ODocument)right).getClassName();
+    }
+    
+    return OEquals.equals(left, right);
   }
 
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);
-  }
-
-  @Override
-  protected String thisToString() {
-    return "(@This) ";
   }
 
   @Override
@@ -76,12 +76,12 @@ public final class OExpressionThis extends OExpressionAbstract {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    return true;
+    return super.equals(obj);
   }
   
   @Override
-  public OExpressionThis copy() {
-    return new OExpressionThis(alias);
+  public OInstanceOf copy() {
+    return new OInstanceOf(alias,getLeft(),getRight());
   }
-  
+ 
 }

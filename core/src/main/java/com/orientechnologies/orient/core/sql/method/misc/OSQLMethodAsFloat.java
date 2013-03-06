@@ -47,6 +47,7 @@ public class OSQLMethodAsFloat extends OSQLMethod {
   public OSQLMethodAsFloat copy() {
     final OSQLMethodAsFloat method = new OSQLMethodAsFloat();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

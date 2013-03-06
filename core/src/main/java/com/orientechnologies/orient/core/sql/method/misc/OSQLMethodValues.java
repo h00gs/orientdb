@@ -44,6 +44,7 @@ public class OSQLMethodValues extends OSQLMethod {
   public OSQLMethodValues copy() {
     final OSQLMethodValues method = new OSQLMethodValues();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

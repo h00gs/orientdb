@@ -43,6 +43,7 @@ public class OSQLMethodToLowerCase extends OSQLMethod {
   public OSQLMethodToLowerCase copy() {
     final OSQLMethodToLowerCase method = new OSQLMethodToLowerCase();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

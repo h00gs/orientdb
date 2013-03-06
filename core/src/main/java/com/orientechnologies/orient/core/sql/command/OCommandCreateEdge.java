@@ -107,14 +107,14 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     if (!(database instanceof OGraphDatabase))
       database = new OGraphDatabase((ODatabaseRecordTx) database);
 
-    final List<ORID> fromIds = visit(from);
-    final List<ORID> toIds = visit(to);
+    final List<OIdentifiable> fromIds = visit(from);
+    final List<OIdentifiable> toIds = visit(to);
 
     // CREATE EDGES
     List<ODocument> edges = new ArrayList<ODocument>();
-    for (ORID from : fromIds) {
-      for (ORID to : toIds) {
-        final ODocument edge = ((OGraphDatabase) database).createEdge(from, to, clazz.getName());
+    for (OIdentifiable from : fromIds) {
+      for (OIdentifiable to : toIds) {
+        final ODocument edge = ((OGraphDatabase) database).createEdge(from.getIdentity(), to.getIdentity(), clazz.getName());
         OSQLHelper.bindParameters(edge, fields, new OCommandParameters(iArgs));
 
         if (clusterName != null)

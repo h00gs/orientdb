@@ -50,6 +50,7 @@ public class OSQLMethodPrefix extends OSQLMethod {
   public OSQLMethodPrefix copy() {
     final OSQLMethodPrefix method = new OSQLMethodPrefix();
     method.getArguments().addAll(getArguments());
+    method.setAlias(getAlias());
     return method;
   }
 }

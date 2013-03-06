@@ -44,7 +44,7 @@ public class SQLSelectProjectionsTest {
 
   @Test
   public void queryProjectionOk() {
-    database.open("admin", "admin");
+    database.open("admin", "admin");    
 
     List<ODocument> result = database
         .command(

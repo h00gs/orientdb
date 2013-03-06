@@ -18,7 +18,6 @@ package com.orientechnologies.orient.core.sql.model.reflect;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.model.OExpressionAbstract;
 import com.orientechnologies.orient.core.sql.model.OExpressionVisitor;
@@ -28,20 +27,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Reference to a document size.
+ * Reference to a document raw.
  * 
  * @author Johann Sorel (Geomatys)
  */
-public final class OExpressionSize extends OExpressionAbstract {
+public final class OExpressionRaw extends OExpressionAbstract {
 
-  public OExpressionSize() {
+  public OExpressionRaw() {
     this(null);
   }
   
-  public OExpressionSize(String alias) {
+  public OExpressionRaw(String alias) {
     super(alias);
     if(alias == null){
-        setAlias("size");
+        setAlias("raw");
     }
   }
   
@@ -52,7 +51,7 @@ public final class OExpressionSize extends OExpressionAbstract {
     }
     if(candidate instanceof ODocument){
       final ODocument doc = (ODocument) candidate;
-      return doc.getSize();
+      return doc.toStream();
     }else if(candidate instanceof Map){
         candidate = ((Map)candidate).values();
     }
@@ -89,7 +88,7 @@ public final class OExpressionSize extends OExpressionAbstract {
 
   @Override
   protected String thisToString() {
-    return "(@Size) ";
+    return "(@Type) ";
   }
 
   @Override
@@ -104,8 +103,8 @@ public final class OExpressionSize extends OExpressionAbstract {
   }
   
   @Override
-  public OExpressionSize copy() {
-    return new OExpressionSize(alias);
+  public OExpressionRaw copy() {
+    return new OExpressionRaw(alias);
   }
   
 }

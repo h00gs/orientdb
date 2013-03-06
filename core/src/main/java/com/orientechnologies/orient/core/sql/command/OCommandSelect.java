@@ -16,6 +16,7 @@
  */
 package com.orientechnologies.orient.core.sql.command;
 
+import com.orientechnologies.common.exception.OException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,6 +45,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.functions.coll.OSQLFunctionFlatten;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.model.OSearchContext;
 import com.orientechnologies.orient.core.sql.model.OSearchResult;
@@ -56,10 +58,8 @@ import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.sun.org.apache.xpath.internal.functions.Function;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.xml.crypto.dsig.spec.XPathType;
 
 /**
  * Executes the SQL SELECT statement. the parse() method compiles the query and 
@@ -70,11 +70,13 @@ import javax.xml.crypto.dsig.spec.XPathType;
  * @author Johann Sorel (Geomatys)
  */
 public class OCommandSelect extends OCommandAbstract implements Iterable {
-  
+      
   public static final String KEYWORD_SELECT = "SELECT";
   
   private static final String PAGING_FINISHED = "finished"; 
-  private static final String PAGING_LINEAR_ORID = "sourceskip"; 
+  private static final String PAGING_LINEAR_ORID = "sourceskip";
+  //used as a flag to indicate all properties must be retrieved.
+  private static final OExpression START = new OLiteral("*");
 
   private final List<OExpression> projections = new ArrayList<OExpression>();
   private OQuerySource source;
@@ -156,8 +158,8 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
         
       if(proj.MULT() != null){
         //all values requested
-        projections.clear();
-        break;
+        projections.add(START);
+        continue;
       }
       final OExpression exp = SQLGrammarUtils.visit(proj);
       projections.add(exp);
@@ -173,6 +175,11 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
               throw new OCommandSQLParsingException("No projections allowed with flatten function.");
           }
       }
+    }
+    
+    //if there is only a * we avoid projections
+    if(projections.size() == 1 && projections.get(0) == START){
+        projections.clear();
     }
     
     //parse source
@@ -325,7 +332,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       search(projections, filter, skip, limit, true);
     }else{
       //groupby or sort by search, we must collect all results first
-      search(null, OExpression.INCLUDE, -1, -1, false);
+      search(projections, OExpression.INCLUDE, -1, -1, false);
       applyGroups();
       applySort();
       
@@ -478,10 +485,26 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
           //flatten
           Object res = projections.get(0).evaluate(context, candidate);
           if(res instanceof Collection){
-              final Collection c = (Collection) res;
-              result.addAll(c);
-          }else{
-              result.add((ODocument)res);
+              final Collection col = (Collection) res;
+              for(Object o : col){
+                  if(o instanceof ORID){
+                      o = ((ORID)o).getRecord();
+                  }
+                  if(o instanceof ODocument){
+                      result.add((ODocument)o);
+                  }else{
+                      throw new OException("Flatten object is not an ODocument : "+o);
+                  }
+              }
+          } else {
+              if (res instanceof ORID) {
+                  res = ((ORID) res).getRecord();
+              }
+              if (res instanceof ODocument) {
+                  result.add((ODocument) res);
+              } else {
+                  throw new OException("Object is not an ODocument : " + res);
+              }
           }
           
       }else{
@@ -657,6 +680,15 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
           final List<OExpression> projections, final ODocument doc) {
     for (int i = 0, n = projections.size(); i < n; i++) {
       final OExpression projection = projections.get(i);
+      if(projection == START && candidate instanceof OIdentifiable){
+          //copy all fields
+          final ODocument cdoc = ((OIdentifiable)candidate).getRecord();
+          for(String key : cdoc.fieldNames()){
+              doc.field(key,cdoc.field(key));
+          }
+          continue;
+      }
+      
       String projname = projection.getAlias();
       if (projname == null) {
         projname = String.valueOf(i);
