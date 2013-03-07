@@ -53,14 +53,27 @@ public class OInstanceOf extends OExpressionWithChildren{
     Object left = getLeft().evaluate(context, candidate);
     Object right = getRight().evaluate(context, candidate);
       
+    OClass cleft = null;
+    OClass cright = null;
+    
     if(left instanceof ODocument){
-        left = ((ODocument)left).getClassName();
+        final ODocument doc = (ODocument) left;
+        cleft = doc.getSchemaClass();
+    }else if(left instanceof String){
+        cleft = getDatabase().getMetadata().getSchema().getClass((String)left);
     }
     if(right instanceof ODocument){
-        right = ((ODocument)right).getClassName();
+        final ODocument doc = (ODocument) right;
+        cright = doc.getSchemaClass();
+    }else if(right instanceof String){
+        cright = getDatabase().getMetadata().getSchema().getClass((String)right);
     }
     
-    return OEquals.equals(left, right);
+    if(cleft != null && cright != null){
+        return cleft.isSubClassOf(cright);
+    }else{
+        return false;
+    }
   }
 
   @Override

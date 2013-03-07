@@ -18,6 +18,7 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.query.OQueryHelper;
+import java.util.Collection;
 
 /**
  *
@@ -59,7 +60,23 @@ public class OLike extends OExpressionWithChildren{
       return false;
     }
     
-    return OQueryHelper.like(String.valueOf(value1), String.valueOf(value2));    
+    if(value1 instanceof Collection && left instanceof Any){
+        for(Object o : ((Collection)value1) ){
+            if(o instanceof String && OQueryHelper.like((String)o, String.valueOf(value2))){
+                return true;
+            }
+        }
+        return false;
+    }else if(value1 instanceof Collection && left instanceof All){
+        for(Object o : ((Collection)value1) ){
+            if(o instanceof String && !OQueryHelper.like((String)o, String.valueOf(value2))){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    return value1 instanceof String && OQueryHelper.like((String)value1, String.valueOf(value2));    
   }
   
   @Override

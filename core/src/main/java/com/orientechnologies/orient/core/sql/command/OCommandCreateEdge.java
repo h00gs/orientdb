@@ -61,6 +61,14 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
   public OCommandCreateEdge() {
   }
 
+  @Override
+  protected OGraphDatabase getDatabase() {
+      ODatabaseRecord db = super.getDatabase();
+      if (!(db instanceof OGraphDatabase))
+      db = new OGraphDatabase((ODatabaseRecordTx) db);
+      return (OGraphDatabase) db;
+  }
+  
   public OCommandCreateEdge parse(final OCommandRequest iRequest) {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
@@ -103,9 +111,7 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     if (clazz == null)
       throw new OCommandExecutionException("Cannot execute the command because it has not been parsed yet");
 
-    ODatabaseRecord database = getDatabase();
-    if (!(database instanceof OGraphDatabase))
-      database = new OGraphDatabase((ODatabaseRecordTx) database);
+    OGraphDatabase database = getDatabase();
 
     final List<OIdentifiable> fromIds = visit(from);
     final List<OIdentifiable> toIds = visit(to);
@@ -114,7 +120,7 @@ public class OCommandCreateEdge extends OCommandAbstract implements OCommandDist
     List<ODocument> edges = new ArrayList<ODocument>();
     for (OIdentifiable from : fromIds) {
       for (OIdentifiable to : toIds) {
-        final ODocument edge = ((OGraphDatabase) database).createEdge(from.getIdentity(), to.getIdentity(), clazz.getName());
+        final ODocument edge = database.createEdge(from.getIdentity(), to.getIdentity(), clazz.getName());
         OSQLHelper.bindParameters(edge, fields, new OCommandParameters(iArgs));
 
         if (clusterName != null)

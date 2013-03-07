@@ -230,7 +230,7 @@ mapEntry        : (literal|cleanreference) DOUBLEDOT expression ;
 collection      : LBRACKET (expression (COMMA expression)*)? RBRACKET ;
 arguments       : LPAREN (MULT |filter (COMMA filter)*)? RPAREN ;
 functionCall    : cleanreference arguments ; // custom function
-traverse        : (cleanreference|traverseAll|traverseAny) TRAVERSE LPAREN nint (COMMA nint (COMMA cleanreference)*)? RPAREN LPAREN  filter RPAREN;
+traverse        : (cleanreference|traverseAll|traverseAny) TRAVERSE LPAREN nint (COMMA nint (COMMA expression)*)? RPAREN LPAREN  filter RPAREN;
 
 expression
   : OTHIS
@@ -240,6 +240,8 @@ expression
   | OSIZE_ATTR
   | OTYPE_ATTR
   | ORAW_ATTR
+  | traverseAll
+  | traverseAny
   | orid
   | literal
   | map
@@ -256,7 +258,8 @@ expression
   | expression WORD               expression // custom operators
   | functionCall
   | expression DOT expression
-  | expression LBRACKET (filter (COMMA filter)? ) RBRACKET
+  | expression LBRACKET ((filter (COMMA filter)?) | INT UNARY INT ) RBRACKET
+  | sourceQuery
   ;
 
 filterAnd     : AND filter ;

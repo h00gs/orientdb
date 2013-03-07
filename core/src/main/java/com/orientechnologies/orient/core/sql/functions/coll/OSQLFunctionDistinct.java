@@ -20,12 +20,12 @@ import java.util.Set;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionAbstract;
+import com.orientechnologies.orient.core.sql.model.OExpression;
 
 /**
  * Keeps items only once removing duplicates
  * 
  * @author Luca Garulli (l.garulli--at--orientechnologies.com)
- * 
  */
 public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
   public static final String NAME    = "distinct";
@@ -40,12 +40,12 @@ public class OSQLFunctionDistinct extends OSQLFunctionAbstract {
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object value = children.get(0).evaluate(context, candidate);
 
-    if (value != null && !set.contains(value)) {
+    if (!set.contains(value)) {
       set.add(value);
       return value;
     }
-
-    return null;
+    
+    return OExpression.POST_ACTION_DISCARD;
   }
 
   public boolean filterResult() {

@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.Collection;
 import java.util.List;
 
@@ -59,7 +60,12 @@ public class OIn extends OExpressionWithChildren{
             rights[i] = col.get(i).evaluate(context, candidate);
         }
     }else{
-        rights = new Object[]{getRight().evaluate(context, candidate)};
+        Object r = getRight().evaluate(context, candidate);
+        if(r instanceof Collection){
+            rights = ((Collection)r).toArray();
+        }else{
+            rights = new Object[]{r};
+        }
     }
     
     if(left instanceof Collection){

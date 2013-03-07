@@ -52,6 +52,14 @@ public class OCommandCreateVertex extends OCommandAbstract implements OCommandDi
   public OCommandCreateVertex() {
   }
 
+  @Override
+  protected OGraphDatabase getDatabase() {
+      ODatabaseRecord db = super.getDatabase();
+      if (!(db instanceof OGraphDatabase))
+      db = new OGraphDatabase((ODatabaseRecordTx) db);
+      return (OGraphDatabase) db;
+  }
+  
   public OCommandCreateVertex parse(final OCommandRequest iRequest) {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
@@ -96,11 +104,9 @@ public class OCommandCreateVertex extends OCommandAbstract implements OCommandDi
     if (clazz == null)
       throw new OCommandExecutionException("Cannot execute the command because it has not been parsed yet");
 
-    ODatabaseRecord database = getDatabase();
-    if (!(database instanceof OGraphDatabase))
-      database = new OGraphDatabase((ODatabaseRecordTx) database);
+    OGraphDatabase database = getDatabase();
 
-    final ODocument vertex = ((OGraphDatabase) database).createVertex(clazz.getName());
+    final ODocument vertex = database.createVertex(clazz.getName());
 
     OSQLHelper.bindParameters(vertex, fields, new OCommandParameters(iArgs));
 

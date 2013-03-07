@@ -332,6 +332,15 @@ public class OToSQLVisitor implements OExpressionVisitor{
     }
 
     @Override
+    public String visit(OExpression.Any candidate, Object data) {
+        return "any()";
+    }
+  
+    @Override
+    public String visit(OExpression.All candidate, Object data) {
+        return "all()";
+    }
+    @Override
     public Object visit(OExpressionTraverse candidate, Object data) {
         final Object source = candidate.getSource();
         final StringBuilder sb = new StringBuilder();

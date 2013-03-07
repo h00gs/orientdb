@@ -22,6 +22,7 @@ import com.orientechnologies.orient.core.command.OCommandListener;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
 import com.orientechnologies.orient.core.metadata.security.ORole;
@@ -46,6 +47,14 @@ public class OCommandDeleteVertex extends OCommandAbstract implements OCommandLi
   public OCommandDeleteVertex() {
   }
 
+  @Override
+  protected OGraphDatabase getDatabase() {
+      ODatabaseRecord db = super.getDatabase();
+      if (!(db instanceof OGraphDatabase))
+      db = new OGraphDatabase((ODatabaseRecordTx) db);
+      return (OGraphDatabase) db;
+  }
+  
   public OCommandDeleteVertex parse(final OCommandRequest iRequest) {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
@@ -89,7 +98,7 @@ public class OCommandDeleteVertex extends OCommandAbstract implements OCommandLi
 
     final ORID id = record.getIdentity();
     if (id.isValid()) {
-      if (((OGraphDatabase) getDatabase()).removeVertex(id)) {
+      if ((getDatabase()).removeVertex(id)) {
         recordCount++;
       }
     }
