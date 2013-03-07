@@ -83,6 +83,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   private OExpression filter;
   private final List<OExpression> groupBys = new ArrayList<OExpression>();
   private final List<OSortBy> sortBys = new ArrayList<OSortBy>();
+  private final Map<String,OExpression> lets = new HashMap<String, OExpression>();
   private long skip;
   private boolean hasAggregate = false;
   private boolean flatten = false;
@@ -169,11 +170,18 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
         allAggregate = false;
       }
       
+      if(proj.let() != null){
+          final OSQLParser.LetContext let = proj.let();
+          final String cvarName = let.contextVariable().WORD().toString();
+          final OExpression cvarExp = SQLGrammarUtils.visit(let.expression());
+          lets.put(cvarName, cvarExp);
+      }
+      
       if(exp instanceof OSQLFunctionFlatten){
           flatten = true;
           if(projections.size()>1){
               throw new OCommandSQLParsingException("No projections allowed with flatten function.");
-      }
+        }
       }
     }
     
@@ -196,6 +204,12 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       }
     }
 
+    //parse lets
+    for(OSQLParser.LetContext let : candidate.let()){
+      final String cvarName = let.contextVariable().WORD().toString();
+      final OExpression cvarExp = SQLGrammarUtils.visit(let.expression());
+      lets.put(cvarName, cvarExp);
+    }
     
     //parse filter
     if(candidate.filter()!= null){
@@ -254,8 +268,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     reset();
     
     //parse source
-    source = new OQuerySource();
-    source.parse(src);
+    if(src != null){
+      source = new OQuerySource();
+      source.parse(src);
+    }
     
     //parse filter
     if(filter != null){
@@ -288,6 +304,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
 
   public void setFilter(OExpression filter) {
     this.filter = filter;
+  }
+
+  public void setSource(OQuerySource source) {
+    this.source = source;
   }
   
   @Override
@@ -365,7 +385,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       
     }else{
       //groupby or sort by search, we must collect all results first
-      search(null, OExpression.INCLUDE, -1, -1, false);
+      search(null, filter, -1, -1, false);
       applyGroups();
       applySort();
       
@@ -493,6 +513,11 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       if(candidate.getIdentity().getClusterId() == Integer.MIN_VALUE){
           //sub query paging state, ignore it
           continue;
+      }
+      
+      //calculate dynamic elements
+      for(Entry<String,OExpression> entry : lets.entrySet()){
+          context.setVariable(entry.getKey(), entry.getValue().evaluate(context, candidate));
       }
       
       if(paging){

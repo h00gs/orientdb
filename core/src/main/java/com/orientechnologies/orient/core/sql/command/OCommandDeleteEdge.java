@@ -31,6 +31,8 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.record.ORecordAbstract;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OName;
+import com.orientechnologies.orient.core.sql.model.OQuerySource;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import java.util.HashSet;
@@ -90,7 +92,7 @@ public class OCommandDeleteEdge extends OCommandAbstract implements OCommandList
       }
     }
     filter = candidate.filter();
-    
+        
     return this;
   }
 
@@ -105,6 +107,14 @@ public class OCommandDeleteEdge extends OCommandAbstract implements OCommandList
     }else if(source != null){
       final OCommandSelect subselect = new OCommandSelect();
       subselect.parse(source, filter);
+      subselect.addListener(this);
+      subselect.execute(iArgs);
+    }else if(source == null && from == null && to == null){
+      final OCommandSelect subselect = new OCommandSelect();
+      subselect.parse(source, filter);
+      final OQuerySource src = new OQuerySource();
+      src.setTargetClasse("E");
+      subselect.setSource(src);
       subselect.addListener(this);
       subselect.execute(iArgs);
     }else{

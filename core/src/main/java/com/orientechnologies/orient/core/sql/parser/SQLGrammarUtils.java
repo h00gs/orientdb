@@ -431,9 +431,9 @@ public final class SQLGrammarUtils {
       final OExpression source = visit((ExpressionContext)candidate.getChild(0));
       final OFiltered filter = new OFiltered(source);
       
-      if(!candidate.INT().isEmpty()){
-          filter.getChildren().add(new OLiteral(Integer.valueOf(candidate.INT(0).toString())));
-          filter.getChildren().add(new OLiteral(Integer.valueOf(candidate.INT(1).toString())));
+      if(candidate.getChild(2) instanceof TerminalNode){
+          filter.getChildren().add(new OLiteral(Integer.valueOf(candidate.getChild(2).toString())));
+          filter.getChildren().add(new OLiteral(Integer.valueOf(candidate.getChild(4).toString())));
       }else{
         for(Object o : candidate.children){
             if(o instanceof FilterContext){

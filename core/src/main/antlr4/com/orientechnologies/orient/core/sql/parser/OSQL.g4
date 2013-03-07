@@ -86,6 +86,7 @@ ANY : A N Y ;
 DEFINED : D E F I N E D ;
 PAGE : P A G E ;
 INSTANCEOF : I N S T A N C E O F ;
+LET : L E T ;
 
 // GLOBAL STUFF ---------------------------------------
 COMMA 	: ',';
@@ -210,6 +211,7 @@ keywords
   | POSITION | RUNTIME | EDGE | FUNCTION | LINK | VERTEX | TYPE | INVERSE
   | IDEMPOTENT | LANGUAGE  | FIND | REFERENCES | REBUILD | TRAVERSE | PUT
   | INCREMENT | WHILE | BETWEEN | TRUE | FALSE | ALL | ANY | PAGE | INSTANCEOF
+  | LET
   ;
 
 anything        : .*? ;
@@ -258,7 +260,7 @@ expression
   | expression WORD               expression // custom operators
   | functionCall
   | expression DOT expression
-  | expression LBRACKET ((filter (COMMA filter)?) | INT UNARY INT ) RBRACKET
+  | expression LBRACKET ( (INT UNARY INT) | (filter (COMMA filter)?)  ) RBRACKET
   | sourceQuery
   ;
 
@@ -302,15 +304,11 @@ insertEntry   : LPAREN expression (COMMA expression)* RPAREN ;
 insertSet     : reference COMPARE_EQL expression ;
 insertFields  : LPAREN reference(COMMA reference)* RPAREN ;
 
-commandSelect : SELECT (projection (COMMA projection)*)? from? (WHERE filter)? groupBy? orderBy? (skip|limit)* ;
+commandSelect : SELECT (projection (COMMA projection)*)? from? let* (WHERE filter)? groupBy? orderBy? (skip|limit)* ;
 projection    : (MULT
               | expression
-              | filter
-              | ORID_ATTR
-              | OCLASS_ATTR
-              | OVERSION_ATTR
-              | OSIZE_ATTR
-              | OTYPE_ATTR ) 
+              | filter ) 
+              (let)?
               (alias)?
               ;
 source        : orid
@@ -329,6 +327,7 @@ orderBy        : ORDER BY orderByElement (COMMA orderByElement)* ;
 orderByElement : expression (ASC|DESC)? ;
 skip           : SKIP INT ;
 limit          : LIMIT INT (BY PAGE)? ;
+let            : LET contextVariable COMPARE_EQL expression ;
 
 
 commandCreateClass      : CREATE CLASS reference (EXTENDS reference)? (CLUSTER numberOrWord(COMMA numberOrWord)*)? ABSTRACT?;
@@ -342,7 +341,7 @@ edgeCluster             : CLUSTER reference ;
 commandCreateFunction   : CREATE FUNCTION reference TEXT (IDEMPOTENT reference)? (LANGUAGE reference)? ;
 commandCreateLink       : CREATE LINK linkName? (TYPE reference)? FROM reference DOT reference TO reference DOT reference INVERSE?;
 linkName                : reference ;
-commandCreateVertex     : CREATE VERTEX reference (CLUSTER reference)? (SET insertSet (COMMA insertSet)*)?;
+commandCreateVertex     : CREATE VERTEX reference? (CLUSTER reference)? (SET insertSet (COMMA insertSet)*)?;
 commandAlterClass       : ALTER CLASS reference reference cword ;
 commandAlterCluster     : ALTER CLUSTER (reference|number) reference cword;
 commandAlterDatabase    : ALTER DATABASE reference cword;
@@ -359,7 +358,7 @@ commandRevoke           : REVOKE reference ON reference FROM reference ;
 commandFindReferences   : FIND REFERENCES source collection ;
 commandRebuildIndex     : REBUILD INDEX reference ;
 commandDelete           : DELETE from (WHERE filter)? ;
-commandDeleteEdge       : DELETE EDGE ((deleteEdgeFrom)? (deleteEdgeTo)? | source) (WHERE filter)?;
+commandDeleteEdge       : DELETE EDGE ((deleteEdgeFrom)? (deleteEdgeTo)? | source)? (WHERE filter)?;
 deleteEdgeFrom          : FROM orid;
 deleteEdgeTo            : TO orid;
 commandDeleteVertex     : DELETE VERTEX (source (WHERE filter)?)? ;
