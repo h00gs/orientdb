@@ -245,7 +245,7 @@ public class SQLInsertTest {
 
   @Test
   public void insertSubQuery() {
-    database.open("admin", "admin");
+     database.open("admin", "admin");
 
     ODocument doc = (ODocument) database.command(new OCommandSQL("INSERT INTO test SET names = (select name from OUser)"))
         .execute();

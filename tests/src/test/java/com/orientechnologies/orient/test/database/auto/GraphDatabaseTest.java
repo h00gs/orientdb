@@ -577,14 +577,14 @@ public class GraphDatabaseTest {
 
     result = database.command(
         new OCommandSQL("delete edge from " + v1.getIdentity() + " to " + v2.getIdentity() + " where  name = 'wow'")).execute();
-    Assert.assertEquals(result, 1);
+    Assert.assertEquals(result, 1l);
     result = database.command(new OCommandSQL("delete edge where name = 'wow'")).execute();
-    Assert.assertEquals(result, 1);
+    Assert.assertEquals(result, 1l);
 
     result = database.command(new OCommandSQL("delete from V1 where @rid = ?")).execute(v2);
-    Assert.assertEquals(result, 1);
+    Assert.assertEquals(result, 1l);
     result = database.command(new OCommandSQL("delete from V1 where @rid = ?")).execute(v3);
-    Assert.assertEquals(result, 1);
+    Assert.assertEquals(result, 1l);
 
     result = database.command(new OCommandSQL("create property V1.ctime DATETIME")).execute();
     // result = database.command(new OCommandSQL("update V1 set ctime=sysdate() where name = 'madeInSqlLand'")).execute();

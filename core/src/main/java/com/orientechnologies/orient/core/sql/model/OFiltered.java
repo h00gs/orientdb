@@ -104,10 +104,7 @@ public final class OFiltered extends OExpressionWithChildren {
         
     }else if(left instanceof Collection && getFilter() instanceof OLiteral){
         //it's not a filter but a List accessor
-        if(!(left instanceof List)){
-            //invalid element
-            return null;
-        }
+        left = new ArrayList((Collection)left);
         final List col = (List) left;
         final Number index = (Number)children.get(1).evaluate(context, candidate);
         return col.get(index.intValue());
