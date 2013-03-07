@@ -328,7 +328,7 @@ public class SQLSelectTest {
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
     resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select from Profile where customReferences.values().CONTAINS( name like 'Ja%')"));
+        "select from Profile where customReferences.\"values\"().CONTAINS( name like 'Ja%')"));
 
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
@@ -395,7 +395,7 @@ public class SQLSelectTest {
     Assert.assertTrue(found);
 
     result = database.command(
-        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races contains (name in ['Asiatic','European'])"))
+        new OSQLSynchQuery<ODocument>("select * from cluster:animal where races.contains(name in ['Asiatic','European'])"))
         .execute();
 
     found = false;

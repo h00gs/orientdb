@@ -351,24 +351,30 @@ public final class SQLGrammarUtils {
   public static OExpression visit(ExpressionContext candidate) throws OCommandSQLParsingException {
     final int nbChild = candidate.getChildCount();
     
-    if(candidate.OCLASS_ATTR() != null){
-      return new OExpressionClass();
-    }else if(candidate.ORID_ATTR() != null){
-      return new OExpressionORID();
-    }else if(candidate.OSIZE_ATTR() != null){
-      return new OExpressionSize();
-    }else if(candidate.OTHIS() != null){
-      return new OExpressionThis();
-    }else if(candidate.OTYPE_ATTR() != null){
-      return new OExpressionType();
-    }else if(candidate.OVERSION_ATTR() != null){
-      return new OExpressionVersion();
-    }else if(candidate.ORAW_ATTR() != null){
-      return new OExpressionRaw();
-    }
-    
     if(nbChild == 1){
       //can be a word, literal, functionCall, context variable
+      if(candidate.OCLASS_ATTR() != null){
+        return new OExpressionClass();
+      }else if(candidate.ORID_ATTR() != null){
+        return new OExpressionORID();
+      }else if(candidate.OSIZE_ATTR() != null){
+        return new OExpressionSize();
+      }else if(candidate.OTHIS() != null){
+        return new OExpressionThis();
+      }else if(candidate.OTYPE_ATTR() != null){
+        return new OExpressionType();
+      }else if(candidate.OVERSION_ATTR() != null){
+        return new OExpressionVersion();
+      }else if(candidate.ORAW_ATTR() != null){
+        return new OExpressionRaw();
+      }else if(candidate.traverseAll() != null){
+        return new OExpression.All();
+      }else if(candidate.traverseAny() != null){
+        return new OExpression.Any();
+      }else if(candidate.sourceQuery()!= null){
+        return new OLiteral(visit(candidate.sourceQuery()));
+      }
+        
       return (OExpression)visit(candidate.getChild(0));
     }else if(nbChild == 2){
       //can be a method call, pathcall
@@ -407,6 +413,7 @@ public final class SQLGrammarUtils {
         }else if(".".equals(operator)){
             if(rightExp instanceof OSQLMethod){
                 ((OSQLMethod)rightExp).getArguments().add(0,leftExp);
+                rightExp.setAlias(leftExp.getAlias());
                 return rightExp;
             }else{
                 return new OPath(leftExp, rightExp);
@@ -423,8 +430,16 @@ public final class SQLGrammarUtils {
       // exp '[' filter(,filter)* ']'
       final OExpression source = visit((ExpressionContext)candidate.getChild(0));
       final OFiltered filter = new OFiltered(source);
-      for(FilterContext fc : candidate.filter()){
-          filter.getChildren().add(visit(fc));
+      
+      if(!candidate.INT().isEmpty()){
+          filter.getChildren().add(new OLiteral(Integer.valueOf(candidate.INT(0).toString())));
+          filter.getChildren().add(new OLiteral(Integer.valueOf(candidate.INT(1).toString())));
+      }else{
+        for(Object o : candidate.children){
+            if(o instanceof FilterContext){
+                filter.getChildren().add(visit((FilterContext)o));
+            }
+        }
       }
       return filter;
     }else{
@@ -654,7 +669,7 @@ public final class SQLGrammarUtils {
         }else if(tc.traverseAny() != null){
             trs.setSource(OExpressionTraverse.SOURCE.ANY);
         }else{
-            final OExpression source = visitAsExpression(tc.cleanreference(i++));
+            final OExpression source = visitAsExpression(tc.cleanreference());
             trs.setSource(source);
         }
         
@@ -668,9 +683,9 @@ public final class SQLGrammarUtils {
         }
         
         //parse subfields
-        final List<CleanreferenceContext> refs = tc.cleanreference();
+        final List<ExpressionContext> refs = tc.expression();
         for(int k=i,n=refs.size();k<n;k++){
-            trs.getSubfields().add(visitAsExpression(refs.get(k)));
+            trs.getSubfields().add(visit(refs.get(k)));
         }
         
         //parse condition
@@ -702,6 +717,9 @@ public final class SQLGrammarUtils {
         final OExpression right;
         if(candidate.filterIn().expression() != null){
           right = (OExpression)visit(candidate.filterIn().expression());
+        }else if(candidate.filterIn().sourceQuery()!= null){
+          List<OIdentifiable> lst = visit(candidate.filterIn().sourceQuery());
+          right = new OLiteral(lst);
         }else{
           throw new OCommandSQLParsingException("Unexpected arguments");
         }

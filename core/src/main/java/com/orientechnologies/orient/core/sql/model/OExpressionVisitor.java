@@ -121,4 +121,8 @@ public interface OExpressionVisitor {
   
   Object visit(OExpression.Exclude candidate, Object data);
   
+  Object visit(OExpression.Any candidate, Object data);
+  
+  Object visit(OExpression.All candidate, Object data);
+  
 }

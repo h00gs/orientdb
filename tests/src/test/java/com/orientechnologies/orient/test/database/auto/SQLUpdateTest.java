@@ -314,7 +314,7 @@ public class SQLUpdateTest {
   public void updateAddMultipleFields() {
     database.open("admin", "admin");
 
-    updatedRecords = ((Number) (database.command(new OCommandSQL("update Account add myCollection = 1, myCollection = 2 "))
+    updatedRecords = ((Number) (database.command(new OCommandSQL("update Account add myCollection = 1, myCollection = 2 LIMIT 1"))
         .execute())).intValue();
     Assert.assertTrue(updatedRecords.longValue() > 0);
 

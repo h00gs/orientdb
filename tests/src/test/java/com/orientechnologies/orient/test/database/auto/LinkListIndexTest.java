@@ -513,7 +513,7 @@ public class LinkListIndexTest {
     document.save();
 
     List<ODocument> result = database.query(new OSQLSynchQuery<ODocument>(
-        "select * from LinkListIndexTestClass where linkCollection contains ?"), docOne.getIdentity());
+        "select * from LinkListIndexTestClass where linkCollection.contains(?)"), docOne.getIdentity());
     Assert.assertNotNull(result);
     Assert.assertEquals(result.size(), 1);
     Assert.assertEquals(Arrays.asList(docOne.getIdentity(), docTwo.getIdentity()), result.get(0).<List> field("linkCollection"));

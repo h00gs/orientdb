@@ -77,7 +77,18 @@ public final class OFiltered extends OExpressionWithChildren {
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object left = getSource().evaluate(context, candidate);
 
-    if(left instanceof Map && getFilter() instanceof OLiteral){
+    if(left instanceof ODocument && getFilter() instanceof OLiteral){
+        //it's not a filter but a document accessor
+        final ODocument doc = (ODocument) left;
+        final String fieldName = String.valueOf(getFilter().evaluate(context, candidate));
+        return doc.field(fieldName);
+    }else if(left instanceof ODocument && getFilter() instanceof OName){
+        //it's not a filter but a document accessor
+        return getFilter().evaluate(context, candidate);
+    }else if(left instanceof ODocument && getFilter() instanceof OPath){
+        //it's not a filter but a document accessor
+        return getFilter().evaluate(context, candidate);
+    }else if(left instanceof Map && getFilter() instanceof OLiteral){
         //it's not a filter but a Map accessor
         return ((Map)left).get(((OLiteral) getFilter()).evaluateNow(context,candidate));
     }else if(getChildren().size()==3){
@@ -89,7 +100,7 @@ public final class OFiltered extends OExpressionWithChildren {
         final List col = (List) left;
         final Number startIndex = (Number)children.get(1).evaluate(context, candidate);
         final Number endIndex = (Number)children.get(2).evaluate(context, candidate);
-        return col.subList(startIndex.intValue(), endIndex.intValue());
+        return col.subList(startIndex.intValue(), endIndex.intValue()+1);//+1 because edges are inclusive
         
     }else if(left instanceof Collection && getFilter() instanceof OLiteral){
         //it's not a filter but a List accessor

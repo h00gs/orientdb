@@ -219,6 +219,17 @@ public class OCopyVisitor implements OExpressionVisitor {
   }
 
   @Override
+  public Object visit(OExpression.Any candidate, Object data) {
+    //inmutable
+    return candidate;
+  }
+  @Override
+  public Object visit(OExpression.All candidate, Object data) {
+    //inmutable
+    return candidate;
+  }
+  
+  @Override
   public Object visit(OIn candidate, Object data) {
     return new OIn(candidate.getAlias(), 
             (OExpression)candidate.getLeft().accept(this,data), 

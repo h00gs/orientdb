@@ -16,12 +16,14 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -127,6 +129,15 @@ public class OEquals extends OExpressionWithChildren{
       return false;
     }
     
+    //check if value is wrapped in a document
+    if( !(value1 instanceof ODocument) && value2 instanceof ODocument){
+      final ODocument d2 = (ODocument) value2;
+      final Object[] values = d2.fieldValues();
+      if(values.length == 1){
+          return equals(value1, values[0]);
+      }
+  }
+    
     if(value1 instanceof ORID && value2 instanceof String){
       //orid check
       try{
@@ -144,6 +155,29 @@ public class OEquals extends OExpressionWithChildren{
         //string is not an id
       }
     }
+    
+    //composite key equality test
+    if(value1 instanceof OCompositeKey){
+        //try to convert right to Compositekey
+        final OCompositeKey lkey = (OCompositeKey) value1;
+        OCompositeKey rkey = null;
+        if(value2 instanceof Collection){
+            rkey = new OCompositeKey( ((Collection)value2).toArray() );
+        }else{
+            rkey = new OCompositeKey( value2 );
+        }
+        return lkey.compareTo(rkey) == 0;
+    }else if(value2 instanceof OCompositeKey){
+        //try to convert left to Compositekey
+        final OCompositeKey rkey = (OCompositeKey) value2;
+        OCompositeKey lkey = null;
+        if(value1 instanceof Collection){
+            lkey = new OCompositeKey( ((Collection)value1).toArray() );
+        }else{
+            lkey = new OCompositeKey( value1 );
+        }
+        return lkey.compareTo(rkey) == 0;
+    }
 
     //resolving for numbers
     if (value1 instanceof Number && value2 instanceof Number) {
@@ -155,7 +189,7 @@ public class OEquals extends OExpressionWithChildren{
       //to ensure a proper compare
       return true;
     }
-    
+        
     return false;
   }
   

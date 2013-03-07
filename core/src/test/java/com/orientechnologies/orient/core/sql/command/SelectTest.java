@@ -264,7 +264,7 @@ public class SelectTest {
   
   @Test
   public void selectMethod(){    
-    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT size.asInteger().append(' length'), name.charAt(2) AS letter FROM car");
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT size.asInteger().append(' length') as append, name.charAt(2) AS letter FROM car");
     final List<ODocument> docs = db.query(query);
     assertEquals(docs.size(), 4);
     assertEquals(docs.get(0).fieldNames().length, 2);

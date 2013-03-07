@@ -62,7 +62,7 @@ public class SQLFunctionsTest {
   }
 
   @Test
-  public void queryMin() {
+  public void queryMin() {      
     List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select min(id) as min from Account")).execute();
 
     Assert.assertTrue(result.size() == 1);
@@ -114,7 +114,7 @@ public class SQLFunctionsTest {
 
   @Test
   public void queryDistinct() {
-    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select distinct(name) as name from City")).execute();
+    List<ODocument> result = database.command(new OSQLSynchQuery<ODocument>("select distinct(name) as name from City")).execute();    
 
     Assert.assertTrue(result.size() > 1);
 

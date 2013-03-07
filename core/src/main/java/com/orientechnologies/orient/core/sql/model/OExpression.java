@@ -17,6 +17,11 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An Expression is an unresolved operation which result change based
@@ -27,6 +32,9 @@ import com.orientechnologies.orient.core.command.OCommandContext;
  */
 public interface OExpression {
   
+  /** Request to skip this record */
+  public static final Object POST_ACTION_DISCARD = new Object();
+    
   /**
    * Expression which always return TRUE.
    */
@@ -188,6 +196,122 @@ public interface OExpression {
       final OSearchResult res = new OSearchResult(this);
       res.setState(OSearchResult.STATE.FILTER);
       res.setExcluded(OSearchResult.ALL);
+      return res;
+    }
+
+    @Override
+    public Object accept(OExpressionVisitor visitor, Object data) {
+        return visitor.visit(this, data);
+    }
+
+    @Override
+    public OExpression copy() {
+      //immutable
+      return this;
+    }
+    
+  }
+  
+  /**
+   * Expression which return a collection of all properties is the document.
+   * Warning, this expression evaluates differently based on the related expressions.
+   */
+  public static final class Any extends OExpressionAbstract{
+
+    public Any() {}
+    
+    @Override
+    protected String thisToString() {
+      return "ANY";
+    }
+
+    @Override
+    protected Object evaluateNow(OCommandContext context, Object candidate) {
+      if(candidate instanceof OIdentifiable){
+        final ODocument doc = (ODocument) ((OIdentifiable)candidate).getRecord();
+        final Object[] values = doc.fieldValues();
+        final List<Object> col = new ArrayList<Object>();
+        for(Object o : values){
+            col.add(o);
+        }
+        return col;
+      }else if(candidate instanceof Map){
+        return ((Map)candidate).values();
+      }
+    return candidate;
+    }
+
+    @Override
+    public boolean isContextFree() {
+      return true;
+    }
+
+    @Override
+    public boolean isDocumentFree() {
+      return false;
+    }
+
+    @Override
+    public OSearchResult searchIndex(OSearchContext searchContext) {
+      final OSearchResult res = new OSearchResult(this);
+      return res;
+    }
+
+    @Override
+    public Object accept(OExpressionVisitor visitor, Object data) {
+        return visitor.visit(this, data);
+    }
+
+    @Override
+    public OExpression copy() {
+      //immutable
+      return this;
+    }
+    
+  }
+    
+  /**
+   * Expression which return a collection of all properties is the document.
+   * Warning, this expression evaluates differently based on the related expressions.
+   */
+  public static final class All extends OExpressionAbstract{
+
+    public All() {}
+    
+    @Override
+    protected String thisToString() {
+      return "ALL";
+    }
+
+    @Override
+    protected Object evaluateNow(OCommandContext context, Object candidate) {
+      if(candidate instanceof OIdentifiable){
+        final ODocument doc = (ODocument) ((OIdentifiable)candidate).getRecord();
+        final Object[] values = doc.fieldValues();
+        final List<Object> col = new ArrayList<Object>();
+        for(Object o : values){
+            col.add(o);
+        }
+        return col;
+      }else if(candidate instanceof Map){
+        return ((Map)candidate).values();
+      }
+    return candidate;
+    }
+
+    @Override
+    public boolean isContextFree() {
+      return true;
+    }
+
+    @Override
+    public boolean isDocumentFree() {
+      return false;
+    }
+
+    @Override
+    public OSearchResult searchIndex(OSearchContext searchContext) {
+      final OSearchResult res = new OSearchResult(this);
       return res;
     }
 

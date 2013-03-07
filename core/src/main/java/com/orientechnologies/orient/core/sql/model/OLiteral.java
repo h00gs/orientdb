@@ -34,6 +34,9 @@ public final class OLiteral extends OExpressionAbstract{
   public OLiteral(String alias, Object value) {
     super(alias);
     this.value = value;
+    if(alias == null){
+        setAlias(String.valueOf(value));
+    }
   }
 
   public Object getValue() {

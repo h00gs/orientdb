@@ -23,6 +23,7 @@ import com.orientechnologies.orient.core.command.OCommandListener;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
+import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.security.ODatabaseSecurityResources;
@@ -56,6 +57,14 @@ public class OCommandDeleteEdge extends OCommandAbstract implements OCommandList
   public OCommandDeleteEdge() {
   }
 
+  @Override
+  protected OGraphDatabase getDatabase() {
+      ODatabaseRecord db = super.getDatabase();
+      if (!(db instanceof OGraphDatabase))
+      db = new OGraphDatabase((ODatabaseRecordTx) db);
+      return (OGraphDatabase) db;
+  }
+
   public OCommandDeleteEdge parse(final OCommandRequest iRequest) throws OCommandSQLParsingException {    
     final ODatabaseRecord database = getDatabase();
     database.checkSecurity(ODatabaseSecurityResources.COMMAND, ORole.PERMISSION_READ);
@@ -87,7 +96,7 @@ public class OCommandDeleteEdge extends OCommandAbstract implements OCommandList
 
   @Override
   public Object execute(Map<Object, Object> iArgs) {
-    OGraphDatabase db = (OGraphDatabase) getDatabase();
+    OGraphDatabase db = getDatabase();
     if(single != null){
       // REMOVE PUNCTUAL RID
       if (db.removeEdge(single)){

@@ -34,6 +34,9 @@ import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OName;
 import com.orientechnologies.orient.core.sql.parser.OSQLParser;
+import com.orientechnologies.orient.core.sql.parser.OSimplifyVisitor;
+import com.orientechnologies.orient.core.sql.parser.OUnknownResolverVisitor;
+import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import static com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +45,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import org.antlr.v4.runtime.misc.Pair;
 
 /**
  * SQL UPDATE command.
@@ -62,6 +67,14 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
   private Map<String, OPair<String, OExpression>> putEntries        = new LinkedHashMap<String, OPair<String, OExpression>>();
   private List<OPair<String, OExpression>>        removeEntries     = new ArrayList<OPair<String, OExpression>>();
   private Map<String, OExpression>                incrementEntries  = new LinkedHashMap<String, OExpression>();
+  
+  //updates specific to an execution, unknowned and ? have been resolved
+  private Map<String, OExpression>                resolvedSetEntries        = new LinkedHashMap<String, OExpression>();
+  private List<OPair<String, OExpression>>        resolvedAddEntries        = new ArrayList<OPair<String, OExpression>>();
+  private Map<String, OPair<String, OExpression>> resolvedPutEntries        = new LinkedHashMap<String, OPair<String, OExpression>>();
+  private List<OPair<String, OExpression>>        resolvedRemoveEntries     = new ArrayList<OPair<String, OExpression>>();
+  private Map<String, OExpression>                resolvedIncrementEntries  = new LinkedHashMap<String, OExpression>();
+  
   private long recordCount = 0;
   
   public OCommandUpdate() {
@@ -124,14 +137,66 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
       }
     }
     
+    if(candidate.limit() != null){
+        setLimit(Integer.valueOf(candidate.limit().INT().getText()));
+    }else{
+        setLimit(-1);
+    }
+    
     return this;
   }
 
   @Override
   public Object execute(final Map<Object, Object> iArgs) {
+    //copy references, parameters change on each execution.    
+    resolvedSetEntries.clear();
+    resolvedAddEntries.clear();
+    resolvedPutEntries.clear();
+    resolvedRemoveEntries.clear();
+    resolvedIncrementEntries.clear();
+      
+    OExpression filter = OExpression.INCLUDE;
+    if(iArgs != null && !iArgs.isEmpty()){
+      
+      //we need to set value where we have OUnknowned
+      final OUnknownResolverVisitor visitor = new OUnknownResolverVisitor(iArgs);
+      for(Entry<String,OExpression> entry : setEntries.entrySet()){
+          resolvedSetEntries.put(entry.getKey(), (OExpression) entry.getValue().accept(visitor, null));
+      }
+      for(OPair<String,OExpression> entry : addEntries){
+          resolvedAddEntries.add(new OPair<String, OExpression>(entry.getKey(), (OExpression) entry.getValue().accept(visitor, null)));
+      }
+      for(Entry<String,OPair<String,OExpression>> entry : putEntries.entrySet()){
+          resolvedPutEntries.put(entry.getKey(), 
+                  new OPair<String, OExpression>(entry.getValue().getKey(), 
+                  (OExpression) entry.getValue().getValue().accept(visitor, null)));
+      }
+      for(Entry<String,OExpression> entry : removeEntries){
+          resolvedRemoveEntries.add(new OPair<String, OExpression>(entry.getKey(), (OExpression) entry.getValue().accept(visitor, null)));
+      }
+      for(Entry<String,OExpression> entry : incrementEntries.entrySet()){
+          resolvedIncrementEntries.put(entry.getKey(), (OExpression) entry.getValue().accept(visitor, null));
+      }
+      
+      if(this.filter != null){
+        filter = (OExpression) SQLGrammarUtils.visit(this.filter).accept(visitor, null);
+      }
+    }else{
+        resolvedSetEntries.putAll(setEntries);
+        resolvedAddEntries.addAll(addEntries);
+        resolvedPutEntries.putAll(putEntries);
+        resolvedRemoveEntries.addAll(removeEntries);
+        resolvedIncrementEntries.putAll(incrementEntries);
+        if(this.filter != null){
+            filter = SQLGrammarUtils.visit(this.filter);
+        }
+    }
+            
     recordCount = 0;
     final OCommandSelect subselect = new OCommandSelect();
-    subselect.parse(source, filter);
+    subselect.parse(source, this.filter);
+    subselect.setFilter(filter);
+    subselect.setLimit(limit);
     subselect.addListener(this);
     subselect.execute(iArgs);
     return recordCount;
@@ -139,7 +204,7 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
 
   @Override
   public String getSyntax() {
-    return "UPDATE <class>|cluster:<cluster>> [SET|ADD|PUT|REMOVE|INCREMENT] [[,] <field-name> = <expression>|<sub-command>]* [WHERE <conditions>]";
+    return "UPDATE <class>|cluster:<cluster>> [SET|ADD|PUT|REMOVE|INCREMENT] [[,] <field-name> = <expression>|<sub-command>]* [WHERE <conditions>] [LIMIT]";
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -154,15 +219,15 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
     boolean recordUpdated = false;
 
     // BIND VALUES TO UPDATE
-    if (!setEntries.isEmpty()) {
-      for(Map.Entry<String,OExpression> entry : setEntries.entrySet()){
+    if (!resolvedSetEntries.isEmpty()) {
+      for(Map.Entry<String,OExpression> entry : resolvedSetEntries.entrySet()){
         record.field(entry.getKey(),entry.getValue().evaluate(ctx, record));
       }
       recordUpdated = true;
     }
 
     // BIND VALUES TO INCREMENT
-    for (Map.Entry<String, OExpression> entry : incrementEntries.entrySet()) {
+    for (Map.Entry<String, OExpression> entry : resolvedIncrementEntries.entrySet()) {
       final Number prevValue = record.field(entry.getKey());
       if (prevValue == null){
         // NO PREVIOUS VALUE: CONSIDER AS 0
@@ -179,7 +244,7 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
     // BIND VALUES TO ADD
     Collection<Object> coll;
     Object fieldValue;
-    for (OPair<String, OExpression> entry : addEntries) {
+    for (OPair<String, OExpression> entry : resolvedAddEntries) {
       coll = null;
       if (!record.containsField(entry.getKey())) {
         // GET THE TYPE IF ANY
@@ -212,7 +277,7 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
     // BIND VALUES TO PUT (AS MAP)
     Map<String, Object> map;
     OPair<String, OExpression> pair;
-    for (Map.Entry<String, OPair<String, OExpression>> entry : putEntries.entrySet()) {
+    for (Map.Entry<String, OPair<String, OExpression>> entry : resolvedPutEntries.entrySet()) {
       fieldValue = record.field(entry.getKey());
 
       if (fieldValue == null) {
@@ -240,7 +305,7 @@ public class OCommandUpdate extends OCommandAbstract implements OCommandListener
     }
 
     // REMOVE FIELD IF ANY
-    for (OPair<String, OExpression> entry : removeEntries) {
+    for (OPair<String, OExpression> entry : resolvedRemoveEntries) {
       v = entry.getValue().evaluate(ctx, record);
       if (v == EMPTY_VALUE || v == null) {
         record.removeField(entry.getKey());

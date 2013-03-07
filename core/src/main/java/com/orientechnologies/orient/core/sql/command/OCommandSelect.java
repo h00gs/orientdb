@@ -173,7 +173,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
           flatten = true;
           if(projections.size()>1){
               throw new OCommandSQLParsingException("No projections allowed with flatten function.");
-          }
+      }
       }
     }
     
@@ -285,13 +285,16 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     }
     return (RET)this;
   }
-  
+
+  public void setFilter(OExpression filter) {
+    this.filter = filter;
+  }
   
   @Override
   public Collection execute(final Map<Object, Object> iArgs) {
       
     //copy references, parameters change on each execution.
-    OExpression filter = this.filter;
+    OExpression filter = this.filter;    
     List<OExpression> projections = new ArrayList<OExpression>(this.projections);
     
     if(iArgs != null && !iArgs.isEmpty()){
@@ -330,9 +333,39 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     if(groupBys.isEmpty() && sortBys.isEmpty() && !hasAggregate){
       //normal query
       search(projections, filter, skip, limit, true);
+    }else if(groupBys.isEmpty() && !hasAggregate){
+      //normal query + order by
+      search(projections, filter, -1, -1, false);      
+      applySort();
+      
+      //apply skip and limit
+      long nbtested = 0;
+      long nbvalid = 0;
+      final List<ODocument> clipped = new ArrayList<ODocument>();
+      
+      for(ODocument r : result){
+        nbtested++;
+        if (nbtested <= skip) {
+          continue;
+        }
+        nbvalid++;
+        clipped.add(r);
+        //notify listeners
+        fireResult(r);
+        
+        //check limit
+        if (limit >= 0 && nbvalid == limit) {
+          //reached the limit
+          break;
+        }
+      }
+      
+      result.clear();
+      result.addAll(clipped);    
+      
     }else{
       //groupby or sort by search, we must collect all results first
-      search(projections, OExpression.INCLUDE, -1, -1, false);
+      search(null, OExpression.INCLUDE, -1, -1, false);
       applyGroups();
       applySort();
       
@@ -471,7 +504,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       final Object valid = simplifiedFilter.evaluate(context, candidate);
       if (!Boolean.TRUE.equals(valid)) {
         continue;
-      }
+      }      
       nbtested++;
 
       //check skip
@@ -508,12 +541,20 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
           }
           
       }else{
-          //projections
-        final ODocument record;
-      if (projections != null && !projections.isEmpty()) {
+        //projections
+        ODocument record;
+        if (projections != null && !projections.isEmpty()) {
           record = new ODocument();
           record.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
-          evaluate(context, candidate, projections, record);
+          record = evaluate(context, candidate, projections, record);
+                    
+          //evaluation might discard some results
+          //hack requiered because of distinct function
+          if(record == null){
+            nbtested--;
+            nbvalid--;
+            continue;
+          }
         } else {
           record = (ODocument) candidate;
         }
@@ -676,7 +717,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
    * @param projections Projections to evaluate
    * @param doc ODocument to store values
    */
-  private static void evaluate(final OCommandContext context, final Object candidate,
+  private static ODocument evaluate(final OCommandContext context, final Object candidate,
           final List<OExpression> projections, final ODocument doc) {
     for (int i = 0, n = projections.size(); i < n; i++) {
       final OExpression projection = projections.get(i);
@@ -693,9 +734,28 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       if (projname == null) {
         projname = String.valueOf(i);
       }
+      
+      if(!projection.isAgregation()){
+        //check this field name is not already used, change it if necessary
+        //warning : this is a source of problems~randomness
+        int k = 2;
+        final List<String> fieldNames = Arrays.asList(doc.fieldNames());
+        if(fieldNames.contains(projname)){
+            while(fieldNames.contains(projname+k)){
+                k++;
+            }
+            projname = projname+k;
+        }
+      }
+      
       final Object value = projection.evaluate(context, candidate);
+      if(value == OExpression.POST_ACTION_DISCARD){
+          //expression discarded this record
+          return null;
+      }
       doc.field(projname, value);
     }
+    return doc;
   }
   
   @Override
