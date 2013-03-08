@@ -352,10 +352,10 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     
     if(groupBys.isEmpty() && sortBys.isEmpty() && !hasAggregate){
       //normal query
-      search(projections, filter, skip, limit, true);
+      search(projections, filter, skip, limit, true, false);
     }else if(groupBys.isEmpty() && !hasAggregate){
       //normal query + order by
-      search(projections, filter, -1, -1, false);      
+      search(projections, filter, -1, -1, false, false);      
       applySort();
       
       //apply skip and limit
@@ -383,9 +383,18 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       result.clear();
       result.addAll(clipped);    
       
+    }else if(groupBys.isEmpty() && sortBys.isEmpty() ){
+      //aggregation query withyout group by or order by
+      search(projections, filter, skip, limit, false, true);
+      
+      //notify listeners
+      for(ODocument r : result){
+        fireResult(r);
+      }
+      
     }else{
       //groupby or sort by search, we must collect all results first
-      search(null, filter, -1, -1, false);
+      search(null, filter, -1, -1, false, false);
       applyGroups();
       applySort();
       
@@ -423,7 +432,7 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
   }
   
   private void search(final List<OExpression> projections, OExpression filter, 
-          final long skip, final long limit, boolean notifyListeners){
+          final long skip, final long limit, boolean notifyListeners, boolean aggregate){
     
     if(paging && previousPagingState != null){
         rangeStart = previousPagingState.field(PAGING_LINEAR_ORID,ORID.class);
@@ -508,6 +517,15 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
     long nbvalid = 0;
     long nbtested = 0;
     
+    if(aggregate){
+        //store one record which will be resued for each projection.
+        final ODocument record = new ODocument();
+        record.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
+        result.add(record);
+        //call projections once with no document, to fill the fields.
+        evaluate(context, null, projections, record);
+    }
+    
     while (ite.hasNext()) {
       final ORecord candidate = ite.next().getRecord();
       if(candidate.getIdentity().getClusterId() == Integer.MIN_VALUE){
@@ -567,28 +585,37 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
           
       }else{
         //projections
-        ODocument record;
+        ODocument projRecord;
         if (projections != null && !projections.isEmpty()) {
-          record = new ODocument();
-          record.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
-          record = evaluate(context, candidate, projections, record);
+          if(aggregate){
+            //reuse the same document
+            projRecord = result.get(0);
+          }else{
+            projRecord = new ODocument();
+            projRecord.setIdentity(-1, new OClusterPositionLong(nbvalid - 1));
+          }
+          projRecord = evaluate(context, candidate, projections, projRecord);
                     
           //evaluation might discard some results
           //hack requiered because of distinct function
-          if(record == null){
+          if(projRecord == null){
             nbtested--;
             nbvalid--;
             continue;
           }
+          
+          if(!aggregate){
+              result.add(projRecord);
+          }
         } else {
-          record = (ODocument) candidate;
+          projRecord = (ODocument) candidate;
+          result.add(projRecord);
         }
 
-        result.add(record);
 
         //notify listener
         if(notifyListeners){
-          if (!fireResult(record)){
+          if (!fireResult(projRecord)){
             //stop search requested
             break;
           }

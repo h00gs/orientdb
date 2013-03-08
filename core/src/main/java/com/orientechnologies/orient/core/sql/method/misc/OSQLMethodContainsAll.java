@@ -17,8 +17,10 @@ package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
+import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
+import com.orientechnologies.orient.core.sql.model.OLiteral;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -47,23 +49,44 @@ public class OSQLMethodContainsAll extends OSQLMethod {
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
 
-    final Object iLeft = children.get(0).evaluate(context,candidate);
-    final Object iRight = children.get(1).evaluate(context,candidate);
+    final Object iLeft = children.get(0).evaluate(context,candidate);    
+    final OExpression filter = children.get(1);
 
-    final Object[] leftvalues = toArray(iLeft);
-    final Object[] rightValues = toArray(iRight);
+    if (filter instanceof OLiteral || filter instanceof OCollection) {
+      final Object iRight = children.get(1).evaluate(context, candidate);
+      final Object[] leftvalues = toArray(iLeft);
+      final Object[] rightValues = toArray(iRight);
 
-    int matches = 0;
-    for (final Object l : leftvalues) {
-      for (final Object r : rightValues) {
-        if (OEquals.equals(l, r)) {
-          ++matches;
-          break;
+      int matches = 0;
+      for (final Object l : leftvalues) {
+        for (final Object r : rightValues) {
+          if (OEquals.equals(l, r)) {
+            ++matches;
+            break;
+          }
         }
       }
+      
+      return matches == rightValues.length;
+      
+    } else {
+      //it's not a real contain, it's a filter test
+      if (iLeft instanceof Iterable<?>) {
+        final Iterable<Object> iterable = (Iterable<Object>) iLeft;
+
+        for (final Object o : iterable) {
+          if (!Boolean.TRUE.equals(filter.evaluate(context, o))) {
+            return false;
+          }
+        }        
+        return true;
+        
+      } else {
+        return Boolean.TRUE.equals(filter.evaluate(context, iLeft));
+      }
     }
-    return matches == rightValues.length;
-	}
+
+  }
 
   private Object[] toArray(Object candidate){
       if(candidate == null){

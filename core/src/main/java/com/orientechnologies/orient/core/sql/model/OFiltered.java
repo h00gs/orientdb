@@ -93,11 +93,11 @@ public final class OFiltered extends OExpressionWithChildren {
         return ((Map)left).get(((OLiteral) getFilter()).evaluateNow(context,candidate));
     }else if(getChildren().size()==3){
         //it's not a filter but a subcollection clip
-        if(!(left instanceof List)){
+        if(!(left instanceof Collection)){
             //invalid element
             return null;
         }
-        final List col = (List) left;
+        final List col = new ArrayList((Collection)left);
         final Number startIndex = (Number)children.get(1).evaluate(context, candidate);
         final Number endIndex = (Number)children.get(2).evaluate(context, candidate);
         return col.subList(startIndex.intValue(), endIndex.intValue()+1);//+1 because edges are inclusive

@@ -153,40 +153,32 @@ public class OSQLEngine {
 		FUNCTION_FACTORIES = null;
 	}
 
-	public OCommandExecutor getCommand(final String candidate) {
-		final Set<String> names = getCommandNames();
-    
-    //find the max command name size, to avoid searching for too long
-    int maxSize = 0;
-    for(String name : names){
-      maxSize = Math.max(maxSize, name.length());
-    }
-    
-		String commandName = candidate;
-		boolean found = names.contains(commandName);
-		int pos = -1;
-		while (!found) {
-			pos = OStringSerializerHelper.getLowerIndexOf(candidate, pos + 1, " ", "\n", "\r");
-			if (pos > -1 && pos <= maxSize) {
-        commandName = candidate.substring(0, pos).toUpperCase(Locale.ENGLISH);
-        found = names.contains(commandName);
-      } else {
+  public OCommandExecutor getCommand(final String candidate) {
+    final Set<String> names = getCommandNames();
+
+    boolean found = false;
+    String commandName = null;
+    for (String name : names) {
+      final String cn = candidate.substring(0, Math.min(name.length(), candidate.length())).toUpperCase(Locale.ENGLISH);
+      if (name.equals(cn)) {
+        commandName = name;
+        found = true;
         break;
       }
-		}
+    }
 
-		if (found) {
-			final Iterator<OCommandExecutorSQLFactory> ite = getCommandFactories();
-			while (ite.hasNext()) {
-				final OCommandExecutorSQLFactory factory = ite.next();
-				if (factory.getCommandNames().contains(commandName)) {
-					return factory.createCommand(commandName);
-				}
-			}
-		}
+    if (found) {
+      final Iterator<OCommandExecutorSQLFactory> ite = getCommandFactories();
+      while (ite.hasNext()) {
+        final OCommandExecutorSQLFactory factory = ite.next();
+        if (factory.getCommandNames().contains(commandName)) {
+          return factory.createCommand(commandName);
+        }
+      }
+    }
 
-		return null;
-	}
+    return null;
+  }
 
 	public OSQLFilter parseCondition(final String iText, final OCommandContext iContext, final String iFilterKeyword) {
 		return new OSQLFilter(iText, iContext, iFilterKeyword);

@@ -41,7 +41,9 @@ public class OSQLFunctionCount extends OSQLFunctionAbstract {
 
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
-    total++;
+    if(candidate != null){
+      total++;
+    }
     return total;
   }
   

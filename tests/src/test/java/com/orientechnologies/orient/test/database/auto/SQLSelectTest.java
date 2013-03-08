@@ -295,16 +295,16 @@ public class SQLSelectTest {
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
     resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select from Profile where customReferences[second]['name'] like 'Ja%'"));
+        "select from Profile where customReferences['second']['name'] like 'Ja%'"));
     Assert.assertEquals(resultset.size(), 1);
     Assert.assertEquals(resultset.get(0).getIdentity(), doc.getIdentity());
 
     resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select customReferences[second]['name'] from Profile where customReferences[second]['name'] is not null"));
+        "select customReferences['second']['name'] from Profile where customReferences['second']['name'] is not null"));
     Assert.assertEquals(resultset.size(), 1);
 
     resultset = database.query(new OSQLSynchQuery<ODocument>(
-        "select customReferences[second]['name'] as value from Profile where customReferences[second]['name'] is not null"));
+        "select customReferences['second']['name'] as value from Profile where customReferences['second']['name'] is not null"));
     Assert.assertEquals(resultset.size(), 1);
 
     doc.delete();

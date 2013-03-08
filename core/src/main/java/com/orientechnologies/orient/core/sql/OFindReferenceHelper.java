@@ -42,6 +42,7 @@ import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
+import java.util.Locale;
 
 /**
  * Helper class to find reference in records.
@@ -66,6 +67,7 @@ public class OFindReferenceHelper {
       }
     } else {
       for (String clazz : classes) {
+        clazz = clazz.toUpperCase(Locale.ENGLISH);
         if (clazz.startsWith("CLUSTER:")) {
           browseCluster(db, iRecordIds, map, clazz.substring(clazz.indexOf("CLUSTER:") + "CLUSTER:".length()));
         } else {
