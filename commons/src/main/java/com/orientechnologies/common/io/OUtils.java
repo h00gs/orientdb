@@ -26,6 +26,12 @@ public class OUtils {
   }
 
   public static String camelCase(final String iText) {
+    if (iText == null)
+      return null;
+
+    if (iText.length() == 1)
+      return iText.toUpperCase();
+
     return Character.toUpperCase(iText.charAt(0)) + iText.substring(1);
   }
 }

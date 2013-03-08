@@ -29,7 +29,6 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
-import com.orientechnologies.orient.core.tx.OTransactionNoTx;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
 import com.orientechnologies.orient.core.type.tree.provider.OMVRBTreeRIDProvider;
 
@@ -44,6 +43,9 @@ import com.orientechnologies.orient.core.type.tree.provider.OMVRBTreeRIDProvider
  * 
  */
 public class OAdaptivePropertyGraphDatabase extends OAbstractPropertyGraph {
+  public static final String CONNECTION_OUT = "out";
+  public static final String CONNECTION_IN  = "in";
+
   public OAdaptivePropertyGraphDatabase(final String iURL) {
     super(iURL);
   }
@@ -541,24 +543,6 @@ public class OAdaptivePropertyGraphDatabase extends OAbstractPropertyGraph {
     }
   }
 
-  protected boolean beginBlock() {
-    if (safeMode && !(getTransaction() instanceof OTransactionNoTx)) {
-      begin();
-      return true;
-    }
-    return false;
-  }
-
-  protected void commitBlock(final boolean iOpenTxInSafeMode) {
-    if (iOpenTxInSafeMode)
-      commit();
-  }
-
-  protected void rollbackBlock(final boolean iOpenTxInSafeMode) {
-    if (iOpenTxInSafeMode)
-      rollback();
-  }
-
   protected boolean checkEdge(final ODocument iEdge, final String[] iLabels, final String[] iClassNames) {
     boolean good = true;
 
@@ -596,6 +580,44 @@ public class OAdaptivePropertyGraphDatabase extends OAbstractPropertyGraph {
       throw new IllegalArgumentException("Record leve locking is not supported for remote connections");
 
     this.lockMode = lockMode;
+  }
+
+  public static DIRECTION getConnectionDirection(final String iConnectionField) {
+    if (iConnectionField == null)
+      throw new IllegalArgumentException("Cannot return direction of NULL connection ");
+
+    if (iConnectionField.startsWith(CONNECTION_OUT))
+      return DIRECTION.OUT;
+    else if (iConnectionField.startsWith(CONNECTION_IN))
+      return DIRECTION.IN;
+
+    throw new IllegalArgumentException("Cannot return direction of connection " + iConnectionField);
+  }
+
+  public static DIRECTION getOppositeDirection(final DIRECTION iDirection) {
+    if (iDirection == null || iDirection == DIRECTION.BOTH)
+      throw new IllegalArgumentException("Cannot return opposite direction of " + iDirection);
+
+    return iDirection == DIRECTION.OUT ? DIRECTION.IN : DIRECTION.OUT;
+  }
+
+  public static String getInverseConnectionFieldName(final String iFieldName) {
+    if (iFieldName.startsWith(CONNECTION_OUT)) {
+      if (iFieldName.length() == CONNECTION_OUT.length())
+        // "OUT" CASE
+        return CONNECTION_IN;
+
+      return CONNECTION_IN + iFieldName.substring(CONNECTION_OUT.length());
+
+    } else if (iFieldName.startsWith(CONNECTION_IN)) {
+      if (iFieldName.length() == CONNECTION_IN.length())
+        // "IN" CASE
+        return CONNECTION_OUT;
+
+      return CONNECTION_OUT + iFieldName.substring(CONNECTION_IN.length());
+
+    } else
+      throw new IllegalArgumentException("Cannot find reverse connection name for field " + iFieldName);
   }
 
   protected Object createLink(final ODocument iFromVertex, final ODocument iToVertex, final String iFieldName) {

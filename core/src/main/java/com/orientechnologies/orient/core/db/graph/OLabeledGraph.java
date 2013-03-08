@@ -11,7 +11,7 @@ public interface OLabeledGraph {
   public enum DIRECTION {
     BOTH, IN, OUT
   }
-
+  
   public long countVertexes();
 
   public Iterable<ODocument> browseVertices();

@@ -53,7 +53,7 @@ import com.orientechnologies.orient.core.exception.OConfigurationException;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.iterator.OEmptyIterator;
+import com.orientechnologies.orient.core.iterator.OEmptyMapIterator;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaShared;
@@ -896,7 +896,7 @@ public class ODocument extends ORecordSchemaAwareAbstract<Object> implements Ite
     checkForFields();
 
     if (_fieldValues == null)
-      return OEmptyIterator.INSTANCE;
+      return OEmptyMapIterator.INSTANCE;
 
     final Iterator<Entry<String, Object>> iterator = _fieldValues.entrySet().iterator();
     return new Iterator<Entry<String, Object>>() {

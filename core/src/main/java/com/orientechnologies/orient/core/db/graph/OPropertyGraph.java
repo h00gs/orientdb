@@ -29,13 +29,7 @@ public interface OPropertyGraph extends ODatabase, OLabeledGraph {
     NO_LOCKING, DATABASE_LEVEL_LOCKING, RECORD_LEVEL_LOCKING
   }
 
-  public static final String VERTEX_CLASS_NAME = "OGraphVertex";
-  public static final String VERTEX_FIELD_IN   = "in";
-  public static final String VERTEX_FIELD_OUT  = "out";
-  public static final String EDGE_FIELD_OUT    = "out";
-  public static final String EDGE_FIELD_IN     = "in";
-  public static final String EDGE_CLASS_NAME   = "OGraphEdge";
-  public static final String LABEL             = "label";
+  public static final String LABEL = "label";
 
   public long countEdges();
 

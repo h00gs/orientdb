@@ -33,7 +33,6 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.OStorageEmbedded;
-import com.orientechnologies.orient.core.tx.OTransactionNoTx;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
 import com.orientechnologies.orient.core.type.tree.provider.OMVRBTreeRIDProvider;
 
@@ -882,20 +881,25 @@ public abstract class OAbstractPropertyGraph extends ODatabaseDocumentTx impleme
     }
   }
 
-  protected boolean beginBlock() {
-    if (safeMode && !(getTransaction() instanceof OTransactionNoTx)) {
+  /**
+   * Internal, begins a transaction in it's in safe mode.
+   * 
+   * @return true if the transaction has begin, otherwise false
+   */
+  public boolean beginBlock() {
+    if (safeMode) {
       begin();
       return true;
     }
     return false;
   }
 
-  protected void commitBlock(final boolean iOpenTxInSafeMode) {
+  public void commitBlock(final boolean iOpenTxInSafeMode) {
     if (iOpenTxInSafeMode)
       commit();
   }
 
-  protected void rollbackBlock(final boolean iOpenTxInSafeMode) {
+  public void rollbackBlock(final boolean iOpenTxInSafeMode) {
     if (iOpenTxInSafeMode)
       rollback();
   }

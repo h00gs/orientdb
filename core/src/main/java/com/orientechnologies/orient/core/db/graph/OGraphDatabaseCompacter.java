@@ -33,7 +33,7 @@ import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
  * @author Luca Garulli
  * 
  */
-public class OGraphDatabaseMigration {
+public class OGraphDatabaseCompacter {
   private long convertedVertices;
   private long updatedEdges;
   private long downgradedEdges;
@@ -68,18 +68,18 @@ public class OGraphDatabaseMigration {
         options.put("labelName", iArgs[++i]);
     }
 
-    new OGraphDatabaseMigration().migrate(dbURL, user, password, options);
+    new OGraphDatabaseCompacter().compact(dbURL, user, password, options);
   }
 
-  public void migrate(final String dbURL, final String user, final String password) {
-    migrate((OGraphDatabase) new OGraphDatabase(dbURL).open(user, password), null);
+  public void compact(final String dbURL, final String user, final String password) {
+    compact((OGraphDatabase) new OGraphDatabase(dbURL).open(user, password), null);
   }
 
-  public void migrate(final String dbURL, final String user, final String password, final Map<String, Object> options) {
-    migrate((OGraphDatabase) new OGraphDatabase(dbURL).open(user, password), options);
+  public void compact(final String dbURL, final String user, final String password, final Map<String, Object> options) {
+    compact((OGraphDatabase) new OGraphDatabase(dbURL).open(user, password), options);
   }
 
-  public void migrate(final OAbstractPropertyGraph db, final Map<String, Object> iOptions) {
+  public void compact(final OAbstractPropertyGraph db, final Map<String, Object> iOptions) {
     System.out.println("Migration of database started...");
     final long start = System.currentTimeMillis();
 
