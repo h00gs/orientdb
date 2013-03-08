@@ -278,7 +278,7 @@ public class SQLInsertTest {
     List<OClusterPosition> positions = getValidPositions(3);
 
     OIdentifiable result = database.command(
-        new OCommandSQL("  INSERT INTO Account SET id= 3232,name= 'my name',map= {\"key\":\"value\"},dir= '',user= #3:"
+        new OCommandSQL("  INSERT INTO Account SET id= 3232,name= 'my name',map= {'key':'value'},dir= '',user= #3:"
             + positions.get(0))).execute();
     Assert.assertNotNull(result);
 
