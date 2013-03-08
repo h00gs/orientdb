@@ -423,7 +423,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
       // COLLECT ALL THE RECORDS AND ORDER THEM AT THE END
       if (tempResult == null)
         tempResult = new ArrayList<OIdentifiable>();
-      tempResult.add(iRecord);
+      ((List)tempResult).add(iRecord);
     }
   }
 
@@ -933,70 +933,70 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     if (orderedFields == null)
       return;
 
-    ODocumentHelper.sort(tempResult, orderedFields);
-    orderedFields.clear();
+//    ODocumentHelper.sort(tempResult, orderedFields);
+//    orderedFields.clear();
   }
 
   /**
    * Extract the content of collections and/or links and put it as result
    */
   private void applyFlatten() {
-    if (flattenTarget == null)
-      return;
-
-    Object fieldValue;
-
-    if (tempResult == null) {
-      tempResult = new ArrayList<OIdentifiable>();
-      if (flattenTarget instanceof OSQLFilterItemVariable) {
-        Object r = ((OSQLFilterItemVariable) flattenTarget).getValue(null, context);
-        if (r != null) {
-          if (r instanceof OIdentifiable)
-            tempResult.add((OIdentifiable) r);
-          else if (OMultiValue.isMultiValue(r)) {
-            for (Object o : OMultiValue.getMultiValueIterable(r))
-              tempResult.add((OIdentifiable) o);
-          }
-        }
-      }
-    } else {
-      final List<OIdentifiable> finalResult = new ArrayList<OIdentifiable>();
-      for (OIdentifiable id : tempResult) {
-        if (flattenTarget instanceof OSQLFilterItem)
-          fieldValue = ((OSQLFilterItem) flattenTarget).getValue(id.getRecord(), context);
-//        else if (flattenTarget instanceof OSQLFunctionRuntime)
-//          fieldValue = ((OSQLFunctionRuntime) flattenTarget).getResult();
-        else
-          fieldValue = flattenTarget.toString();
-
-        if (fieldValue != null)
-          if (fieldValue instanceof Collection<?>) {
-            for (Object o : ((Collection<?>) fieldValue)) {
-              if (o instanceof OIdentifiable)
-                finalResult.add(((OIdentifiable) o).getRecord());
-              else if (o instanceof List) {
-                List<OIdentifiable> list = (List<OIdentifiable>) o;
-                for (int i = 0; i < list.size(); i++)
-                  finalResult.add(list.get(i).getRecord());
-              }
-            }
-          } else if (fieldValue instanceof Map<?, ?>) {
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) fieldValue).entrySet()) {
-              final Object o = entry.getValue();
-
-              if (o instanceof OIdentifiable)
-                finalResult.add(((OIdentifiable) o).getRecord());
-              else if (o instanceof List) {
-                List<OIdentifiable> list = (List<OIdentifiable>) o;
-                for (int i = 0; i < list.size(); i++)
-                  finalResult.add(list.get(i).getRecord());
-              }
-            }
-          } else
-            finalResult.add((OIdentifiable) fieldValue);
-      }
-      tempResult = finalResult;
-    }
+//    if (flattenTarget == null)
+//      return;
+//
+//    Object fieldValue;
+//
+//    if (tempResult == null) {
+//      tempResult = new ArrayList<OIdentifiable>();
+//      if (flattenTarget instanceof OSQLFilterItemVariable) {
+//        Object r = ((OSQLFilterItemVariable) flattenTarget).getValue(null, context);
+//        if (r != null) {
+//          if (r instanceof OIdentifiable)
+//            tempResult.add((OIdentifiable) r);
+//          else if (OMultiValue.isMultiValue(r)) {
+//            for (Object o : OMultiValue.getMultiValueIterable(r))
+//              tempResult.add((OIdentifiable) o);
+//          }
+//        }
+//      }
+//    } else {
+//      final List<OIdentifiable> finalResult = new ArrayList<OIdentifiable>();
+//      for (OIdentifiable id : tempResult) {
+//        if (flattenTarget instanceof OSQLFilterItem)
+//          fieldValue = ((OSQLFilterItem) flattenTarget).getValue(id.getRecord(), context);
+////        else if (flattenTarget instanceof OSQLFunctionRuntime)
+////          fieldValue = ((OSQLFunctionRuntime) flattenTarget).getResult();
+//        else
+//          fieldValue = flattenTarget.toString();
+//
+//        if (fieldValue != null)
+//          if (fieldValue instanceof Collection<?>) {
+//            for (Object o : ((Collection<?>) fieldValue)) {
+//              if (o instanceof OIdentifiable)
+//                finalResult.add(((OIdentifiable) o).getRecord());
+//              else if (o instanceof List) {
+//                List<OIdentifiable> list = (List<OIdentifiable>) o;
+//                for (int i = 0; i < list.size(); i++)
+//                  finalResult.add(list.get(i).getRecord());
+//              }
+//            }
+//          } else if (fieldValue instanceof Map<?, ?>) {
+//            for (Map.Entry<?, ?> entry : ((Map<?, ?>) fieldValue).entrySet()) {
+//              final Object o = entry.getValue();
+//
+//              if (o instanceof OIdentifiable)
+//                finalResult.add(((OIdentifiable) o).getRecord());
+//              else if (o instanceof List) {
+//                List<OIdentifiable> list = (List<OIdentifiable>) o;
+//                for (int i = 0; i < list.size(); i++)
+//                  finalResult.add(list.get(i).getRecord());
+//              }
+//            }
+//          } else
+//            finalResult.add((OIdentifiable) fieldValue);
+//      }
+//      tempResult = finalResult;
+//    }
   }
 
   private void searchInIndex() {
@@ -1212,17 +1212,17 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
   }
 
   private void handleGroupBy() {
-    if (groupedResult != null && tempResult == null) {
-      tempResult = new ArrayList<OIdentifiable>();
-
-      for (Entry<Object, ORuntimeResult> g : groupedResult.entrySet()) {
-        if (g.getKey() != null || groupedResult.size() == 1) {
-          final ODocument doc = g.getValue().getResult();
-          if (doc != null && !doc.isEmpty())
-            tempResult.add(doc);
-        }
-      }
-    }
+//    if (groupedResult != null && tempResult == null) {
+//      tempResult = new ArrayList<OIdentifiable>();
+//
+//      for (Entry<Object, ORuntimeResult> g : groupedResult.entrySet()) {
+//        if (g.getKey() != null || groupedResult.size() == 1) {
+//          final ODocument doc = g.getValue().getResult();
+//          if (doc != null && !doc.isEmpty())
+//            tempResult.add(doc);
+//        }
+//      }
+//    }
   }
 
   private static boolean checkIndexExistence(final OClass iSchemaClass, final OIndexSearchResult result) {
