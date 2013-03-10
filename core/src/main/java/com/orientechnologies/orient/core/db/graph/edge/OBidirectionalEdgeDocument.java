@@ -15,18 +15,13 @@
  */
 package com.orientechnologies.orient.core.db.graph.edge;
 
-import java.util.Collection;
-
-import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.graph.OLabeledGraph.DIRECTION;
 import com.orientechnologies.orient.core.db.graph.OAdaptivePropertyGraphDatabase;
-import com.orientechnologies.orient.core.db.graph.OPropertyGraphDatabase;
+import com.orientechnologies.orient.core.db.graph.OLabeledGraph.DIRECTION;
 import com.orientechnologies.orient.core.db.graph.vertex.OVertex;
 import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
 
 /**
  * Bidirectional link managed as a pair of raw LINK objects.
@@ -34,7 +29,7 @@ import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
  * @author Luca Garulli
  * 
  */
-public class OBidirectionalEdgeDocument implements OBidirectionalEdge {
+public class OBidirectionalEdgeDocument extends OAbstractEdge {
   public static final String EDGE_FIELD_OUT  = OAdaptivePropertyGraphDatabase.CONNECTION_OUT;
   public static final String EDGE_FIELD_IN   = OAdaptivePropertyGraphDatabase.CONNECTION_IN;
 
@@ -44,6 +39,16 @@ public class OBidirectionalEdgeDocument implements OBidirectionalEdge {
 
   public OBidirectionalEdgeDocument(OIdentifiable iEdgeRecord) {
     record = iEdgeRecord;
+    checkClass();
+  }
+
+  public OBidirectionalEdgeDocument(final String iClassName, final OVertex iOut, final OVertex iIn) {
+    final ODocument edge = new ODocument(iClassName);
+    edge.field(EDGE_FIELD_OUT, iOut);
+    edge.field(EDGE_FIELD_IN, iIn);
+
+    record = edge;
+    checkClass();
   }
 
   public OBidirectionalEdgeDocument(final OVertex iOut, final OVertex iIn) {
@@ -79,7 +84,7 @@ public class OBidirectionalEdgeDocument implements OBidirectionalEdge {
     if (edge == null)
       return false;
 
-    final OPropertyGraphDatabase db = (OPropertyGraphDatabase) ODatabaseRecordThreadLocal.INSTANCE.get();
+    final OAdaptivePropertyGraphDatabase db = (OAdaptivePropertyGraphDatabase) ODatabaseRecordThreadLocal.INSTANCE.get();
 
     final boolean safeMode = db.beginBlock();
     try {
@@ -88,7 +93,7 @@ public class OBidirectionalEdgeDocument implements OBidirectionalEdge {
 
       db.acquireWriteLock(outVertex);
       try {
-        final String outFieldName = db.getOutVertexField(edge.getClassName());
+        final String outFieldName = OVertexDocument.getConnectionFieldName(DIRECTION.OUT, edge.getClassName());
         dropEdgeFromVertex(edge, outVertex, outFieldName, outVertex.field(outFieldName));
         db.save(outVertex);
       } finally {
@@ -100,7 +105,7 @@ public class OBidirectionalEdgeDocument implements OBidirectionalEdge {
 
       db.acquireWriteLock(inVertex);
       try {
-        final String inFieldName = db.getOutVertexField(edge.getClassName());
+        final String inFieldName = OVertexDocument.getConnectionFieldName(DIRECTION.IN, edge.getClassName());
         dropEdgeFromVertex(edge, inVertex, inFieldName, inVertex.field(inFieldName));
         db.save(inVertex);
       } finally {
@@ -118,41 +123,17 @@ public class OBidirectionalEdgeDocument implements OBidirectionalEdge {
     return true;
   }
 
-  @SuppressWarnings("unchecked")
-  private void dropEdgeFromVertex(final ODocument edge, final ODocument iVertex, final String iFieldName, final Object iFieldValue) {
-    if (iFieldValue == null) {
-      // NO EDGE? WARN
-      OLogManager.instance().warn(this, "Edge not found in vertex's property %s.%s while removing the edge %s",
-          iVertex.getIdentity(), iFieldName, record.getIdentity());
-
-    } else if (iFieldValue instanceof OIdentifiable) {
-      // FOUND A SINGLE ITEM: JUST REMOVE IT
-
-      if (iFieldValue.equals(record))
-        iVertex.field(iFieldName, (OIdentifiable) null);
-      else
-        // NO EDGE? WARN
-        OLogManager.instance().warn(this, "Edge not found in vertex's property %s.%s link while removing the edge %s",
-            iVertex.getIdentity(), iFieldName, record.getIdentity());
-
-    } else if (iFieldValue instanceof OMVRBTreeRIDSet) {
-      // ALREADY A SET: JUST REMOVE THE NEW EDGE
-      if (!((OMVRBTreeRIDSet) iFieldValue).remove(edge))
-        OLogManager.instance().warn(this, "Edge not found in vertex's property %s.%s set while removing the edge %s",
-            iVertex.getIdentity(), iFieldName, record.getIdentity());
-    } else if (iFieldValue instanceof Collection<?>) {
-      // CONVERT COLLECTION IN TREE-SET AND REMOVE THE EDGE
-      final OMVRBTreeRIDSet out = new OMVRBTreeRIDSet(iVertex, (Collection<OIdentifiable>) iFieldValue);
-      if (!out.remove(edge))
-        OLogManager.instance().warn(this, "Edge not found in vertex's property %s.%s collection while removing the edge %s",
-            iVertex.getIdentity(), iFieldName, record.getIdentity());
-      else
-        iVertex.field(iFieldName, out);
-    } else
-      throw new IllegalStateException("Wrong type found in the field '" + iFieldName + "': " + iFieldValue.getClass());
-  }
-
   public static OIdentifiable getVertex(final ODocument iEdge, final DIRECTION iDirection) {
     return iEdge.field(iDirection == DIRECTION.OUT ? EDGE_FIELD_OUT : EDGE_FIELD_IN);
   }
+
+  protected void checkClass() {
+    // FORCE EARLY UNMARSHALLING
+    final ODocument doc = record.getRecord();
+    doc.deserializeFields();
+
+    if (!doc.getSchemaClass().isSubClassOf(EDGE_CLASS_NAME))
+      throw new IllegalArgumentException("The document received is not an edge. Found class '" + doc.getSchemaClass() + "'");
+  }
+
 }

@@ -26,10 +26,15 @@ public class OUtils {
   }
 
   public static String camelCase(final String iText) {
-    if (iText == null)
+    if (iText == null || iText.length() == 0)
       return null;
 
+    if (Character.isUpperCase(iText.charAt(0)))
+      // ALREADY CAMELIZED
+      return iText;
+
     if (iText.length() == 1)
+      // ONE CHARACTER, UPPER CASE ALL
       return iText.toUpperCase();
 
     return Character.toUpperCase(iText.charAt(0)) + iText.substring(1);

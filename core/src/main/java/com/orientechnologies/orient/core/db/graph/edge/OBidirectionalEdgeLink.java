@@ -16,8 +16,8 @@
 package com.orientechnologies.orient.core.db.graph.edge;
 
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.graph.OAdaptivePropertyGraphDatabase;
-import com.orientechnologies.orient.core.db.graph.OPropertyGraph;
+import com.orientechnologies.orient.core.db.graph.OLabeledGraph.DIRECTION;
+import com.orientechnologies.orient.core.db.graph.OPropertyGraphDatabase;
 import com.orientechnologies.orient.core.db.graph.vertex.OVertex;
 import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -29,15 +29,15 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
  * @author Luca Garulli
  * 
  */
-public class OBidirectionalEdgeLink implements OBidirectionalEdge {
+public class OBidirectionalEdgeLink extends OAbstractEdge {
   protected final OIdentifiable out;
   protected final OIdentifiable in;
-  protected final String        fieldName;
+  protected final String        edgeClassName;
 
-  public OBidirectionalEdgeLink(final OIdentifiable iOut, final OIdentifiable iIn, final String iFieldName) {
+  public OBidirectionalEdgeLink(final OIdentifiable iOut, final OIdentifiable iIn, final String iEdgeClassName) {
     this.out = iOut;
     this.in = iIn;
-    this.fieldName = iFieldName;
+    this.edgeClassName = iEdgeClassName;
   }
 
   @Override
@@ -65,37 +65,41 @@ public class OBidirectionalEdgeLink implements OBidirectionalEdge {
   }
 
   public String getFieldName() {
-    return fieldName;
+    return edgeClassName;
   }
 
   public boolean drop() {
-    final OAdaptivePropertyGraphDatabase db = (OAdaptivePropertyGraphDatabase) ODatabaseRecordThreadLocal.INSTANCE.get();
+    final ODocument outVertex = out.getRecord();
+    if (outVertex == null)
+      return false;
+
+    final ODocument inVertex = in.getRecord();
+    if (inVertex == null)
+      return false;
+
+    final OPropertyGraphDatabase db = (OPropertyGraphDatabase) ODatabaseRecordThreadLocal.INSTANCE.get();
 
     final boolean safeMode = db.beginBlock();
     try {
       // OUT VERTEX
-      db.acquireWriteLock(out);
+      db.acquireWriteLock(outVertex);
       try {
-        final String outFieldName = db.getOutVertexField(edge.getClassName());
-        dropEdgeFromVertex(edge, outVertex, outFieldName, outVertex.field(outFieldName));
-        db.save(out);
+        final String outFieldName = OVertexDocument.getConnectionFieldName(DIRECTION.OUT, edgeClassName);
+        dropEdgeFromVertex(inVertex, outVertex, outFieldName, outVertex.field(outFieldName));
+        db.save(outVertex);
       } finally {
-        db.releaseWriteLock(out);
+        db.releaseWriteLock(outVertex);
       }
 
       // IN VERTEX
-      final ODocument inVertex = edge.field(OPropertyGraph.EDGE_FIELD_IN);
-
-      db.acquireWriteLock(in);
+      db.acquireWriteLock(inVertex);
       try {
-        final String inFieldName = db.getOutVertexField(edge.getClassName());
-        dropEdgeFromVertex(edge, inVertex, inFieldName, inVertex.field(inFieldName));
+        final String inFieldName = OVertexDocument.getConnectionFieldName(DIRECTION.IN, edgeClassName);
+        dropEdgeFromVertex(outVertex, inVertex, inFieldName, inVertex.field(inFieldName));
         db.save(inVertex);
       } finally {
-        db.releaseWriteLock(in);
+        db.releaseWriteLock(inVertex);
       }
-
-      db.delete(edge);
 
       db.commitBlock(safeMode);
 

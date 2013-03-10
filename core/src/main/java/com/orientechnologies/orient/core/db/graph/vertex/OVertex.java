@@ -15,31 +15,29 @@
  */
 package com.orientechnologies.orient.core.db.graph.vertex;
 
-import java.util.Iterator;
-
 import com.orientechnologies.orient.core.db.graph.OLabeledGraph.DIRECTION;
 import com.orientechnologies.orient.core.db.graph.edge.OEdge;
 
 public interface OVertex {
-  public Iterator<OVertex> getVertices(final DIRECTION iDirection, final String iClassName);
+  public Iterable<OVertex> getVertices(final DIRECTION iDirection, final String iClassName);
 
-  public Iterator<OVertex> getOutVertices();
+  public Iterable<OVertex> getOutVertices();
 
-  public Iterator<OVertex> getOutVertices(String iClassNames);
+  public Iterable<OVertex> getOutVertices(String iClassNames);
 
-  public Iterator<OVertex> getInVertices();
+  public Iterable<OVertex> getInVertices();
 
-  public Iterator<OVertex> getInVertices(String iClassNames);
+  public Iterable<OVertex> getInVertices(String iClassNames);
 
-  public Iterator<OEdge> getEdges(final DIRECTION iDirection, final String iClassName);
+  public Iterable<OEdge> getEdges(final DIRECTION iDirection, final String iClassName);
 
-  public Iterator<OEdge> getOutEdges();
+  public Iterable<OEdge> getOutEdges();
 
-  public Iterator<OEdge> getOutEdges(String iClassNames);
+  public Iterable<OEdge> getOutEdges(String iClassNames);
 
-  public Iterator<OEdge> getInEdges();
+  public Iterable<OEdge> getInEdges();
 
-  public Iterator<OEdge> getInEdges(String iClassNames);
+  public Iterable<OEdge> getInEdges(String iClassNames);
 
   public boolean drop();
 }

@@ -16,9 +16,9 @@
 package com.orientechnologies.orient.core.db.graph.vertex;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import com.orientechnologies.common.collection.OLazyIterator;
+import com.orientechnologies.common.io.OUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.graph.OAdaptivePropertyGraphDatabase;
@@ -43,27 +43,33 @@ public class OVertexDocument implements OVertex {
     record = new ODocument(VERTEX_CLASS_NAME);
   }
 
+  public OVertexDocument(final String iClassName) {
+    record = new ODocument(iClassName);
+    checkClass();
+  }
+
   public OVertexDocument(final OIdentifiable iRecord) {
     record = iRecord;
+    checkClass();
   }
 
   @Override
-  public Iterator<OVertex> getOutVertices() {
+  public Iterable<OVertex> getOutVertices() {
     return getVertices(DIRECTION.OUT, null);
   }
 
   @Override
-  public Iterator<OVertex> getOutVertices(final String iClassNames) {
+  public Iterable<OVertex> getOutVertices(final String iClassNames) {
     return getVertices(DIRECTION.OUT, iClassNames);
   }
 
   @Override
-  public Iterator<OVertex> getInVertices() {
+  public Iterable<OVertex> getInVertices() {
     return getVertices(DIRECTION.IN, null);
   }
 
   @Override
-  public Iterator<OVertex> getInVertices(final String iClassNames) {
+  public Iterable<OVertex> getInVertices(final String iClassNames) {
     return getVertices(DIRECTION.IN, iClassNames);
   }
 
@@ -109,8 +115,8 @@ public class OVertexDocument implements OVertex {
    * @param iClassName
    *          Class name to filter. If null the class name is ignored
    */
-  public Iterator<OVertex> getVertices(final DIRECTION iDirection, final String iClassName) {
-    return new OLazyWrapperIterator<OVertex>(getVerticesAsRecords(iDirection, iClassName)) {
+  public Iterable<OVertex> getVertices(final DIRECTION iDirection, final String iClassName) {
+    return new OLazyWrapperIterator<OVertex>(getVerticesAsRecords(iDirection, iClassName).iterator()) {
       @Override
       public OVertex createWrapper(final Object iObject) {
         return iObject instanceof OVertex ? (OVertex) iObject : new OVertexDocument((OIdentifiable) iObject);
@@ -126,10 +132,10 @@ public class OVertexDocument implements OVertex {
    * @param iClassName
    *          Class name to filter. If null the class name is ignored
    */
-  public Iterator<OIdentifiable> getVerticesAsRecords(final DIRECTION iDirection, final String iClassName) {
+  public Iterable<OIdentifiable> getVerticesAsRecords(final DIRECTION iDirection, final String iClassName) {
     final ODocument doc = getDocument();
 
-    final OMultiCollectionIterator<OIdentifiable> iterator = new OMultiCollectionIterator<OIdentifiable>();
+    final OMultiCollectionIterator<OIdentifiable> Iterable = new OMultiCollectionIterator<OIdentifiable>();
     for (String fieldName : doc.fieldNames()) {
       final DIRECTION direction = getFieldDirection(iDirection, fieldName, iClassName);
       if (direction == null)
@@ -142,40 +148,40 @@ public class OVertexDocument implements OVertex {
           final ODocument fieldRecord = ((OIdentifiable) fieldValue).getRecord();
           if (fieldRecord.getSchemaClass().isSubClassOf(VERTEX_CLASS_NAME))
             // DIRECT VERTEX
-            iterator.add(fieldValue);
+            Iterable.add(fieldValue);
           else if (fieldRecord.getSchemaClass().isSubClassOf(OBidirectionalEdgeDocument.EDGE_CLASS_NAME)) {
             // EDGE
             final OIdentifiable otherVertex = OBidirectionalEdgeDocument.getVertex(fieldRecord,
                 direction == DIRECTION.OUT ? DIRECTION.IN : DIRECTION.OUT);
-            iterator.add(otherVertex);
+            Iterable.add(otherVertex);
           } else
             throw new IllegalStateException("Invalid content found in " + fieldName + " field");
 
         } else if (fieldValue instanceof Collection<?>) {
-          iterator.add(fieldValue);
+          Iterable.add(fieldValue);
         }
     }
 
-    return iterator;
+    return Iterable;
   }
 
   @Override
-  public Iterator<OEdge> getOutEdges() {
+  public Iterable<OEdge> getOutEdges() {
     return getEdges(DIRECTION.OUT, null);
   }
 
   @Override
-  public Iterator<OEdge> getOutEdges(final String iClassNames) {
+  public Iterable<OEdge> getOutEdges(final String iClassNames) {
     return getEdges(DIRECTION.OUT, iClassNames);
   }
 
   @Override
-  public Iterator<OEdge> getInEdges() {
+  public Iterable<OEdge> getInEdges() {
     return getEdges(DIRECTION.IN, null);
   }
 
   @Override
-  public Iterator<OEdge> getInEdges(final String iClassNames) {
+  public Iterable<OEdge> getInEdges(final String iClassNames) {
     return getEdges(DIRECTION.IN, iClassNames);
   }
 
@@ -187,10 +193,10 @@ public class OVertexDocument implements OVertex {
    * @param iClassName
    *          Class name to filter. If null the class name is ignored
    */
-  public Iterator<OEdge> getEdges(final DIRECTION iDirection, final String iClassName) {
+  public Iterable<OEdge> getEdges(final DIRECTION iDirection, final String iClassName) {
     final ODocument doc = getDocument();
 
-    final OMultiCollectionIterator<OEdge> iterator = new OMultiCollectionIterator<OEdge>();
+    final OMultiCollectionIterator<OEdge> Iterable = new OMultiCollectionIterator<OEdge>();
     for (String fieldName : doc.fieldNames()) {
       final DIRECTION direction = getFieldDirection(iDirection, fieldName, iClassName);
       if (direction == null)
@@ -203,16 +209,16 @@ public class OVertexDocument implements OVertex {
           final ODocument fieldRecord = ((OIdentifiable) fieldValue).getRecord();
           if (fieldRecord.getSchemaClass().isSubClassOf(VERTEX_CLASS_NAME))
             // DIRECT VERTEX
-            iterator.add(new OBidirectionalEdgeLink(doc, fieldRecord, fieldName));
+            Iterable.add(new OBidirectionalEdgeLink(doc, fieldRecord, fieldName));
           else if (fieldRecord.getSchemaClass().isSubClassOf(OBidirectionalEdgeDocument.EDGE_CLASS_NAME)) {
             // EDGE
-            iterator.add(new OBidirectionalEdgeDocument(fieldRecord));
+            Iterable.add(new OBidirectionalEdgeDocument(fieldRecord));
           } else
             throw new IllegalStateException("Invalid content found in " + fieldName + " field");
 
         } else if (fieldValue instanceof Collection<?>) {
-          // CREATE LAZY ITERATOR AGAINST COLLECTION FIELD
-          iterator.add(new OLazyWrapperIterator<OEdge>(((Collection<?>) fieldValue).iterator(), fieldName) {
+          // CREATE LAZY Iterable AGAINST COLLECTION FIELD
+          Iterable.add(new OLazyWrapperIterator<OEdge>(((Collection<?>) fieldValue).iterator(), fieldName) {
             @Override
             public OEdge createWrapper(final Object iObject) {
               if (iObject instanceof OEdge)
@@ -232,7 +238,7 @@ public class OVertexDocument implements OVertex {
         }
     }
 
-    return iterator;
+    return Iterable;
   }
 
   public static Object getConnections(final ODocument iVertex, final DIRECTION iDirection, final String iClassName) {
@@ -324,5 +330,25 @@ public class OVertexDocument implements OVertex {
 
     } else
       throw new IllegalStateException("Invalid content found in " + iFieldName + " field");
+  }
+
+  protected void checkClass() {
+    // FORCE EARLY UNMARSHALLING
+    final ODocument doc = record.getRecord();
+    doc.deserializeFields();
+
+    if (!doc.getSchemaClass().isSubClassOf(VERTEX_CLASS_NAME))
+      throw new IllegalArgumentException("The document received is not a vertex. Found class '" + doc.getSchemaClass() + "'");
+  }
+
+  public static String getConnectionFieldName(final DIRECTION iDirection, final String iClassName) {
+    if (iDirection == null || iDirection == DIRECTION.BOTH)
+      throw new IllegalArgumentException("Direction not valid");
+
+    final String prefix = iDirection == DIRECTION.OUT ? VERTEX_FIELD_OUT : VERTEX_FIELD_IN;
+    if (iClassName == null || iClassName.isEmpty() || iClassName.equals(OBidirectionalEdgeDocument.EDGE_CLASS_NAME))
+      return prefix;
+
+    return prefix + OUtils.camelCase(iClassName);
   }
 }
