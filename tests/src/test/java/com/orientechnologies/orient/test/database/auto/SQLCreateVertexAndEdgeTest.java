@@ -24,7 +24,8 @@ import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
-import com.orientechnologies.orient.core.db.graph.OPropertyGraph;
+import com.orientechnologies.orient.core.db.graph.edge.OBidirectionalEdgeDocument;
+import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 
@@ -57,13 +58,13 @@ public class SQLCreateVertexAndEdgeTest {
 
     // VERTEXES
     ODocument v1 = database.command(new OCommandSQL("create vertex")).execute();
-    Assert.assertEquals(v1.getClassName(), OPropertyGraph.VERTEX_CLASS_NAME);
+    Assert.assertEquals(v1.getClassName(), OVertexDocument.VERTEX_CLASS_NAME);
 
     ODocument v2 = database.command(new OCommandSQL("create vertex V1")).execute();
     Assert.assertEquals(v2.getClassName(), "V1");
 
     ODocument v3 = database.command(new OCommandSQL("create vertex set brand = 'fiat'")).execute();
-    Assert.assertEquals(v3.getClassName(), OPropertyGraph.VERTEX_CLASS_NAME);
+    Assert.assertEquals(v3.getClassName(), OVertexDocument.VERTEX_CLASS_NAME);
     Assert.assertEquals(v3.field("brand"), "fiat");
 
     ODocument v4 = database.command(new OCommandSQL("create vertex V1 set brand = 'fiat',name = 'wow'")).execute();
@@ -80,7 +81,7 @@ public class SQLCreateVertexAndEdgeTest {
         .execute();
     Assert.assertFalse(edges.isEmpty());
     ODocument e1 = edges.get(0);
-    Assert.assertEquals(e1.getClassName(), OPropertyGraph.EDGE_CLASS_NAME);
+    Assert.assertEquals(e1.getClassName(), OBidirectionalEdgeDocument.EDGE_CLASS_NAME);
     Assert.assertEquals(e1.field("out"), v1);
     Assert.assertEquals(e1.field("in"), v2);
 
@@ -95,7 +96,7 @@ public class SQLCreateVertexAndEdgeTest {
         new OCommandSQL("create edge from " + v1.getIdentity() + " to " + v4.getIdentity() + " set weight = 3")).execute();
     Assert.assertFalse(edges.isEmpty());
     ODocument e3 = edges.get(0);
-    Assert.assertEquals(e3.getClassName(), OPropertyGraph.EDGE_CLASS_NAME);
+    Assert.assertEquals(e3.getClassName(), OBidirectionalEdgeDocument.EDGE_CLASS_NAME);
     Assert.assertEquals(e3.field("out"), v1);
     Assert.assertEquals(e3.field("in"), v4);
     Assert.assertEquals(e3.field("weight"), 3);
@@ -118,11 +119,11 @@ public class SQLCreateVertexAndEdgeTest {
     Assert.assertEquals(e5.getClassName(), "E1");
     Assert.assertEquals(e5.getIdentity().getClusterId(), database.getDefaultClusterId());
 
-//    edges = database.command(new OCommandSQL("create edge cluster default from ? to ? set weight = 30")).execute(v3, v5);
-//    Assert.assertFalse(edges.isEmpty());
-//    ODocument e6 = edges.get(0);
-//    Assert.assertTrue(database.getInVertex(e6).equals(v5));
-//    Assert.assertTrue(database.getOutVertex(e6).equals(v3));
+    // edges = database.command(new OCommandSQL("create edge cluster default from ? to ? set weight = 30")).execute(v3, v5);
+    // Assert.assertFalse(edges.isEmpty());
+    // ODocument e6 = edges.get(0);
+    // Assert.assertTrue(database.getInVertex(e6).equals(v5));
+    // Assert.assertTrue(database.getOutVertex(e6).equals(v3));
 
     // database.command(new OCommandSQL("drop class E1")).execute();
     // database.command(new OCommandSQL("drop class V1")).execute();

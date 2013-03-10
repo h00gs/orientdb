@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.orientechnologies.orient.core.db.graph.edge.OBidirectionalEdgeDocument;
+import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
@@ -63,8 +65,8 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
     try {
 
       final ODocument edge = new ODocument(cls).setOrdered(true);
-      edge.field(OPropertyGraph.EDGE_FIELD_OUT, iOutVertex);
-      edge.field(OPropertyGraph.EDGE_FIELD_IN, iInVertex);
+      edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_OUT, iOutVertex);
+      edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_IN, iInVertex);
 
       if (iFields != null)
         if (iFields.length == 1) {
@@ -83,16 +85,16 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
       acquireWriteLock(iOutVertex);
       try {
 
-        final Object outField = iOutVertex.field(OPropertyGraph.VERTEX_FIELD_OUT);
+        final Object outField = iOutVertex.field(OVertexDocument.VERTEX_FIELD_OUT);
         final OMVRBTreeRIDSet out;
         if (outField instanceof OMVRBTreeRIDSet) {
           out = (OMVRBTreeRIDSet) outField;
         } else if (outField instanceof Collection<?>) {
           out = new OMVRBTreeRIDSet(iOutVertex, (Collection<OIdentifiable>) outField);
-          iOutVertex.field(OPropertyGraph.VERTEX_FIELD_OUT, out);
+          iOutVertex.field(OVertexDocument.VERTEX_FIELD_OUT, out);
         } else {
           out = new OMVRBTreeRIDSet(iOutVertex);
-          iOutVertex.field(OPropertyGraph.VERTEX_FIELD_OUT, out);
+          iOutVertex.field(OVertexDocument.VERTEX_FIELD_OUT, out);
         }
         out.add(edge);
       } finally {
@@ -103,16 +105,16 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
       acquireWriteLock(iInVertex);
       try {
 
-        final Object inField = iInVertex.field(OPropertyGraph.VERTEX_FIELD_IN);
+        final Object inField = iInVertex.field(OVertexDocument.VERTEX_FIELD_IN);
         final OMVRBTreeRIDSet in;
         if (inField instanceof OMVRBTreeRIDSet) {
           in = (OMVRBTreeRIDSet) inField;
         } else if (inField instanceof Collection<?>) {
           in = new OMVRBTreeRIDSet(iInVertex, (Collection<OIdentifiable>) inField);
-          iInVertex.field(OPropertyGraph.VERTEX_FIELD_IN, in);
+          iInVertex.field(OVertexDocument.VERTEX_FIELD_IN, in);
         } else {
           in = new OMVRBTreeRIDSet(iInVertex);
-          iInVertex.field(OPropertyGraph.VERTEX_FIELD_IN, in);
+          iInVertex.field(OVertexDocument.VERTEX_FIELD_IN, in);
         }
         in.add(edge);
 
@@ -147,13 +149,13 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
     final boolean safeMode = beginBlock();
     try {
       // OUT VERTEX
-      final ODocument outVertex = edge.field(OPropertyGraph.EDGE_FIELD_OUT);
+      final ODocument outVertex = edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_OUT);
 
       acquireWriteLock(outVertex);
       try {
 
         if (outVertex != null) {
-          final Set<ODocument> out = ((Set<ODocument>) outVertex.field(OPropertyGraph.VERTEX_FIELD_OUT));
+          final Set<ODocument> out = ((Set<ODocument>) outVertex.field(OVertexDocument.VERTEX_FIELD_OUT));
           if (out != null)
             out.remove(edge);
           save(outVertex);
@@ -164,13 +166,13 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
       }
 
       // IN VERTEX
-      final ODocument inVertex = edge.field(OPropertyGraph.EDGE_FIELD_IN);
+      final ODocument inVertex = edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_IN);
 
       acquireWriteLock(inVertex);
       try {
 
         if (inVertex != null) {
-          final Set<ODocument> in = ((Set<ODocument>) inVertex.field(OPropertyGraph.VERTEX_FIELD_IN));
+          final Set<ODocument> in = ((Set<ODocument>) inVertex.field(OVertexDocument.VERTEX_FIELD_IN));
           if (in != null)
             in.remove(edge);
           save(inVertex);
@@ -265,7 +267,7 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
     acquireReadLock(iVertex);
     try {
 
-      final OMVRBTreeRIDSet set = vertex.field(OPropertyGraph.VERTEX_FIELD_OUT);
+      final OMVRBTreeRIDSet set = vertex.field(OVertexDocument.VERTEX_FIELD_OUT);
 
       if (iLabel == null)
         // RETURN THE ENTIRE COLLECTION
@@ -301,7 +303,7 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
     acquireReadLock(iVertex);
     try {
 
-      final OMVRBTreeRIDSet set = vertex.field(OPropertyGraph.VERTEX_FIELD_IN);
+      final OMVRBTreeRIDSet set = vertex.field(OVertexDocument.VERTEX_FIELD_IN);
 
       if (iLabel == null)
         // RETURN THE ENTIRE COLLECTION
@@ -331,12 +333,12 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
     final ODocument e = (ODocument) iEdge.getRecord();
 
     checkEdgeClass(e);
-    OIdentifiable v = e.field(OPropertyGraph.EDGE_FIELD_IN);
+    OIdentifiable v = e.field(OBidirectionalEdgeDocument.EDGE_FIELD_IN);
     if (v != null && v instanceof ORID) {
       // REPLACE WITH THE DOCUMENT
       v = v.getRecord();
       final boolean wasDirty = e.isDirty();
-      e.field(OPropertyGraph.EDGE_FIELD_IN, v);
+      e.field(OBidirectionalEdgeDocument.EDGE_FIELD_IN, v);
       if (!wasDirty)
         e.unsetDirty();
     }
@@ -351,12 +353,12 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
     final ODocument e = (ODocument) iEdge.getRecord();
 
     checkEdgeClass(e);
-    OIdentifiable v = e.field(OPropertyGraph.EDGE_FIELD_OUT);
+    OIdentifiable v = e.field(OBidirectionalEdgeDocument.EDGE_FIELD_OUT);
     if (v != null && v instanceof ORID) {
       // REPLACE WITH THE DOCUMENT
       v = v.getRecord();
       final boolean wasDirty = e.isDirty();
-      e.field(OPropertyGraph.EDGE_FIELD_OUT, v);
+      e.field(OBidirectionalEdgeDocument.EDGE_FIELD_OUT, v);
       if (!wasDirty)
         e.unsetDirty();
     }
@@ -433,14 +435,14 @@ public class OGraphDatabase extends OAbstractPropertyGraph {
   public void checkForGraphSchema() {
     super.checkForGraphSchema();
 
-    if (vertexBaseClass.getProperty(OPropertyGraph.VERTEX_FIELD_IN) == null)
-      vertexBaseClass.createProperty(OPropertyGraph.VERTEX_FIELD_IN, OType.LINKSET, edgeBaseClass);
-    if (vertexBaseClass.getProperty(OPropertyGraph.VERTEX_FIELD_OUT) == null)
-      vertexBaseClass.createProperty(OPropertyGraph.VERTEX_FIELD_OUT, OType.LINKSET, edgeBaseClass);
+    if (vertexBaseClass.getProperty(OVertexDocument.VERTEX_FIELD_IN) == null)
+      vertexBaseClass.createProperty(OVertexDocument.VERTEX_FIELD_IN, OType.LINKSET, edgeBaseClass);
+    if (vertexBaseClass.getProperty(OVertexDocument.VERTEX_FIELD_OUT) == null)
+      vertexBaseClass.createProperty(OVertexDocument.VERTEX_FIELD_OUT, OType.LINKSET, edgeBaseClass);
 
-    if (edgeBaseClass.getProperty(OPropertyGraph.EDGE_FIELD_IN) == null)
-      edgeBaseClass.createProperty(OPropertyGraph.EDGE_FIELD_IN, OType.LINK, vertexBaseClass);
-    if (edgeBaseClass.getProperty(OPropertyGraph.EDGE_FIELD_OUT) == null)
-      edgeBaseClass.createProperty(OPropertyGraph.EDGE_FIELD_OUT, OType.LINK, vertexBaseClass);
+    if (edgeBaseClass.getProperty(OBidirectionalEdgeDocument.EDGE_FIELD_IN) == null)
+      edgeBaseClass.createProperty(OBidirectionalEdgeDocument.EDGE_FIELD_IN, OType.LINK, vertexBaseClass);
+    if (edgeBaseClass.getProperty(OBidirectionalEdgeDocument.EDGE_FIELD_OUT) == null)
+      edgeBaseClass.createProperty(OBidirectionalEdgeDocument.EDGE_FIELD_OUT, OType.LINK, vertexBaseClass);
   }
 }

@@ -21,7 +21,7 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
-import com.orientechnologies.orient.core.db.graph.OPropertyGraph;
+import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -66,7 +66,7 @@ public class OCommandExecutorSQLDeleteVertex extends OCommandExecutorSQLSetAware
       } else if (temp.equals(KEYWORD_WHERE)) {
         if (clazz == null)
           // ASSIGN DEFAULT CLASS
-          clazz = database.getMetadata().getSchema().getClass(OPropertyGraph.VERTEX_CLASS_NAME);
+          clazz = database.getMetadata().getSchema().getClass(OVertexDocument.VERTEX_CLASS_NAME);
 
         final String condition = parserGetCurrentPosition() > -1 ? " " + parserText.substring(parserGetPreviousPosition()) : "";
         query = database.command(new OSQLAsynchQuery<ODocument>("select from " + clazz.getName() + condition, this));

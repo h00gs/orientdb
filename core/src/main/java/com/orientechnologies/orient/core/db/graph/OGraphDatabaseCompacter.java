@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.orientechnologies.common.io.OUtils;
+import com.orientechnologies.orient.core.db.graph.edge.OBidirectionalEdgeDocument;
+import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -122,9 +124,9 @@ public class OGraphDatabaseCompacter {
   protected boolean convertVertexEdges(final OAbstractPropertyGraph db, final ODocument doc, final Map<String, Object> options) {
     boolean changed = false;
 
-    if (convertEdges(db, doc, OPropertyGraph.VERTEX_FIELD_OUT, options))
+    if (convertEdges(db, doc, OVertexDocument.VERTEX_FIELD_OUT, options))
       changed = true;
-    if (convertEdges(db, doc, OPropertyGraph.VERTEX_FIELD_IN, options))
+    if (convertEdges(db, doc, OVertexDocument.VERTEX_FIELD_IN, options))
       changed = true;
 
     return changed;
@@ -275,7 +277,7 @@ public class OGraphDatabaseCompacter {
       // CAN CONVERT IT TO JUST A DIRECT LINK TO THE VERTEX?
       boolean downgradeToLink = true;
       for (String n : edge.fieldNames()) {
-        if (!n.equals(OPropertyGraph.VERTEX_FIELD_IN) && !n.equals(OPropertyGraph.VERTEX_FIELD_OUT)
+        if (!n.equals(OVertexDocument.VERTEX_FIELD_IN) && !n.equals(OVertexDocument.VERTEX_FIELD_OUT)
             && !n.equals(OPropertyGraph.LABEL)) {
           // ADDITION AL PROPERTY: CANNOT DOWNGRADE IT
           downgradeToLink = false;
@@ -285,10 +287,10 @@ public class OGraphDatabaseCompacter {
 
       if (downgradeToLink) {
         // GET AS NEW EDGE THE LINK TO THE TARGET VERTEX
-        if (iVertex.equals(edge.field(OPropertyGraph.EDGE_FIELD_IN)))
-          newEdge = edge.field(OPropertyGraph.EDGE_FIELD_OUT);
-        else if (iVertex.equals(edge.field(OPropertyGraph.EDGE_FIELD_OUT)))
-          newEdge = edge.field(OPropertyGraph.EDGE_FIELD_IN);
+        if (iVertex.equals(edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_IN)))
+          newEdge = edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_OUT);
+        else if (iVertex.equals(edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_OUT)))
+          newEdge = edge.field(OBidirectionalEdgeDocument.EDGE_FIELD_IN);
         else
           throw new ODatabaseException("Cannot migrate the graph database because the edge " + edge
               + " contains an invalid reference to the linked vertex " + iVertex);
@@ -332,15 +334,15 @@ public class OGraphDatabaseCompacter {
   }
 
   protected void convertSchema(final OAbstractPropertyGraph db) {
-    if (db.getVertexBaseClass().existsProperty(OPropertyGraph.VERTEX_FIELD_OUT))
-      db.getVertexBaseClass().dropProperty(OPropertyGraph.VERTEX_FIELD_OUT);
+    if (db.getVertexBaseClass().existsProperty(OVertexDocument.VERTEX_FIELD_OUT))
+      db.getVertexBaseClass().dropProperty(OVertexDocument.VERTEX_FIELD_OUT);
 
-    if (db.getVertexBaseClass().existsProperty(OPropertyGraph.VERTEX_FIELD_IN))
-      db.getVertexBaseClass().dropProperty(OPropertyGraph.VERTEX_FIELD_IN);
+    if (db.getVertexBaseClass().existsProperty(OVertexDocument.VERTEX_FIELD_IN))
+      db.getVertexBaseClass().dropProperty(OVertexDocument.VERTEX_FIELD_IN);
 
-    if (db.getEdgeBaseClass().existsProperty(OPropertyGraph.EDGE_FIELD_IN))
-      db.getEdgeBaseClass().dropProperty(OPropertyGraph.EDGE_FIELD_IN);
-    if (db.getEdgeBaseClass().existsProperty(OPropertyGraph.EDGE_FIELD_OUT))
-      db.getEdgeBaseClass().dropProperty(OPropertyGraph.EDGE_FIELD_OUT);
+    if (db.getEdgeBaseClass().existsProperty(OBidirectionalEdgeDocument.EDGE_FIELD_IN))
+      db.getEdgeBaseClass().dropProperty(OBidirectionalEdgeDocument.EDGE_FIELD_IN);
+    if (db.getEdgeBaseClass().existsProperty(OBidirectionalEdgeDocument.EDGE_FIELD_OUT))
+      db.getEdgeBaseClass().dropProperty(OBidirectionalEdgeDocument.EDGE_FIELD_OUT);
   }
 }

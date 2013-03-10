@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.db.graph.OPropertyGraph;
+import com.orientechnologies.orient.core.db.graph.edge.OBidirectionalEdgeDocument;
+import com.orientechnologies.orient.core.db.graph.vertex.OVertexDocument;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -85,7 +86,8 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
 
     if (iRecords.size() > 0) {
       final ORecord<?> firstRecord = iRecords.get(0).getRecord();
-      final OClass vertexBaseClass = firstRecord.getDatabase().getMetadata().getSchema().getClass(OPropertyGraph.VERTEX_CLASS_NAME);
+      final OClass vertexBaseClass = firstRecord.getDatabase().getMetadata().getSchema()
+          .getClass(OVertexDocument.VERTEX_CLASS_NAME);
       if (firstRecord instanceof ODocument && ((ODocument) firstRecord).getSchemaClass().isSubClassOf(vertexBaseClass))
         // GRAPHDB MODEL
         generateGraphDbOutput(iRecords, json);
@@ -168,14 +170,14 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
         for (String field : doc.fieldNames()) {
           final Object v = doc.field(field);
           if (v != null) {
-            if (OPropertyGraph.VERTEX_FIELD_OUT.equals(field)) {
+            if (OVertexDocument.VERTEX_FIELD_OUT.equals(field)) {
               final Collection<ODocument> edgeSet = (Collection<ODocument>) v;
               for (ODocument e : edgeSet) {
                 if (vertexes.contains(e.field("in")))
                   // VERTEX IS PART OF RESULT SET: ADD THE EDGE
                   edges.add(e);
               }
-            } else if (OPropertyGraph.VERTEX_FIELD_IN.equals(field)) {
+            } else if (OVertexDocument.VERTEX_FIELD_IN.equals(field)) {
               final Collection<ODocument> edgeSet = (Collection<ODocument>) v;
               for (ODocument e : edgeSet) {
                 if (vertexes.contains(e.field("out")))
@@ -205,9 +207,9 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
       for (String field : doc.fieldNames()) {
         final Object v = doc.field(field);
         if (v != null) {
-          if (OPropertyGraph.EDGE_FIELD_IN.equals(field))
+          if (OBidirectionalEdgeDocument.EDGE_FIELD_IN.equals(field))
             json.writeAttribute(3, false, "source", v);
-          else if (OPropertyGraph.EDGE_FIELD_OUT.equals(field))
+          else if (OBidirectionalEdgeDocument.EDGE_FIELD_OUT.equals(field))
             json.writeAttribute(3, false, "target", v);
           else
             json.writeAttribute(3, false, field, v);

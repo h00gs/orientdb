@@ -24,7 +24,7 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
-import com.orientechnologies.orient.core.db.graph.OPropertyGraph;
+import com.orientechnologies.orient.core.db.graph.edge.OBidirectionalEdgeDocument;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecordTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -85,7 +85,7 @@ public class OCommandExecutorSQLDeleteEdge extends OCommandExecutorSQLSetAware i
       } else if (temp.equals(KEYWORD_WHERE)) {
         if (clazz == null)
           // ASSIGN DEFAULT CLASS
-          clazz = database.getMetadata().getSchema().getClass(OPropertyGraph.EDGE_CLASS_NAME);
+          clazz = database.getMetadata().getSchema().getClass(OBidirectionalEdgeDocument.EDGE_CLASS_NAME);
 
         final String condition = parserGetCurrentPosition() > -1 ? " " + parserText.substring(parserGetCurrentPosition()) : "";
 
