@@ -31,6 +31,10 @@ import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
 import com.orientechnologies.orient.core.sql.model.OOperatorPower;
 import com.orientechnologies.orient.core.sql.model.OOr;
 import com.orientechnologies.orient.core.sql.operator.OSQLOperator;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Simplify expressions.
@@ -46,84 +50,86 @@ public class OSimplifyVisitor extends OCopyVisitor{
   public Object visit(OAnd candidate, Object extraData) {
     candidate = (OAnd) super.visit(candidate, extraData);
 
-    final OExpression left = candidate.getLeft();
-    final OExpression right = candidate.getRight();
+    final List<OExpression> children = candidate.getChildren();
+    final List<OExpression> newChildren = new ArrayList<OExpression>(children.size());
 
-    boolean leftIsAlwaysTrue = false;
-    if(left == OExpression.INCLUDE){
-      leftIsAlwaysTrue = true;
-    }else if(left instanceof OLiteral){
-      final Object value = ((OLiteral) left).getValue();
-      if (Boolean.TRUE.equals(value)) {
-        leftIsAlwaysTrue = true;
-      }else if (Boolean.FALSE.equals(value)) {
-        return OExpression.EXCLUDE;
-      } else if (value == null) {
+    for (OExpression child : children) {
+      final OExpression cloned = (OExpression) child.accept(this, extraData);
+
+      // if one element is Exclude, the all chain is Exclude
+      if (cloned == OExpression.EXCLUDE) {
         return OExpression.EXCLUDE;
       }
-    }
-    
-    boolean rightIsAlwaysTrue = false;
-    if(right == OExpression.INCLUDE){
-      rightIsAlwaysTrue = true;
-    }else if(right instanceof OLiteral){
-      final Object value = ((OLiteral) right).getValue();
-      if (Boolean.TRUE.equals(value)) {
-        rightIsAlwaysTrue = true;
-      }else if (Boolean.FALSE.equals(value)) {
-        return OExpression.EXCLUDE;
-      } else if (value == null) {
-        return OExpression.EXCLUDE;
+
+      // we can skip includes
+      if (cloned == OExpression.INCLUDE) {
+        continue;
       }
+
+      if (cloned instanceof OAnd) {
+        //we can append sub children here
+        newChildren.addAll(((OAnd) cloned).getChildren());
+        continue;
+      }
+
+      newChildren.add(cloned);
     }
-    
-    if(leftIsAlwaysTrue && rightIsAlwaysTrue){
+
+    // all elements have been simplified
+    if (newChildren.isEmpty()) {
       return OExpression.INCLUDE;
-    }else if(leftIsAlwaysTrue){
-      return right;
-    }else if(rightIsAlwaysTrue){
-      return left;
     }
-    
-    return candidate;
+
+    // only one element, unwrap it
+    if (newChildren.size() == 1) {
+      return newChildren.get(0);
+    }
+
+    return new OAnd(candidate.getAlias(),newChildren);
   }
 
   @Override
   public Object visit(OOr candidate, Object extraData) {
     candidate = (OOr) super.visit(candidate, extraData);
 
-    OExpression left = candidate.getLeft();
-    OExpression right = candidate.getRight();
-    
-    if (left == OExpression.INCLUDE || right == OExpression.INCLUDE) {
-      return OExpression.INCLUDE;
+    final List<OExpression> children = candidate.getChildren();
+    final List<OExpression> newChildren = new ArrayList<OExpression>(children.size());
+
+
+    for (OExpression child : children) {
+      final OExpression cloned = (OExpression) child.accept(this, extraData);
+
+      // if one element is Include, the all chain is Include
+      if (cloned == OExpression.INCLUDE) {
+        return OExpression.INCLUDE;
+      }
+
+      // we can skip excludes
+      if (cloned == OExpression.EXCLUDE) {
+        continue;
+      }
+
+      if (cloned instanceof OOr) {
+        //we can append sub children here
+        newChildren.addAll(((OOr) cloned).getChildren());
+        continue;
+      }
+      
+      newChildren.add(cloned);
     }
 
-    if (left instanceof OLiteral) {
-      final Object value = ((OLiteral) left).getValue();
-      if (Boolean.TRUE.equals(value)) {
-        return OExpression.INCLUDE;
-      }else if (value == null || Boolean.FALSE.equals(value)) {
-        left = OExpression.EXCLUDE;
-      }
+    // we might end up with an empty list
+    if (newChildren.isEmpty()) {
+      return OExpression.EXCLUDE;
     }
-    
-    if (right instanceof OLiteral) {
-      final Object value = ((OLiteral) right).getValue();
-      if (Boolean.TRUE.equals(value)) {
-        return OExpression.INCLUDE;
-      }else if (value == null || Boolean.FALSE.equals(value)) {
-        right = OExpression.EXCLUDE;
-      }
+
+    // remove the logic we have only one filter
+    if (newChildren.size() == 1) {
+      return newChildren.get(0);
     }
-    
-    if (left == OExpression.EXCLUDE) {
-      return right;
-    }else if (right == OExpression.EXCLUDE) {
-      return left;
-    }
-    
-    return candidate;
+
+    // else return the cloned and simplified up list
+    return new OOr(candidate.getAlias(),children);
   }
 
   @Override

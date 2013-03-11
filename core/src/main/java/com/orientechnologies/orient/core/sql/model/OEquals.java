@@ -25,11 +25,9 @@ import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -37,7 +35,7 @@ import java.util.Set;
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OEquals extends OExpressionWithChildren{
+public class OEquals extends OBinaryFilter{
   
   public OEquals(OExpression left, OExpression right) {
     this(null,left,right);
@@ -46,15 +44,7 @@ public class OEquals extends OExpressionWithChildren{
   public OEquals(String alias, OExpression left, OExpression right) {
     super(alias,left,right);
   }
-  
-  public OExpression getLeft(){
-    return children.get(0);
-  }
-  
-  public OExpression getRight(){
-    return children.get(1);
-  }
-  
+    
   @Override
   protected String thisToString() {
     return "(Equals)";
@@ -64,48 +54,35 @@ public class OEquals extends OExpressionWithChildren{
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     return equals(getLeft(), getRight(), context, candidate);
   }
-
+  
   @Override
-  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
-    final String className = searchContext.getSource().getTargetClasse();
-    if(className == null){
-      //no optimisation
-      return;
-    }
-    
-    //test is equality match pattern : field = value
-    Entry<OName,OExpression> simple = isSimple(this);
-    if(simple == null){
-      //no optimisation
-      return;
-    }
-    
+  protected boolean analyzeSearchIndex(final OSearchContext searchContext, final OSearchResult result, 
+        final OClass clazz, final OName equalFieldName, final OExpression equalFieldValue) {
     //search for an index
-    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(simple.getKey().getName());
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(equalFieldName.getName());
     if(indexes == null || indexes.isEmpty()){
       //no index usable
-      return;
+      return false;
     }
     
+    boolean found = false;
     for(OIndex index : indexes){
       if(index.getKeyTypes().length != 1){
         continue;
       }
       
-      if(OClass.INDEX_TYPE.UNIQUE.toString().equals(index.getType())){
-        //found a usable index
-        final Collection searchFor = Collections.singleton(simple.getValue().evaluate(null, null));
-        final Collection<OIdentifiable> ids = index.getValues(searchFor);
-        searchResult.setState(OSearchResult.STATE.FILTER);
-        searchResult.setIncluded(ids);
-        updateStatistic(index);
-        return;
-      }
+      //found a usable index
+      final Collection searchFor = Collections.singleton(equalFieldValue.evaluate(null, null));
+      final Collection<OIdentifiable> ids = index.getValues(searchFor);
+      searchResult.setState(OSearchResult.STATE.FILTER);
+      searchResult.setIncluded(ids);
+      updateStatistic(index);
+      found = true;
+      break;
     }
-    
+    return found;
   }
-
+  
   static Entry<OName,OExpression> isSimple(OEquals exp){
     //test is equality match pattern : field = value
     OName fieldName;
@@ -123,48 +100,7 @@ public class OEquals extends OExpressionWithChildren{
     return new AbstractMap.SimpleImmutableEntry<OName, OExpression>(fieldName, literal);
   }
   
-  static Entry<List<OName>,OExpression> isPath(OEquals exp){
-    
-    OExpression left = exp.getLeft();
-    OExpression right = exp.getRight();
-      
-    if(right instanceof OPath || right instanceof OName){
-      //flip order, we want the path/Name on the left
-      OExpression tmp = left;
-      left = right;
-      right = tmp;
-    }
-    
-    if(!right.isStatic()){
-        //can't optimize with index
-        return null;
-    }
-    
-    final List<OName> path;
-    if(left instanceof OName){
-        path = Collections.singletonList((OName)left);
-    }else if(left instanceof OPath){
-        path = new ArrayList<OName>();
-        final List<OExpression> unfolded = ((OPath)left).unfold();
-        for(OExpression e : unfolded){
-            if(e instanceof OName){
-                path.add((OName)e);
-            }else{
-                //can't optimize with index
-                return null;
-            }
-        }        
-    }else{
-        //can't optimize
-        return null;
-    }
-    
-    return new AbstractMap.SimpleImmutableEntry<List<OName>,OExpression>(path, right);
-  }
   
-  private static void unwrap(OPath path, List<OName> names){
-      
-  }
   
   public static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
     final Object value1 = left.evaluate(context, candidate);

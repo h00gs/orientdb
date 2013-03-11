@@ -211,7 +211,7 @@ public abstract class OExpressionAbstract implements OExpression{
    * @param index
    *          which usage is registering.
    */
-  protected void updateStatistic(OIndex<?> index) {
+  public void updateStatistic(OIndex<?> index) {
 
     final OJVMProfiler profiler = Orient.instance().getProfiler();
     if (profiler.isRecording()) {

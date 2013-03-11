@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -109,6 +110,40 @@ public final class OSearchResult {
 
   public void setExcluded(Collection<OIdentifiable> excluded) {
     this.excluded = excluded;
+  }
+  
+  public void reset(){
+    this.state = STATE.EVALUATE;
+    this.included = null;
+    this.candidates = null;
+    this.excluded = null;
+  }
+  
+  public void set(OSearchResult other){
+    this.state = other.state;
+    if(other.included == ALL){
+      this.included = ALL;
+    }else if(other.included == null){
+      this.included = null;
+    }else{
+      this.included = new ArrayList<OIdentifiable>(other.included);
+    }
+    
+    if(other.candidates == ALL){
+      this.candidates = ALL;
+    }else if(other.candidates == null){
+      this.candidates = null;
+    }else{
+      this.candidates = new ArrayList<OIdentifiable>(other.candidates);
+    }
+    
+    if(other.excluded == ALL){
+      this.excluded = ALL;
+    }else if(other.excluded == null){
+      this.excluded = null;
+    }else{
+      this.excluded = new ArrayList<OIdentifiable>(other.excluded);
+    }
   }
   
 }

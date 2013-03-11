@@ -21,6 +21,8 @@ import com.orientechnologies.orient.core.sql.model.OCollection;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OSearchContext;
+import com.orientechnologies.orient.core.sql.model.OSearchResult;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -46,6 +48,11 @@ public class OSQLMethodContainsAll extends OSQLMethod {
     children.add(right);
   }
 
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+      
+  }
+  
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
 

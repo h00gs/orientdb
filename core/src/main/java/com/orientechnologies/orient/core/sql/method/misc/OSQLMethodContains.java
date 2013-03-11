@@ -21,6 +21,8 @@ import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OSearchContext;
+import com.orientechnologies.orient.core.sql.model.OSearchResult;
 
 /**
  * CONTAINS operator.
@@ -42,6 +44,11 @@ public class OSQLMethodContains extends OSQLMethod {
     children.add(right);
   }
 
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+      
+  }
+  
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
 

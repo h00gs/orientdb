@@ -33,6 +33,9 @@ public final class OContextVariable extends OExpressionAbstract {
   public OContextVariable(String name, String alias) {
     super(alias);
     this.varName = name;
+    if(alias == null){
+      setAlias("$"+name);
+    }
   }
 
   public Object getVariableName() {

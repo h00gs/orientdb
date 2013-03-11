@@ -21,6 +21,7 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,22 +35,22 @@ import java.util.Set;
  */
 public class OAnd extends OExpressionWithChildren{
 
+  public OAnd(List<OExpression> arguments) {
+    super(arguments);
+  }
+
+  public OAnd(String alias, List<OExpression> arguments) {
+    super(alias, arguments);
+  }
+
+  public OAnd(String alias, OExpression... children) {
+    super(alias, children);
+  }
+  
   public OAnd(OExpression left, OExpression right) {
     this(null,left,right);
   }
 
-  public OAnd(String alias, OExpression left, OExpression right) {
-    super(alias,left,right);
-  }
-  
-  public OExpression getLeft(){
-    return children.get(0);
-  }
-  
-  public OExpression getRight(){
-    return children.get(1);
-  }
-  
   @Override
   protected String thisToString() {
     return "(And)";
@@ -57,72 +58,80 @@ public class OAnd extends OExpressionWithChildren{
 
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
-    final Object objLeft = children.get(0).evaluate(context, candidate);
-    if(!(objLeft instanceof Boolean)){
-      //can not combine non boolean values
-      return false;
+    for(OExpression e : children){
+      final Object val = e.evaluate(context, candidate);
+      if(!(val instanceof Boolean)){
+        //can not combine non boolean values
+        return Boolean.FALSE;
+      }
+      if(Boolean.FALSE.equals(val)){
+        return Boolean.FALSE;
+      }
     }
-    final Object objRight = children.get(1).evaluate(context, candidate);
-    if(!(objRight instanceof Boolean)){
-      //can not combine non boolean values
-      return false;
-    }
-    
-    return ((Boolean)objLeft) && ((Boolean)objRight);
+    return Boolean.TRUE;
   }
 
   @Override
   protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
-    
+
     final String className = searchContext.getSource().getTargetClasse();
     combineIndex:
-    if(className != null){
+    if (className != null) {
       //see if we have a multikey index for pattern : field1 = value1 AND field2 = value2
-        if(getLeft() instanceof OEquals && getRight() instanceof OEquals){
-            final Entry<OName,OExpression> e1 = OEquals.isSimple((OEquals)getLeft());
-            final Entry<OName,OExpression> e2 = OEquals.isSimple((OEquals)getRight());
-            if(e1 == null || e2 == null){
-                break combineIndex;
-            }
-            
-            //search for an index
-            final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-            final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(e1.getKey().getName(),e2.getKey().getName());
-            if(indexes == null || indexes.isEmpty()){
-              //no index usable
-              return;
-            }
-
-            for(OIndex index : indexes){
-              if(index.getKeyTypes().length != 2){
-                continue;
-              }              
-              //found a usable index              
-              final List<String> fields = index.getDefinition().getFields();
-              final Object[] key = new Object[2];
-              if(fields.get(0).equalsIgnoreCase(e1.getKey().getName())){
-                  key[0] = e1.getValue().evaluate(null, null);
-                  key[1] = e2.getValue().evaluate(null, null);
-              }else{
-                  key[0] = e2.getValue().evaluate(null, null);
-                  key[1] = e1.getValue().evaluate(null, null);                  
-              }
-              
-              final Collection searchFor = Collections.singleton(key);
-              final Collection<OIdentifiable> ids = index.getValues(searchFor);
-              searchResult.setState(OSearchResult.STATE.FILTER);
-              searchResult.setIncluded(ids);
-              updateStatistic(index);
-              return;
-            }
+      if (getChildren().get(0) instanceof OEquals && getChildren().get(1) instanceof OEquals) {
+        final Entry<OName, OExpression> e1 = OEquals.isSimple((OEquals) getChildren().get(0));
+        final Entry<OName, OExpression> e2 = OEquals.isSimple((OEquals) getChildren().get(1));
+        if (e1 == null || e2 == null) {
+          break combineIndex;
         }
+
+        //search for an index
+        final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+        final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(e1.getKey().getName(), e2.getKey().getName());
+        if (indexes == null || indexes.isEmpty()) {
+          //no index usable
+          return;
+        }
+
+        for (OIndex index : indexes) {
+          if (index.getKeyTypes().length != 2) {
+            continue;
+          }
+          //found a usable index              
+          final List<String> fields = index.getDefinition().getFields();
+          final Object[] key = new Object[2];
+          if (fields.get(0).equalsIgnoreCase(e1.getKey().getName())) {
+            key[0] = e1.getValue().evaluate(null, null);
+            key[1] = e2.getValue().evaluate(null, null);
+          } else {
+            key[0] = e2.getValue().evaluate(null, null);
+            key[1] = e1.getValue().evaluate(null, null);
+          }
+
+          final Collection searchFor = Collections.singleton(new OCompositeKey(key));
+          final Collection<OIdentifiable> ids = index.getValues(searchFor);
+          result.setState(OSearchResult.STATE.FILTER);
+          result.setIncluded(ids);
+          updateStatistic(index);
+          return;
+        }
+      }
     }
-    
-    
+
+
     //no combined key index could be used, fallback on left/right merge.
+    final OSearchResult resLeft = new OSearchResult(this);
+    result.set(children.get(0).getSearchResult());
+    for (int i = 1, n = children.size(); i < n; i++) {
+      resLeft.set(result);
+      result.reset();
+      combineSearch(resLeft, children.get(i), result);
+    }
+  }
+
+  private void combineSearch(OSearchResult resLeft, OExpression right, OSearchResult result){
     //combine search results for left and right filters.
-    final OSearchResult resLeft = getLeft().getSearchResult();
-    final OSearchResult resRight = getRight().getSearchResult();
+    final OSearchResult resRight = right.getSearchResult();
     
     if(resLeft.getState() == OSearchResult.STATE.EVALUATE || resRight.getState() == OSearchResult.STATE.EVALUATE){
       //we can't reduce global search, all elements will have to be tested
@@ -216,7 +225,7 @@ public class OAnd extends OExpressionWithChildren{
     result.setCandidates(candidates);
     result.setExcluded(excluded);
   }
-  
+    
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);
@@ -235,7 +244,7 @@ public class OAnd extends OExpressionWithChildren{
 
   @Override
   public OAnd copy() {
-    return new OAnd(alias, getLeft(), getRight());
+    return new OAnd(alias,new ArrayList<OExpression>(getChildren()));
   }
   
 }

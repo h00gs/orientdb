@@ -569,7 +569,9 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
                   if(o instanceof ODocument){
                       result.add((ODocument)o);
                   }else{
-                      throw new OException("Flatten object is not an ODocument : "+o);
+                      final ODocument doc = new ODocument();
+                      doc.field("0",o);
+                      result.add(doc);
                   }
               }
           } else {

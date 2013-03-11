@@ -17,8 +17,14 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -86,7 +92,7 @@ public class OPath extends OExpressionWithChildren{
    * @param names
    * @return List<OName>
    */
-  public List<OExpression> unfold(){
+  public List<OExpression> unfoldPath(){
       final List<OExpression> lst = new ArrayList<OExpression>();
       unfold(this, lst);
       return lst;
@@ -100,4 +106,52 @@ public class OPath extends OExpressionWithChildren{
           lst.add(exp);
       }
   }
+  
+  public static Map.Entry<List<OIndex>,OClass> unfoldIndexes(List<OName> path, OClass clazz){
+    final List<OIndex> walk = new ArrayList<OIndex>();
+    for (int i = 0, n = path.size() - 1; i < n; i++) {
+      final OName name = path.get(i);
+      //path element
+      final OProperty prop = clazz.getProperty(name.getName());
+      if (prop == null || prop.getLinkedClass() == null) {
+        //can't optimize
+        return null;
+      }
+      final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(name.getName());
+      if (indexes == null || indexes.isEmpty()) {
+        //no index usable
+        return null;
+      }
+      boolean found = false;
+      for (OIndex index : indexes) {
+        if (index.getKeyTypes().length != 1) {
+          continue;
+        }
+        found = true;
+        walk.add(index);
+      }
+      if (!found) {
+        //no index usable
+        return null;
+      }
+      clazz = prop.getLinkedClass();
+    }
+    
+    return new AbstractMap.SimpleImmutableEntry<List<OIndex>,OClass>(walk, clazz);
+  }
+  
+  public static void foldIndexes(OExpressionAbstract exp, final List<OIndex> walk, final OSearchResult searchResult) {
+    //unfold the path
+    for (int i = walk.size() - 1; i >= 0; i--) {
+      final OIndex wi = walk.get(i);
+      if (searchResult.getIncluded() != null) {
+        searchResult.setIncluded(wi.getValues(searchResult.getIncluded()));
+      } else {
+        searchResult.setExcluded(wi.getValues(searchResult.getExcluded()));
+      }
+      exp.updateStatistic(wi);
+    }
+  }
+  
+  
 }

@@ -54,7 +54,16 @@ public class OToSQLVisitor implements OExpressionVisitor{
 
     @Override
     public String visit(OAnd candidate, Object data) {
-        return "(" + candidate.getLeft().accept(this,data) +" AND "+ candidate.getRight().accept(this,data) +")";
+      final StringBuilder sb = new StringBuilder("(");
+      final List<OExpression> exps = candidate.getChildren();
+      for(int i=0,n=exps.size();i<n;i++){
+        sb.append(exps.get(i).accept(this,data));
+        if(i<n-1){
+          sb.append(" AND ");
+        }
+      }      
+      sb.append(")");
+      return sb.toString();
     }
 
     @Override
@@ -218,7 +227,16 @@ public class OToSQLVisitor implements OExpressionVisitor{
 
     @Override
     public String visit(OOr candidate, Object data) {
-        return "(" + candidate.getLeft().accept(this,data) +" OR "+ candidate.getRight().accept(this,data) +")";
+        final StringBuilder sb = new StringBuilder("(");
+      final List<OExpression> exps = candidate.getChildren();
+      for(int i=0,n=exps.size();i<n;i++){
+        sb.append(exps.get(i).accept(this,data));
+        if(i<n-1){
+          sb.append(" OR ");
+        }
+      }      
+      sb.append(")");
+      return sb.toString();
     }
 
     @Override

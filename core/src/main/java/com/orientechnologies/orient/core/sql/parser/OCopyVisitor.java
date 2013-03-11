@@ -156,16 +156,26 @@ public class OCopyVisitor implements OExpressionVisitor {
 
   @Override
   public Object visit(OAnd candidate, Object data) {
-    return new OAnd(candidate.getAlias(), 
-            (OExpression)candidate.getLeft().accept(this,data), 
-            (OExpression)candidate.getRight().accept(this,data));
+    final List<OExpression> childs = new ArrayList<OExpression>(candidate.getChildren());
+    for(int i=0;i<childs.size();i++){
+      childs.set(i, (OExpression)childs.get(i).accept(this, data));
+    }
+    final OAnd copy = candidate.copy();
+    copy.getChildren().clear();
+    copy.getChildren().addAll(childs);
+    return copy;    
   }
 
   @Override
   public Object visit(OOr candidate, Object data) {
-    return new OOr(candidate.getAlias(), 
-            (OExpression)candidate.getLeft().accept(this,data), 
-            (OExpression)candidate.getRight().accept(this,data));
+    final List<OExpression> childs = new ArrayList<OExpression>(candidate.getChildren());
+    for(int i=0;i<childs.size();i++){
+      childs.set(i, (OExpression)childs.get(i).accept(this, data));
+    }
+    final OOr copy = candidate.copy();
+    copy.getChildren().clear();
+    copy.getChildren().addAll(childs);
+    return copy;    
   }
 
   @Override

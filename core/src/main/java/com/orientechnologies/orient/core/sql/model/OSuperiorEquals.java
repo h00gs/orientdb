@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OSuperiorEquals extends OExpressionWithChildren{
+public class OSuperiorEquals extends OBinaryFilter{
   
   public OSuperiorEquals(OExpression left, OExpression right) {
     this(null,left,right);
@@ -36,61 +36,33 @@ public class OSuperiorEquals extends OExpressionWithChildren{
   public OSuperiorEquals(String alias, OExpression left, OExpression right) {
     super(alias,left,right);
   }
-  
-  public OExpression getLeft(){
-    return children.get(0);
-  }
-  
-  public OExpression getRight(){
-    return children.get(1);
-  }
-  
+    
   @Override
   protected String thisToString() {
     return "(>=)";
   }
 
   @Override
-  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
-    final String className = searchContext.getSource().getTargetClasse();
-    if(className == null){
-      //no optimisation
-      return;
-    }
-    
-    //test is superior match pattern : field >= value
-    final boolean above;
-    OName fieldName;
-    OLiteral literal;
-    if(getLeft() instanceof OName && getRight() instanceof OLiteral){
-      fieldName = (OName) getLeft();
-      literal = (OLiteral) getRight();
-      above = true;
-    }else if(getLeft() instanceof OLiteral && getRight() instanceof OName){
-      fieldName = (OName) getRight();
-      literal = (OLiteral) getLeft();
-      above = false;
-    }else{
-      //no optimisation
-      return;
-    }
+  protected boolean analyzeSearchIndex(OSearchContext searchContext, OSearchResult result, 
+        OClass clazz, OName fieldName, OExpression fieldValue) {
+      
+    final boolean above = (getLeft() instanceof OName || getLeft() instanceof OPath);
     
     //search for an index
-    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
     final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
     if(indexes == null || indexes.isEmpty()){
       //no index usable
-      return;
+      return false;
     }
     
+    boolean found = false;
     for(OIndex index : indexes){
       if(index.getKeyTypes().length != 1){
         continue;
       }
       
-      final Object key = literal.evaluate(null, null);
-      
       //found a usable index
+      final Object key = fieldValue.evaluate(null, null);
       final Collection<OIdentifiable> ids;
       if(above){
           ids = index.getValuesMajor(key, true);
@@ -100,9 +72,10 @@ public class OSuperiorEquals extends OExpressionWithChildren{
       searchResult.setState(OSearchResult.STATE.FILTER);
       searchResult.setIncluded(ids);
       updateStatistic(index);
-      return;
+      found = true;
+      break;
     }
-    
+    return found;
   }
   
   @Override

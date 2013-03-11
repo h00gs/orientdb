@@ -18,8 +18,10 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,20 +30,20 @@ import java.util.Set;
  */
 public class OOr extends OExpressionWithChildren{
 
-  public OOr(OExpression left, OExpression right) {
-    this(null,left,right);
+  public OOr(List<OExpression> arguments) {
+    super(arguments);
   }
 
-  public OOr(String alias, OExpression left, OExpression right) {
-    super(alias,left,right);
+  public OOr(String alias, List<OExpression> arguments) {
+    super(alias, arguments);
   }
-  
-  public OExpression getLeft(){
-    return children.get(0);
+
+  public OOr(String alias, OExpression... children) {
+    super(alias, children);
   }
-  
-  public OExpression getRight(){
-    return children.get(1);
+
+  public OOr(OExpression left, OExpression right) {
+    this(null,left,right);
   }
   
   @Override
@@ -51,30 +53,32 @@ public class OOr extends OExpressionWithChildren{
 
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
-    final Object objLeft = children.get(0).evaluate(context, candidate);
-    if(!(objLeft instanceof Boolean)){
-      //can not combine non boolean values
-      return false;
-    }else if(((Boolean)objLeft)){
-      //no need to evaluate the right side
-      return true;
+    for(OExpression e : children){
+      final Object val = e.evaluate(context, candidate);
+      if(Boolean.TRUE.equals(val)){
+        return Boolean.TRUE;
+      }
     }
-    final Object objRight = children.get(1).evaluate(context, candidate);
-    if(!(objRight instanceof Boolean)){
-      //can not combine non boolean values
-      return false;
-    }else if(((Boolean)objRight)){
-      return true;
-    }
-    
-    return false;
+    return Boolean.FALSE;
   }
 
   @Override
   protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    
+    //no combined key index could be used, fallback on left/right merge.
+    final OSearchResult resLeft = new OSearchResult(this);
+    result.set(children.get(0).getSearchResult());
+    for(int i=1,n=children.size();i<n;i++){
+      resLeft.set(result);
+      result.reset();
+      combineSearch(resLeft, children.get(i), result);
+    }
+          
+  }
+  
+  private void combineSearch(OSearchResult resLeft, OExpression right, OSearchResult result){
     //combine search results for left and right filters.
-    final OSearchResult resLeft = getLeft().getSearchResult();
-    final OSearchResult resRight = getRight().getSearchResult();
+    final OSearchResult resRight = right.getSearchResult();
     
     if(resLeft.getState() == OSearchResult.STATE.EVALUATE || resRight.getState() == OSearchResult.STATE.EVALUATE){
       //we can't reduce global search, all elements will have to be tested
@@ -136,7 +140,7 @@ public class OOr extends OExpressionWithChildren{
     
     result.setIncluded(included);
     result.setCandidates(candidates);
-    result.setExcluded(excluded);    
+    result.setExcluded(excluded);  
   }
   
   @Override
@@ -157,7 +161,7 @@ public class OOr extends OExpressionWithChildren{
   
   @Override
   public OOr copy() {
-    return new OOr(alias,getLeft(),getRight());
+    return new OOr(alias,new ArrayList<OExpression>(getChildren()));
   }
   
 }
