@@ -21,7 +21,8 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -57,33 +58,39 @@ public class OBetween extends OExpressionWithChildren{
 
   @Override
   protected void analyzeSearchIndex(final OSearchContext searchContext, final OSearchResult result) {
+    
     final String className = searchContext.getSource().getTargetClasse();
-    if(className == null){
+    if (className == null) {
       //no optimisation
       return;
     }
     
-    //test is basic between pattern : field BETWEEN literal1 AND literal2
-    if(!(getTarget() instanceof OName)){
-        //no optimisation
-        return;
-    }
     if(!(getLeft() instanceof OLiteral && getRight() instanceof OLiteral)){
         //no optimisation
         return;
     }
-    OName fieldName = (OName) getTarget();
-    Object min = getLeft().evaluate(null, null);
-    Object max = getRight().evaluate(null, null);
     
-    //search for an index
-    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    Map.Entry<List<OName>, OExpression> stack = OBinaryFilter.toStackPath(getTarget(),OExpression.INCLUDE);
+    if (stack == null) return;
+
+    final List<OName> path = stack.getKey();
+    OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    if (indexUnfold == null) return;
+    clazz = indexUnfold.getValue();
+    final OName fieldName = path.get(path.size()-1);
+    
+    //search for indexes
     final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return;
     }
     
+    Object min = getLeft().evaluate(null, null);
+    Object max = getRight().evaluate(null, null);
+    
+    boolean found = false;
     for(OIndex index : indexes){
       if(index.getKeyTypes().length != 1){
         continue;
@@ -94,8 +101,16 @@ public class OBetween extends OExpressionWithChildren{
       searchResult.setState(OSearchResult.STATE.FILTER);
       searchResult.setIncluded(ids);
       updateStatistic(index);
+      found = true;
+      break;
+    }
+    
+    if (!found) {
+      //could not find a proper index
       return;
     }
+    
+    OPath.foldIndexes(this, indexUnfold.getKey(), searchResult);    
   }
   
   @Override

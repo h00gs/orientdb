@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -55,37 +56,38 @@ public class OIn extends OExpressionWithChildren{
 
   @Override
   protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    
     final String className = searchContext.getSource().getTargetClasse();
-    if(className == null){
+    if (className == null) {
       //no optimisation
       return;
     }
     
-    //test is inferior match pattern : field IN [literal*]
-    OName fieldName;
-    OExpression literal;
-    if(getLeft() instanceof OName && getRight().isStatic()){
-      fieldName = (OName) getLeft();
-      literal = getRight();
-    }else{
-      //no optimisation
-      return;
-    }
+    Map.Entry<List<OName>, OExpression> stack = OBinaryFilter.toStackPath(getLeft(),getRight());
+    if (stack == null) return;
+
+    final List<OName> path = stack.getKey();
+    OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    if (indexUnfold == null) return;
+    clazz = indexUnfold.getValue();
+    final OName fieldName = path.get(path.size()-1);
+    final OExpression fieldValue = stack.getValue();
     
-    //search for an index
-    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    //search for indexes
     final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return;
     }
-    
+        
+    boolean found = false;
     for(OIndex index : indexes){
       if(index.getKeyTypes().length != 1){
         continue;
       }
       
-      final Object val = literal.evaluate(null, null);
+      final Object val = fieldValue.evaluate(null, null);
       final Collection col;
       if(val instanceof Collection){
           col = (Collection) val;
@@ -98,9 +100,16 @@ public class OIn extends OExpressionWithChildren{
       searchResult.setState(OSearchResult.STATE.FILTER);
       searchResult.setIncluded(ids);
       updateStatistic(index);
+      found = true;
+      break;
+    }
+    
+    if (!found) {
+      //could not find a proper index
       return;
     }
     
+    OPath.foldIndexes(this, indexUnfold.getKey(), searchResult);    
   }
   
   @Override
