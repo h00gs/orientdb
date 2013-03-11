@@ -17,6 +17,8 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -71,10 +73,31 @@ public class OPath extends OExpressionWithChildren{
     return super.equals(obj);
   }
   
-
   @Override
   public OPath copy() {
     return new OPath(alias, getLeft(),getRight());
   }
   
+  /**
+   * Unfold this path.
+   * Example : a.b.c.d
+   * will return list : [a,b,c,d]
+   * @param path
+   * @param names
+   * @return List<OName>
+   */
+  public List<OExpression> unfold(){
+      final List<OExpression> lst = new ArrayList<OExpression>();
+      unfold(this, lst);
+      return lst;
+  }
+  
+  private void unfold(OExpression exp, List<OExpression> lst){
+      if(exp instanceof OPath){
+          unfold(((OPath)exp).getLeft(), lst);
+          unfold(((OPath)exp).getRight(), lst);
+      }else{
+          lst.add(exp);
+      }
+  }
 }

@@ -17,6 +17,12 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  *
@@ -49,6 +55,49 @@ public class OBetween extends OExpressionWithChildren{
     return "(Between)";
   }
 
+  @Override
+  protected void analyzeSearchIndex(final OSearchContext searchContext, final OSearchResult result) {
+    final String className = searchContext.getSource().getTargetClasse();
+    if(className == null){
+      //no optimisation
+      return;
+    }
+    
+    //test is basic between pattern : field BETWEEN literal1 AND literal2
+    if(!(getTarget() instanceof OName)){
+        //no optimisation
+        return;
+    }
+    if(!(getLeft() instanceof OLiteral && getRight() instanceof OLiteral)){
+        //no optimisation
+        return;
+    }
+    OName fieldName = (OName) getTarget();
+    Object min = getLeft().evaluate(null, null);
+    Object max = getRight().evaluate(null, null);
+    
+    //search for an index
+    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    for(OIndex index : indexes){
+      if(index.getKeyTypes().length != 1){
+        continue;
+      }
+      
+      //found a usable index
+      final Collection<OIdentifiable> ids = index.getValuesBetween(min,max);
+      searchResult.setState(OSearchResult.STATE.FILTER);
+      searchResult.setIncluded(ids);
+      updateStatistic(index);
+      return;
+    }
+  }
+  
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object objTarget = getTarget().evaluate(context, candidate);

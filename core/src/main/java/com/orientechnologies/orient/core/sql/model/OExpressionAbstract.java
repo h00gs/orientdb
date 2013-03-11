@@ -17,10 +17,13 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.ODatabaseRecord;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.profiler.OJVMProfiler;
 import java.util.Collection;
 import java.util.List;
 
@@ -202,6 +205,29 @@ public abstract class OExpressionAbstract implements OExpression{
     return ODatabaseRecordThreadLocal.INSTANCE.get();
   }
 
+  /**
+   * Register statistic information about usage of index in {@link OProfiler}.
+   * 
+   * @param index
+   *          which usage is registering.
+   */
+  protected void updateStatistic(OIndex<?> index) {
+
+    final OJVMProfiler profiler = Orient.instance().getProfiler();
+    if (profiler.isRecording()) {
+      Orient.instance().getProfiler()
+          .updateCounter(profiler.getDatabaseMetric(index.getDatabaseName(), "query.indexUsed"), "Used index in query", +1);
+
+      final int paramCount = index.getDefinition().getParamCount();
+      if (paramCount > 1) {
+        final String profiler_prefix = profiler.getDatabaseMetric(index.getDatabaseName(), "query.compositeIndexUsed");
+        profiler.updateCounter(profiler_prefix, "Used composite index in query", +1);
+        profiler.updateCounter(profiler_prefix + "." + paramCount, "Used composite index in query with " + paramCount + " params",
+            +1);
+      }
+    }
+  }
+  
   @Override
   public OExpression copy() {
     try {

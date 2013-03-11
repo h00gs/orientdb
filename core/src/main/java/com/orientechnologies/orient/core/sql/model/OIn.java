@@ -17,9 +17,14 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -48,6 +53,56 @@ public class OIn extends OExpressionWithChildren{
     return "(IN)";
   }
 
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    final String className = searchContext.getSource().getTargetClasse();
+    if(className == null){
+      //no optimisation
+      return;
+    }
+    
+    //test is inferior match pattern : field IN [literal*]
+    OName fieldName;
+    OExpression literal;
+    if(getLeft() instanceof OName && getRight().isStatic()){
+      fieldName = (OName) getLeft();
+      literal = getRight();
+    }else{
+      //no optimisation
+      return;
+    }
+    
+    //search for an index
+    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    for(OIndex index : indexes){
+      if(index.getKeyTypes().length != 1){
+        continue;
+      }
+      
+      final Object val = literal.evaluate(null, null);
+      final Collection col;
+      if(val instanceof Collection){
+          col = (Collection) val;
+      }else{
+          col = Collections.singleton(val);
+      }
+      
+      //found a usable index
+      final Collection<OIdentifiable> ids = index.getValues(col);
+      searchResult.setState(OSearchResult.STATE.FILTER);
+      searchResult.setIncluded(ids);
+      updateStatistic(index);
+      return;
+    }
+    
+  }
+  
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Object left = getLeft().evaluate(context, candidate);

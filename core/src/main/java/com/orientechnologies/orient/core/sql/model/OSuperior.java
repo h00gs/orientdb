@@ -17,7 +17,13 @@
 package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import static com.orientechnologies.orient.core.sql.model.OExpression.POST_ACTION_DISCARD;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  *
@@ -46,6 +52,61 @@ public class OSuperior extends OExpressionWithChildren{
     return "(>)";
   }
 
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    final String className = searchContext.getSource().getTargetClasse();
+    if(className == null){
+      //no optimisation
+      return;
+    }
+    
+    //test is superior match pattern : field > value
+    final boolean above;
+    OName fieldName;
+    OLiteral literal;
+    if(getLeft() instanceof OName && getRight() instanceof OLiteral){
+      fieldName = (OName) getLeft();
+      literal = (OLiteral) getRight();
+      above = true;
+    }else if(getLeft() instanceof OLiteral && getRight() instanceof OName){
+      fieldName = (OName) getRight();
+      literal = (OLiteral) getLeft();
+      above = false;
+    }else{
+      //no optimisation
+      return;
+    }
+    
+    //search for an index
+    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    for(OIndex index : indexes){
+      if(index.getKeyTypes().length != 1){
+        continue;
+      }
+      
+      final Object key = literal.evaluate(null, null);
+      
+      //found a usable index
+      final Collection<OIdentifiable> ids;
+      if(above){
+          ids = index.getValuesMajor(key, false);
+      }else{
+          ids = index.getValuesMinor(key, false);
+      }
+      searchResult.setState(OSearchResult.STATE.FILTER);
+      searchResult.setIncluded(ids);
+      updateStatistic(index);
+      return;
+    }
+    
+  }
+  
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Integer v = OInferior.compare(getLeft(),getRight(),context,candidate);

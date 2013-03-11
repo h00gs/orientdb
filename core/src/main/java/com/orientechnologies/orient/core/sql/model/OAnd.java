@@ -16,10 +16,16 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -67,6 +73,53 @@ public class OAnd extends OExpressionWithChildren{
 
   @Override
   protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    
+    final String className = searchContext.getSource().getTargetClasse();
+    combineIndex:
+    if(className != null){
+      //see if we have a multikey index for pattern : field1 = value1 AND field2 = value2
+        if(getLeft() instanceof OEquals && getRight() instanceof OEquals){
+            final Entry<OName,OExpression> e1 = OEquals.isSimple((OEquals)getLeft());
+            final Entry<OName,OExpression> e2 = OEquals.isSimple((OEquals)getRight());
+            if(e1 == null || e2 == null){
+                break combineIndex;
+            }
+            
+            //search for an index
+            final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+            final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(e1.getKey().getName(),e2.getKey().getName());
+            if(indexes == null || indexes.isEmpty()){
+              //no index usable
+              return;
+            }
+
+            for(OIndex index : indexes){
+              if(index.getKeyTypes().length != 2){
+                continue;
+              }              
+              //found a usable index              
+              final List<String> fields = index.getDefinition().getFields();
+              final Object[] key = new Object[2];
+              if(fields.get(0).equalsIgnoreCase(e1.getKey().getName())){
+                  key[0] = e1.getValue().evaluate(null, null);
+                  key[1] = e2.getValue().evaluate(null, null);
+              }else{
+                  key[0] = e2.getValue().evaluate(null, null);
+                  key[1] = e1.getValue().evaluate(null, null);                  
+              }
+              
+              final Collection searchFor = Collections.singleton(key);
+              final Collection<OIdentifiable> ids = index.getValues(searchFor);
+              searchResult.setState(OSearchResult.STATE.FILTER);
+              searchResult.setIncluded(ids);
+              updateStatistic(index);
+              return;
+            }
+        }
+    }
+    
+    
+    //no combined key index could be used, fallback on left/right merge.
     //combine search results for left and right filters.
     final OSearchResult resLeft = getLeft().getSearchResult();
     final OSearchResult resRight = getRight().getSearchResult();
@@ -163,7 +216,7 @@ public class OAnd extends OExpressionWithChildren{
     result.setCandidates(candidates);
     result.setExcluded(excluded);
   }
-
+  
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);

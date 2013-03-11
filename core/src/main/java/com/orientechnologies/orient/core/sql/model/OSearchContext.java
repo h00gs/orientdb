@@ -37,5 +37,26 @@ public final class OSearchContext {
   public void setSource(OQuerySource source) {
     this.source = source;
   }
+
+  @Override
+  public int hashCode() {
+    int hash = 3;
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final OSearchContext other = (OSearchContext) obj;
+    if (this.source != other.source && (this.source == null || !this.source.equals(other.source))) {
+      return false;
+    }
+    return true;
+  }
   
 }

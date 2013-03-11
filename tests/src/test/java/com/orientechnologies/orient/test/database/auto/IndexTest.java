@@ -793,7 +793,7 @@ public class IndexTest {
         indexQueries = 0;
       }
     }
-
+    
     final List<Profile> result = database.command(
         new OSQLSynchQuery<Profile>(
             "SELECT * FROM Profile WHERE nick in ['ZZZJayLongNickIndex0' ,'ZZZJayLongNickIndex1', 'ZZZJayLongNickIndex2']"))

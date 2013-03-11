@@ -18,14 +18,18 @@ package com.orientechnologies.orient.core.sql.model;
 
 import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.parser.SQLGrammarUtils;
 import java.text.ParseException;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Set;
 
 /**
  *
@@ -54,6 +58,61 @@ public class OInferior extends OExpressionWithChildren{
     return "(<)";
   }
 
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+    final String className = searchContext.getSource().getTargetClasse();
+    if(className == null){
+      //no optimisation
+      return;
+    }
+    
+    //test is inferior match pattern : field < value
+    final boolean under;
+    OName fieldName;
+    OLiteral literal;
+    if(getLeft() instanceof OName && getRight() instanceof OLiteral){
+      fieldName = (OName) getLeft();
+      literal = (OLiteral) getRight();
+      under = true;
+    }else if(getLeft() instanceof OLiteral && getRight() instanceof OName){
+      fieldName = (OName) getRight();
+      literal = (OLiteral) getLeft();
+      under = false;
+    }else{
+      //no optimisation
+      return;
+    }
+    
+    //search for an index
+    final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    for(OIndex index : indexes){
+      if(index.getKeyTypes().length != 1){
+        continue;
+      }
+      
+      final Object key = literal.evaluate(null, null);
+      
+      //found a usable index
+      final Collection<OIdentifiable> ids;
+      if(under){
+          ids = index.getValuesMinor(key, false);
+      }else{
+          ids = index.getValuesMajor(key, false);
+      }
+      searchResult.setState(OSearchResult.STATE.FILTER);
+      searchResult.setIncluded(ids);
+      updateStatistic(index);
+      return;
+    }
+    
+  }
+  
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     final Integer v = compare(getLeft(),getRight(),context,candidate);
