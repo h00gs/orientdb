@@ -120,6 +120,7 @@ public final class OSearchResult {
   }
   
   public void set(OSearchResult other){
+    reset();
     this.state = other.state;
     if(other.included == ALL){
       this.included = ALL;

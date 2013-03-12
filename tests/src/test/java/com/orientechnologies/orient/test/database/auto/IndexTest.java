@@ -690,7 +690,7 @@ public class IndexTest {
 
     Assert.assertEquals(expectedNicks.size(), 0);
     long newIndexQueries = Orient.instance().getProfiler().getCounter("db.demo.query.indexUsed");
-    Assert.assertEquals(newIndexQueries, indexQueries + 1);
+    Assert.assertEquals(newIndexQueries, indexQueries + 5);
   }
 
   @Test(dependsOnMethods = "populateIndexDocuments")
@@ -730,7 +730,7 @@ public class IndexTest {
 
     Assert.assertEquals(expectedNicks.size(), 0);
     long newIndexQueries = Orient.instance().getProfiler().getCounter("db.demo.query.indexUsed");
-    Assert.assertEquals(newIndexQueries, indexQueries+4);
+    Assert.assertEquals(newIndexQueries, indexQueries+6);
   }
 
   public void populateIndexDocuments() {

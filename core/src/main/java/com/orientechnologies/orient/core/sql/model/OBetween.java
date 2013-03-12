@@ -16,6 +16,9 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OAlwaysGreaterKey;
+import com.orientechnologies.common.collection.OAlwaysLessKey;
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
@@ -78,10 +81,11 @@ public class OBetween extends OExpressionWithChildren{
     final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
     if (indexUnfold == null) return;
     clazz = indexUnfold.getValue();
-    final OName fieldName = path.get(path.size()-1);
+    final OName expfieldName = path.get(path.size()-1);
+    final String fieldName = expfieldName.getName();
     
     //search for indexes
-    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName);
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return;
@@ -92,17 +96,37 @@ public class OBetween extends OExpressionWithChildren{
     
     boolean found = false;
     for(OIndex index : indexes){
-      if(index.getKeyTypes().length != 1){
-        continue;
-      }
-      
-      //found a usable index
-      final Collection<OIdentifiable> ids = index.getValuesBetween(min,max);
-      searchResult.setState(OSearchResult.STATE.FILTER);
-      searchResult.setIncluded(ids);
-      updateStatistic(index);
-      found = true;
-      break;
+      if(index.getKeyTypes().length == 1){
+        //found a usable index
+        final Collection<OIdentifiable> ids = index.getValuesBetween(min,max);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
+      }else{
+        // composite key index
+        final List<String> fields = index.getDefinition().getFields();
+        final Object[] fkmin = new Object[fields.size()];
+        final Object[] fkmax = new Object[fields.size()];
+        for(int i=0;i<fkmax.length;i++){
+          if(fields.get(i).equalsIgnoreCase(fieldName)){
+            fkmin[i] = min;
+            fkmax[i] = max;
+          }else{
+            fkmin[i] = new OAlwaysLessKey();
+            fkmax[i] = new OAlwaysGreaterKey();
+          }
+        }
+        final OCompositeKey minkey = new OCompositeKey(fkmin);
+        final OCompositeKey maxkey = new OCompositeKey(fkmax);
+        final Collection<OIdentifiable> ids = index.getValuesBetween(minkey,maxkey);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
+      }      
     }
     
     if (!found) {

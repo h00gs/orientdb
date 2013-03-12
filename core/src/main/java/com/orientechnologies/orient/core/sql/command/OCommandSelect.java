@@ -329,9 +329,9 @@ public class OCommandSelect extends OCommandAbstract implements Iterable {
       }
       //filter should never be null, in the worst case it's OExpression.INCLUDE
       filter = (OExpression) filter.accept(visitor, null);
-      //simplify filter
-      filter = (OExpression) filter.accept(OSimplifyVisitor.INSTANCE, null);
     }
+    //simplify filter
+    filter = (OExpression) filter.accept(OSimplifyVisitor.INSTANCE, null);
     
     result.clear();
     

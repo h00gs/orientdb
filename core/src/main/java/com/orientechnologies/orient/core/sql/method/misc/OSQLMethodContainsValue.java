@@ -15,6 +15,9 @@
  */
 package com.orientechnologies.orient.core.sql.method.misc;
 
+import com.orientechnologies.common.collection.OAlwaysGreaterKey;
+import com.orientechnologies.common.collection.OAlwaysLessKey;
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
@@ -78,10 +81,11 @@ public class OSQLMethodContainsValue extends OSQLMethod {
     final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
     if (indexUnfold == null) return;
     clazz = indexUnfold.getValue();
-    final OName fieldName = path.get(path.size()-1);
-    final OExpression fieldValue = stack.getValue();
+    final OName expfieldName = path.get(path.size()-1);
+    final String fieldName = expfieldName.getName();
+    final Object fieldValue = stack.getValue().evaluate(null, null);
     
-    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName);
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return;
@@ -90,17 +94,45 @@ public class OSQLMethodContainsValue extends OSQLMethod {
     boolean found = false;
     for(OIndex index : indexes){
       final OIndexDefinition definition = index.getDefinition();
-      if(!(definition instanceof OPropertyMapIndexDefinition)){
-        continue;
+      
+      if(definition instanceof OPropertyMapIndexDefinition){
+        final OPropertyMapIndexDefinition mdef = (OPropertyMapIndexDefinition) definition;
+        if(mdef.getIndexBy() != OPropertyMapIndexDefinition.INDEX_BY.VALUE){
+          continue;
+        }
+
+        //found a usable index
+        final Collection searchFor = Collections.singleton(fieldValue);
+        final Collection<OIdentifiable> ids = index.getValues(searchFor);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
       }
-      final OPropertyMapIndexDefinition mdef = (OPropertyMapIndexDefinition) definition;
-      if(mdef.getIndexBy() != OPropertyMapIndexDefinition.INDEX_BY.VALUE){
-        continue;
+      
+      //may be a composite index
+      final List<String> keyFields = definition.getFieldsToIndex();
+      final Object[] fkmin = new Object[keyFields.size()];
+      final Object[] fkmax = new Object[keyFields.size()];
+      boolean fieldfound = false;
+      for(int i=0;i<fkmax.length;i++){
+        final String s = keyFields.get(i);
+        if(s.startsWith(fieldName) && s.endsWith("by value")){
+          fieldfound = true;
+          fkmin[i] = fieldValue;
+          fkmax[i] = fieldValue;
+        }else{
+          fkmin[i] = new OAlwaysLessKey();
+          fkmax[i] = new OAlwaysGreaterKey();
+        }
       }
-            
+      if(!fieldfound) continue;
+
       //found a usable index
-      final Collection searchFor = Collections.singleton(fieldValue.evaluate(null, null));
-      final Collection<OIdentifiable> ids = index.getValues(searchFor);
+      final OCompositeKey minkey = new OCompositeKey(fkmin);
+      final OCompositeKey maxkey = new OCompositeKey(fkmax);
+      final Collection<OIdentifiable> ids = index.getValuesBetween(minkey, maxkey);
       searchResult.setState(OSearchResult.STATE.FILTER);
       searchResult.setIncluded(ids);
       updateStatistic(index);

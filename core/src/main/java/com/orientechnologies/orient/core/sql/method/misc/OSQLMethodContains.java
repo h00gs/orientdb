@@ -16,13 +16,27 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 
+import com.orientechnologies.common.collection.OAlwaysGreaterKey;
+import com.orientechnologies.common.collection.OAlwaysLessKey;
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OEquals;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OName;
+import com.orientechnologies.orient.core.sql.model.OPath;
+import com.orientechnologies.orient.core.sql.model.ORangedFilter;
 import com.orientechnologies.orient.core.sql.model.OSearchContext;
 import com.orientechnologies.orient.core.sql.model.OSearchResult;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * CONTAINS operator.
@@ -46,7 +60,81 @@ public class OSQLMethodContains extends OSQLMethod {
 
   @Override
   protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
+        
+    final String className = searchContext.getSource().getTargetClasse();
+    if (className == null) {
+      //no optimisation
+      return;
+    }
+    
+    if(children.size() != 2 || !(children.get(1) instanceof OLiteral) ){
+      //no optimisation
+      return;
+    }
+    
+    Map.Entry<List<OName>, OExpression> stack = ORangedFilter.toStackPath(children.get(0),children.get(1));
+    if (stack == null) return;
+
+    final List<OName> path = stack.getKey();
+    OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    if (indexUnfold == null) return;
+    clazz = indexUnfold.getValue();
+    final OName fieldName = path.get(path.size()-1);
+    final OExpression fieldValue = stack.getValue();
+    
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    boolean found = false;
+    for(OIndex index : indexes){
+      if(index.getKeyTypes().length == 1){
+        //perfect match index
+        //found a usable index
+        final Object key = fieldValue.evaluate(null, null);
+        final Collection searchFor = Collections.singleton(key);
+        final Collection<OIdentifiable> ids = index.getValues(searchFor);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
+      }else{
+        // composite key index
+        final List<String> fields = index.getDefinition().getFields();
+        if(fields.get(0).equalsIgnoreCase(fieldName.getName())){
+          //we can use this index by only setting the last key element
+          final Object fkv = fieldValue.evaluate(null, null);
+          final Object[] fkmin = new Object[fields.size()];
+          final Object[] fkmax = new Object[fields.size()];
+          fkmin[0] = fkv;
+          fkmax[0] = fkv;
+          for(int i=1;i<fkmax.length;i++){
+            fkmin[i] = new OAlwaysLessKey();
+            fkmax[i] = new OAlwaysGreaterKey();
+          }
+          final OCompositeKey minkey = new OCompositeKey(fkmin);
+          final OCompositeKey maxkey = new OCompositeKey(fkmax);
+          final Collection<OIdentifiable> ids = index.getValuesBetween(minkey, true, maxkey, true);
+          searchResult.setState(OSearchResult.STATE.FILTER);
+          searchResult.setIncluded(ids);
+          updateStatistic(index);
+          found = true;
+          break;
+        }
+      }
       
+    }
+    
+    if (!found) {
+      //could not find a proper index
+      return;
+    }
+    
+    OPath.foldIndexes(this, indexUnfold.getKey(), searchResult);
   }
   
   @Override

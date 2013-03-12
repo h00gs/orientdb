@@ -126,6 +126,13 @@ public class OOr extends OExpressionWithChildren{
       candidates = null;
       excluded.retainAll(rightExcluded);
       return;      
+    }else if(leftExcluded != null || rightExcluded != null){
+      //we can only preserve exclusion list
+      excluded = new HashSet<OIdentifiable>();
+      if(leftExcluded != null) excluded.addAll(leftExcluded);
+      if(rightExcluded != null) excluded.addAll(rightExcluded);
+      included = null;
+      candidates = null;
     }else{
       //merge included and candidates
       included = new HashSet<OIdentifiable>();
