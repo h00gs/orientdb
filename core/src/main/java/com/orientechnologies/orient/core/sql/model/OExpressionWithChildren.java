@@ -50,7 +50,7 @@ public abstract class OExpressionWithChildren extends OExpressionAbstract {
   }
   
   @Override
-  public final OSearchResult searchIndex(OSearchContext searchContext) {
+  public OSearchResult searchIndex(OSearchContext searchContext) {
     searchResult = new OSearchResult(this);
     for(OExpression child : children){
       //children search optimization

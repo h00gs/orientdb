@@ -29,17 +29,17 @@ import java.util.Map;
  *
  * @author Johann Sorel (Geomatys)
  */
-public abstract class OBinaryFilter extends OExpressionWithChildren {
+public abstract class ORangedFilter extends OExpressionWithChildren {
 
-  public OBinaryFilter(List<OExpression> arguments) {
+  public ORangedFilter(List<OExpression> arguments) {
     super(arguments);
   }
 
-  public OBinaryFilter(String alias, List<OExpression> arguments) {
+  public ORangedFilter(String alias, List<OExpression> arguments) {
     super(alias, arguments);
   }
 
-  public OBinaryFilter(String alias, OExpression... children) {
+  public ORangedFilter(String alias, OExpression... children) {
     super(alias, children);
   }
 

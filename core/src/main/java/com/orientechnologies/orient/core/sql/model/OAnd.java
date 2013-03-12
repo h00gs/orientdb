@@ -16,16 +16,21 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OAlwaysGreaterKey;
+import com.orientechnologies.common.collection.OAlwaysLessKey;
 import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -70,54 +75,93 @@ public class OAnd extends OExpressionWithChildren{
     }
     return Boolean.TRUE;
   }
-
-  @Override
-  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
-
+ 
+  public OSearchResult searchIndex(OSearchContext searchContext) {
+    searchResult = new OSearchResult(this);
+        
     final String className = searchContext.getSource().getTargetClasse();
     combineIndex:
     if (className != null) {
-      //see if we have a multikey index for pattern : field1 = value1 AND field2 = value2
-      if (getChildren().get(0) instanceof OEquals && getChildren().get(1) instanceof OEquals) {
-        final Entry<OName, OExpression> e1 = OEquals.isSimple((OEquals) getChildren().get(0));
-        final Entry<OName, OExpression> e2 = OEquals.isSimple((OEquals) getChildren().get(1));
-        if (e1 == null || e2 == null) {
+      //see if we have a multikey index for pattern : field1 <op> value1 AND field2 <op> value2 ...
+      final Map<String,FieldRange> ranges = new HashMap<String,FieldRange>();      
+      for(OExpression exp : children){
+        final FieldRange range = toFieldRange(exp);
+        if(range == null){
+          //no optimization
           break combineIndex;
         }
-
-        //search for an index
-        final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-        final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(e1.getKey().getName(), e2.getKey().getName());
-        if (indexes == null || indexes.isEmpty()) {
-          //no index usable
-          return;
-        }
-
-        for (OIndex index : indexes) {
-          if (index.getKeyTypes().length != 2) {
-            continue;
+        
+        if(ranges.containsKey(range.fieldName)){
+          //merge ranges
+          final Object mergeResult = ranges.get(range.fieldName).merge(range);
+          if(mergeResult == null){
+            //conditions makes it so nothing can match
+            searchResult.setState(OSearchResult.STATE.FILTER);
+            searchResult.setExcluded(OSearchResult.ALL);
+            return searchResult;
+          }else if(Boolean.FALSE.equals(mergeResult)){
+            //merge failed, index not usable
+            break combineIndex;
+          }else{
+            //merge succesfull
           }
-          //found a usable index              
-          final List<String> fields = index.getDefinition().getFields();
-          final Object[] key = new Object[2];
-          if (fields.get(0).equalsIgnoreCase(e1.getKey().getName())) {
-            key[0] = e1.getValue().evaluate(null, null);
-            key[1] = e2.getValue().evaluate(null, null);
-          } else {
-            key[0] = e2.getValue().evaluate(null, null);
-            key[1] = e1.getValue().evaluate(null, null);
-          }
-
-          final Collection searchFor = Collections.singleton(new OCompositeKey(key));
-          final Collection<OIdentifiable> ids = index.getValues(searchFor);
-          result.setState(OSearchResult.STATE.FILTER);
-          result.setIncluded(ids);
-          updateStatistic(index);
-          return;
+        }else{
+          ranges.put(range.fieldName,range);
         }
       }
+      
+      //search for an index
+      final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+      final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(ranges.keySet());
+      if (indexes == null || indexes.isEmpty()) {
+        //no index usable
+        break combineIndex;
+      }
+      
+      for (OIndex index : indexes) {
+        //found a usable index
+        final List<String> fieldKeys = index.getDefinition().getFields();
+        final Object[] fkmin = new Object[fieldKeys.size()];
+        final Object[] fkmax = new Object[fieldKeys.size()];
+        boolean minInc = true;
+        boolean maxInc = true;
+        for(int i=0;i<fkmin.length;i++){
+          final String name = fieldKeys.get(i);
+          final FieldRange range = ranges.get(name);
+          if(range == null){
+            fkmin[i] = new OAlwaysLessKey();
+            fkmax[i] = new OAlwaysGreaterKey();
+            minInc = true;
+            maxInc = true;
+          }else{
+            fkmin[i] = range.min;
+            fkmax[i] = range.max;
+            minInc = range.isMinInclusive;
+            maxInc = range.isMaxInclusive;
+          }
+        }
+        
+        final OCompositeKey minkey = new OCompositeKey(fkmin);
+        final OCompositeKey maxkey = new OCompositeKey(fkmax);
+        final Collection<OIdentifiable> ids = index.getValuesBetween(minkey, minInc, maxkey, maxInc);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        return searchResult;
+      }      
     }
-
+    
+    //no composite key index could be used, use basic merge.    
+    for(OExpression child : children){
+      //children search optimization
+      child.searchIndex(searchContext);
+    }
+    analyzeSearchIndex(searchContext, searchResult);
+    return searchResult;
+  }
+  
+  @Override
+  protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
 
     //no combined key index could be used, fallback on left/right merge.
     final OSearchResult resLeft = new OSearchResult(this);
@@ -245,6 +289,224 @@ public class OAnd extends OExpressionWithChildren{
   @Override
   public OAnd copy() {
     return new OAnd(alias,new ArrayList<OExpression>(getChildren()));
+  }
+  
+  private static FieldRange toFieldRange(OExpression candidate){
+    if(candidate instanceof ORangedFilter && !(candidate instanceof ONotEquals) ){
+      //test is equality match pattern : field op value
+      final ORangedFilter exp = (ORangedFilter) candidate;
+      OName fieldName;
+      Object value;
+      final boolean flip;
+      if(exp.getLeft() instanceof OName && exp.getRight().isStatic()){
+        fieldName = (OName) exp.getLeft();
+        value = exp.getRight().evaluate(null, null);
+        flip = false;
+      }else if(exp.getLeft().isStatic() && exp.getRight() instanceof OName){
+        fieldName = (OName) exp.getRight();
+        value = exp.getLeft().evaluate(null, null);
+        flip = true;
+      }else{
+        //no optimisation
+        return null;
+      }
+      
+      final FieldRange fr = new FieldRange();
+      fr.fieldName = fieldName.getName();
+      if(candidate instanceof OEquals){
+        fr.min = fr.max = value;
+        fr.isMinInclusive = fr.isMaxInclusive = true;
+      }else if(candidate instanceof OInferior){
+        if(flip){
+          fr.max = new OAlwaysGreaterKey();
+          fr.isMaxInclusive = true;
+          fr.min = value;
+          fr.isMinInclusive = false;
+        }else{
+          fr.max = value;
+          fr.isMaxInclusive = false;
+          fr.min = new OAlwaysLessKey();
+          fr.isMinInclusive = true;
+        }
+      }else if(candidate instanceof OInferiorEquals){
+        if(flip){
+          fr.max = new OAlwaysGreaterKey();
+          fr.isMaxInclusive = true;
+          fr.min = value;
+          fr.isMinInclusive = true;
+        }else{
+          fr.max = value;
+          fr.isMaxInclusive = true;
+          fr.min = new OAlwaysLessKey();
+          fr.isMinInclusive = true;
+        }
+      }else if(candidate instanceof OSuperior){
+        if(flip){
+          fr.max = value;
+          fr.isMaxInclusive = false;
+          fr.min = new OAlwaysLessKey();
+          fr.isMinInclusive = true;
+        }else{
+          fr.max = new OAlwaysGreaterKey();
+          fr.isMaxInclusive = true;
+          fr.min = value;
+          fr.isMinInclusive = false;
+        }
+      }else if(candidate instanceof OSuperiorEquals){
+        if(flip){
+          fr.max = value;
+          fr.isMaxInclusive = true;
+          fr.min = new OAlwaysLessKey();
+          fr.isMinInclusive = true;
+        }else{
+          fr.max = new OAlwaysGreaterKey();
+          fr.isMaxInclusive = true;
+          fr.min = value;
+          fr.isMinInclusive = true;
+        }
+      }
+      
+      return fr;
+    }else if(candidate instanceof OBetween){
+      final OBetween between = (OBetween) candidate;
+      if(between.getTarget() instanceof OName && between.getLeft().isStatic() && between.getRight().isStatic()){
+        final FieldRange fr = new FieldRange();
+        fr.fieldName = ((OName)between.getTarget()).getName();
+        fr.min = between.getLeft().evaluate(null, null);
+        fr.max = between.getRight().evaluate(null, null);
+        fr.isMinInclusive = true;
+        fr.isMaxInclusive = true;
+        return fr;
+      }
+    }
+    
+    return null;
+  }
+  
+  private static class FieldRange{
+    String fieldName;
+    Object min;
+    Object max;
+    boolean isMinInclusive;
+    boolean isMaxInclusive;
+    
+    public boolean isPonctual(){
+      return min == max;
+    }
+    
+    public boolean contains(Object candidate){
+      if(min instanceof OAlwaysLessKey){
+        //ok
+      }else{
+        try{
+          final int c = ((Comparable)min).compareTo(candidate);
+          if(c > 0){
+            return false;
+          }else if(c == 0 && !isMinInclusive){
+            return false;
+          }
+        }catch(Exception ex){
+          //we tryed
+          return false;
+        }
+      }
+      
+      if(max instanceof OAlwaysGreaterKey){
+        //ok
+      }else{
+        try{
+          final int c = ((Comparable)max).compareTo(candidate);
+          if(c < 0){
+            return false;
+          }else if(c == 0 && !isMaxInclusive){
+            return false;
+          }
+        }catch(Exception ex){
+          //we tryed
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    /**
+     * Try to merge range
+     * @param range
+     * @return true if merge is successful.
+     *         false if merge is impossible
+     *         null if merge result in an impossible match
+     */
+    private Object merge(FieldRange range){
+      if(isPonctual() && range.isPonctual()){
+        if(this.min.equals(range.min)){
+          //same
+          return true;
+        }else{
+          //ranges are different ponctual values
+          //nothing can match
+          return null;
+        }
+      }else if(isPonctual()){
+        //one ponctual, one range
+        return range.contains(min);
+      }else if(range.isPonctual()){
+        //one range, one ponctual
+        return contains(range.min);
+      }
+      
+      if(min instanceof OAlwaysLessKey){
+        min = range.min;
+        isMinInclusive = range.isMinInclusive;
+      }else if(range.min instanceof OAlwaysLessKey){
+        //keep current
+      }else{
+        //keep the maximum value
+        try{
+          if(min instanceof Comparable){
+            if(((Comparable)min).compareTo(range.min) >=0){
+              //keep curent
+              isMinInclusive = isMinInclusive && range.isMinInclusive;
+            }else{
+              min = range.min;
+              isMinInclusive = range.isMinInclusive;
+            }
+          }else{
+            return false;
+          }
+        }catch(Exception ex){
+          //we tryed
+          return false;
+        }
+      }
+      
+      if(max instanceof OAlwaysGreaterKey){
+        max = range.max;
+        isMaxInclusive = range.isMaxInclusive;
+      }else if(range.max instanceof OAlwaysGreaterKey){
+        //keep current
+      }else{
+        //keep the minimum value
+        try{
+          if(max instanceof Comparable){
+            if(((Comparable)max).compareTo(range.max) <=0){
+              //keep current
+              isMaxInclusive = isMaxInclusive && range.isMaxInclusive;
+            }else{
+              max = range.max;
+              isMaxInclusive = range.isMaxInclusive;
+            }
+          }else{
+            return false;
+          }
+        }catch(Exception ex){
+          //we tryed
+          return false;
+        }
+      }
+      
+      return true;
+    }    
   }
   
 }

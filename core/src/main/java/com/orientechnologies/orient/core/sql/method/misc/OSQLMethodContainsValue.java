@@ -16,13 +16,25 @@
 package com.orientechnologies.orient.core.sql.method.misc;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.index.OIndexDefinition;
+import com.orientechnologies.orient.core.index.OPropertyMapIndexDefinition;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
+import com.orientechnologies.orient.core.sql.model.OName;
+import com.orientechnologies.orient.core.sql.model.OPath;
+import com.orientechnologies.orient.core.sql.model.ORangedFilter;
 import com.orientechnologies.orient.core.sql.model.OSearchContext;
 import com.orientechnologies.orient.core.sql.model.OSearchResult;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * CONTAINS VALUE operator.
@@ -47,6 +59,61 @@ public class OSQLMethodContainsValue extends OSQLMethod {
   @Override
   protected void analyzeSearchIndex(OSearchContext searchContext, OSearchResult result) {
       
+    final String className = searchContext.getSource().getTargetClasse();
+    if (className == null) {
+      //no optimisation
+      return;
+    }
+    
+    if(children.size() != 2 || !(children.get(1) instanceof OLiteral) ){
+      //no optimisation
+      return;
+    }
+    
+    Map.Entry<List<OName>, OExpression> stack = ORangedFilter.toStackPath(children.get(0),children.get(1));
+    if (stack == null) return;
+
+    final List<OName> path = stack.getKey();
+    OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
+    final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    if (indexUnfold == null) return;
+    clazz = indexUnfold.getValue();
+    final OName fieldName = path.get(path.size()-1);
+    final OExpression fieldValue = stack.getValue();
+    
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    if(indexes == null || indexes.isEmpty()){
+      //no index usable
+      return;
+    }
+    
+    boolean found = false;
+    for(OIndex index : indexes){
+      final OIndexDefinition definition = index.getDefinition();
+      if(!(definition instanceof OPropertyMapIndexDefinition)){
+        continue;
+      }
+      final OPropertyMapIndexDefinition mdef = (OPropertyMapIndexDefinition) definition;
+      if(mdef.getIndexBy() != OPropertyMapIndexDefinition.INDEX_BY.VALUE){
+        continue;
+      }
+            
+      //found a usable index
+      final Collection searchFor = Collections.singleton(fieldValue.evaluate(null, null));
+      final Collection<OIdentifiable> ids = index.getValues(searchFor);
+      searchResult.setState(OSearchResult.STATE.FILTER);
+      searchResult.setIncluded(ids);
+      updateStatistic(index);
+      found = true;
+      break;
+    }
+    
+    if (!found) {
+      //could not find a proper index
+      return;
+    }
+    
+    OPath.foldIndexes(this, indexUnfold.getKey(), searchResult);
   }
   
   @Override

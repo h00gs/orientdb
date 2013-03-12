@@ -70,7 +70,7 @@ public class OBetween extends OExpressionWithChildren{
         return;
     }
     
-    Map.Entry<List<OName>, OExpression> stack = OBinaryFilter.toStackPath(getTarget(),OExpression.INCLUDE);
+    Map.Entry<List<OName>, OExpression> stack = ORangedFilter.toStackPath(getTarget(),OExpression.INCLUDE);
     if (stack == null) return;
 
     final List<OName> path = stack.getKey();

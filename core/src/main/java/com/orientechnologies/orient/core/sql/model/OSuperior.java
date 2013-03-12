@@ -16,19 +16,21 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OSuperior extends OBinaryFilter{
+public class OSuperior extends ORangedFilter{
   
   public OSuperior(OExpression left, OExpression right) {
     this(null,left,right);
@@ -45,12 +47,13 @@ public class OSuperior extends OBinaryFilter{
 
   @Override
   protected boolean analyzeSearchIndex(OSearchContext searchContext, OSearchResult result, 
-        OClass clazz, OName fieldName, OExpression fieldValue) {
+        OClass clazz, OName expfieldName, OExpression fieldValue) {
       
     final boolean above = (getLeft() instanceof OName || getLeft() instanceof OPath);
     
     //search for an index
-    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    final String fieldName = expfieldName.getName();
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName);
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return false;
@@ -58,23 +61,40 @@ public class OSuperior extends OBinaryFilter{
     
     boolean found = false;
     for(OIndex index : indexes){
-      if(index.getKeyTypes().length != 1){
-        continue;
-      }
-      
-      //found a usable index
-      final Object key = fieldValue.evaluate(null, null);
-      final Collection<OIdentifiable> ids;
-      if(above){
-          ids = index.getValuesMajor(key, false);
+      if(index.getKeyTypes().length == 1){
+        //found a usable index
+        final Object key = fieldValue.evaluate(null, null);
+        final Collection<OIdentifiable> ids;
+        if(above){
+            ids = index.getValuesMajor(key, false);
+        }else{
+            ids = index.getValuesMinor(key, false);
+        }
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
       }else{
-          ids = index.getValuesMinor(key, false);
-      }
-      searchResult.setState(OSearchResult.STATE.FILTER);
-      searchResult.setIncluded(ids);
-      updateStatistic(index);
-      found = true;
-      break;
+        // composite key index
+        final List<String> fields = index.getDefinition().getFields();
+        if(fields.get(0).equalsIgnoreCase(fieldName)){
+          //we can use this index by only setting the last key element
+          final Object fkv = fieldValue.evaluate(null, null);
+          final OCompositeKey key = new OCompositeKey(fkv);
+          final Collection<OIdentifiable> ids;
+          if(above){
+            ids = index.getValuesMajor(key, false);
+          }else{
+            ids = index.getValuesMinor(key, false);
+          }
+          searchResult.setState(OSearchResult.STATE.FILTER);
+          searchResult.setIncluded(ids);
+          updateStatistic(index);
+          found = true;
+          break;
+        }
+      }      
     }
     return found;
   }

@@ -21,7 +21,7 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.sql.method.OSQLMethod;
-import com.orientechnologies.orient.core.sql.model.OBinaryFilter;
+import com.orientechnologies.orient.core.sql.model.ORangedFilter;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
 import com.orientechnologies.orient.core.sql.model.OName;
@@ -66,7 +66,7 @@ public class OSQLMethodContainsText extends OSQLMethod {
       return;
     }
     
-    Map.Entry<List<OName>, OExpression> stack = OBinaryFilter.toStackPath(children.get(0),children.get(1));
+    Map.Entry<List<OName>, OExpression> stack = ORangedFilter.toStackPath(children.get(0),children.get(1));
     if (stack == null) return;
 
     final List<OName> path = stack.getKey();

@@ -730,7 +730,7 @@ public class IndexTest {
 
     Assert.assertEquals(expectedNicks.size(), 0);
     long newIndexQueries = Orient.instance().getProfiler().getCounter("db.demo.query.indexUsed");
-    Assert.assertEquals(newIndexQueries, indexQueries);
+    Assert.assertEquals(newIndexQueries, indexQueries+4);
   }
 
   public void populateIndexDocuments() {

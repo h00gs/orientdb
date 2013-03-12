@@ -63,7 +63,7 @@ public class OIn extends OExpressionWithChildren{
       return;
     }
     
-    Map.Entry<List<OName>, OExpression> stack = OBinaryFilter.toStackPath(getLeft(),getRight());
+    Map.Entry<List<OName>, OExpression> stack = ORangedFilter.toStackPath(getLeft(),getRight());
     if (stack == null) return;
 
     final List<OName> path = stack.getKey();

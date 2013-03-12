@@ -29,13 +29,14 @@ import java.text.ParseException;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OInferior extends OBinaryFilter{
+public class OInferior extends ORangedFilter{
   
   public OInferior(OExpression left, OExpression right) {
     this(null,left,right);
@@ -52,12 +53,13 @@ public class OInferior extends OBinaryFilter{
 
   @Override
   protected boolean analyzeSearchIndex(OSearchContext searchContext, OSearchResult result, 
-        OClass clazz, OName fieldName, OExpression fieldValue) {
+        OClass clazz, OName expfieldName, OExpression fieldValue) {
       
     final boolean under = (getLeft() instanceof OName || getLeft() instanceof OPath);
     
     //search for an index
-    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName.getName());
+    final String fieldName = expfieldName.getName();
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName);
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return false;
@@ -65,23 +67,40 @@ public class OInferior extends OBinaryFilter{
     
     boolean found = false;
     for(OIndex index : indexes){
-      if(index.getKeyTypes().length != 1){
-        continue;
-      }
-      
-      //found a usable index
-      final Object key = fieldValue.evaluate(null, null);
-      final Collection<OIdentifiable> ids;
-      if(under){
-          ids = index.getValuesMinor(key, false);
+      if(index.getKeyTypes().length == 1){
+        //found a usable index
+        final Object key = fieldValue.evaluate(null, null);
+        final Collection<OIdentifiable> ids;
+        if(under){
+            ids = index.getValuesMinor(key, false);
+        }else{
+            ids = index.getValuesMajor(key, false);
+        }
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
       }else{
-          ids = index.getValuesMajor(key, false);
+        // composite key index
+        final List<String> fields = index.getDefinition().getFields();
+        if(fields.get(0).equalsIgnoreCase(fieldName)){
+          //we can use this index by only setting the last key element
+          final Object fkv = fieldValue.evaluate(null, null);
+          final OCompositeKey key = new OCompositeKey(fkv);
+          final Collection<OIdentifiable> ids;
+          if(under){
+            ids = index.getValuesMinor(key, false);
+          }else{
+            ids = index.getValuesMajor(key, false);
+          }
+          searchResult.setState(OSearchResult.STATE.FILTER);
+          searchResult.setIncluded(ids);
+          updateStatistic(index);
+          found = true;
+          break;
+        }
       }
-      searchResult.setState(OSearchResult.STATE.FILTER);
-      searchResult.setIncluded(ids);
-      updateStatistic(index);
-      found = true;
-      break;
     }
     return found;
   }

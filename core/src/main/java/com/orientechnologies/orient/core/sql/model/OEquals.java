@@ -16,6 +16,8 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OAlwaysGreaterKey;
+import com.orientechnologies.common.collection.OAlwaysLessKey;
 import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -28,6 +30,7 @@ import java.util.AbstractMap;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -35,7 +38,7 @@ import java.util.Set;
  *
  * @author Johann Sorel (Geomatys)
  */
-public class OEquals extends OBinaryFilter{
+public class OEquals extends ORangedFilter{
   
   public OEquals(OExpression left, OExpression right) {
     this(null,left,right);
@@ -59,7 +62,8 @@ public class OEquals extends OBinaryFilter{
   protected boolean analyzeSearchIndex(final OSearchContext searchContext, final OSearchResult result, 
         final OClass clazz, final OName equalFieldName, final OExpression equalFieldValue) {
     //search for an index
-    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(equalFieldName.getName());
+    final String fieldName = equalFieldName.getName();
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(fieldName);
     if(indexes == null || indexes.isEmpty()){
       //no index usable
       return false;
@@ -67,40 +71,45 @@ public class OEquals extends OBinaryFilter{
     
     boolean found = false;
     for(OIndex index : indexes){
-      if(index.getKeyTypes().length != 1){
-        continue;
+      if(index.getKeyTypes().length == 1){
+        //perfect match index
+        //found a usable index
+        final Object key = equalFieldValue.evaluate(null, null);
+        final Collection searchFor = Collections.singleton(key);
+        final Collection<OIdentifiable> ids = index.getValues(searchFor);
+        searchResult.setState(OSearchResult.STATE.FILTER);
+        searchResult.setIncluded(ids);
+        updateStatistic(index);
+        found = true;
+        break;
+      }else{
+        // composite key index
+        final List<String> fields = index.getDefinition().getFields();
+        if(fields.get(0).equalsIgnoreCase(fieldName)){
+          //we can use this index by only setting the last key element
+          final Object fkv = equalFieldValue.evaluate(null, null);
+          final Object[] fkmin = new Object[fields.size()];
+          final Object[] fkmax = new Object[fields.size()];
+          fkmin[0] = fkv;
+          fkmax[0] = fkv;
+          for(int i=1;i<fkmax.length;i++){
+            fkmin[i] = new OAlwaysLessKey();
+            fkmax[i] = new OAlwaysGreaterKey();
+          }
+          final OCompositeKey minkey = new OCompositeKey(fkmin);
+          final OCompositeKey maxkey = new OCompositeKey(fkmax);
+          final Collection<OIdentifiable> ids = index.getValuesBetween(minkey, true, maxkey, true);
+          searchResult.setState(OSearchResult.STATE.FILTER);
+          searchResult.setIncluded(ids);
+          updateStatistic(index);
+          found = true;
+          break;
+        }
       }
       
-      //found a usable index
-      final Collection searchFor = Collections.singleton(equalFieldValue.evaluate(null, null));
-      final Collection<OIdentifiable> ids = index.getValues(searchFor);
-      searchResult.setState(OSearchResult.STATE.FILTER);
-      searchResult.setIncluded(ids);
-      updateStatistic(index);
-      found = true;
-      break;
     }
     return found;
   }
-  
-  static Entry<OName,OExpression> isSimple(OEquals exp){
-    //test is equality match pattern : field = value
-    OName fieldName;
-    OExpression literal;
-    if(exp.getLeft() instanceof OName && exp.getRight().isStatic()){
-      fieldName = (OName) exp.getLeft();
-      literal = (OLiteral) exp.getRight();
-    }else if(exp.getLeft().isStatic() && exp.getRight() instanceof OName){
-      fieldName = (OName) exp.getRight();
-      literal = (OLiteral) exp.getLeft();
-    }else{
-      //no optimisation
-      return null;
-    }
-    return new AbstractMap.SimpleImmutableEntry<OName, OExpression>(fieldName, literal);
-  }
-  
-  
   
   public static boolean equals(OExpression left, OExpression right, OCommandContext context, Object candidate){
     final Object value1 = left.evaluate(context, candidate);

@@ -118,7 +118,7 @@ public class OTransactionOptimistic extends OTransactionRealAbstract {
         database.getStorage().callInLock(new Callable<Void>() {
 
           public Void call() throws Exception {
-
+            
             database.getStorage().commit(OTransactionOptimistic.this);
 
             // COMMIT INDEX CHANGES

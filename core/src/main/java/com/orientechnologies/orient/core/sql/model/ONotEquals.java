@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * @author Johann Sorel (Geomatys)
  */
-public class ONotEquals extends OBinaryFilter{
+public class ONotEquals extends ORangedFilter{
   
   public ONotEquals(OExpression left, OExpression right) {
     this(null,left,right);
