@@ -19,6 +19,7 @@ package com.orientechnologies.orient.core.sql.model;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import static com.orientechnologies.orient.core.sql.model.OEquals.toStackPath;
+import com.orientechnologies.orient.core.sql.model.OPath.FoldSegment;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,11 +70,10 @@ public abstract class ORangedFilter extends OExpressionWithChildren {
 
     final List<OName> path = stack.getKey();
     OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-    final Map.Entry<List<OIndex>, OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    final Map.Entry<List<FoldSegment>, OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
     if (indexUnfold == null) {
       return;
     }
-    final List<OIndex> walk = indexUnfold.getKey();
     clazz = indexUnfold.getValue();
 
     final OName equalFieldName = path.get(path.size() - 1);
@@ -86,7 +86,7 @@ public abstract class ORangedFilter extends OExpressionWithChildren {
     }
 
     //unfold the path
-    OPath.foldIndexes(this, walk, searchResult);
+    OPath.foldIndexes(this, indexUnfold.getKey(), searchResult);
   }
 
   /**

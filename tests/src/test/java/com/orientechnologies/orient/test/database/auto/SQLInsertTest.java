@@ -245,17 +245,18 @@ public class SQLInsertTest {
 
   @Test
   public void insertSubQuery() {
-     database.open("admin", "admin");
-
-    ODocument doc = (ODocument) database.command(new OCommandSQL("INSERT INTO test SET names = (select name from OUser)"))
+    database.open("admin", "admin");
+    try{
+      ODocument doc = (ODocument) database.command(new OCommandSQL("INSERT INTO test SET names = (select name from OUser)"))
         .execute();
 
-    Assert.assertTrue(doc != null);
-    Assert.assertNotNull(doc.field("names"));
-    Assert.assertTrue(doc.field("names") instanceof Collection);
-    Assert.assertEquals(((Collection<?>) doc.field("names")).size(), 3);
-
-    database.close();
+      Assert.assertTrue(doc != null);
+      Assert.assertNotNull(doc.field("names"));
+      Assert.assertTrue(doc.field("names") instanceof Collection);
+      Assert.assertEquals(((Collection<?>) doc.field("names")).size(), 3);
+    }finally{
+        database.close();
+    }
   }
 
   @Test

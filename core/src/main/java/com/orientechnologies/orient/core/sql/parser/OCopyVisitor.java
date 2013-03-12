@@ -398,11 +398,11 @@ public class OCopyVisitor implements OExpressionVisitor {
     cp.setAlias(candidate.getAlias());
     cp.setSource(candidate.getSource());
     for(OExpression e : candidate.getSubfields()){
-        cp.getSubfields().add((OExpression)visit(e,data));
+        cp.getSubfields().add((OExpression)e.accept(this,data));
     }
     cp.setStartDepth(candidate.getStartDepth());
     cp.setEndDepth(candidate.getEndDepth());
-    cp.setFilter((OExpression)visit(candidate.getFilter(),data));
+    cp.setFilter((OExpression)candidate.getFilter().accept(this,data));
     return cp;
   }
 }

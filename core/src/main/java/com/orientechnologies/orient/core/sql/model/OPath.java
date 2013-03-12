@@ -16,12 +16,16 @@
  */
 package com.orientechnologies.orient.core.sql.model;
 
+import com.orientechnologies.common.collection.OAlwaysGreaterKey;
+import com.orientechnologies.common.collection.OAlwaysLessKey;
+import com.orientechnologies.common.collection.OCompositeKey;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,8 +111,8 @@ public class OPath extends OExpressionWithChildren{
       }
   }
   
-  public static Map.Entry<List<OIndex>,OClass> unfoldIndexes(List<OName> path, OClass clazz){
-    final List<OIndex> walk = new ArrayList<OIndex>();
+  public static Map.Entry<List<FoldSegment>,OClass> unfoldIndexes(List<OName> path, OClass clazz){
+    final List<FoldSegment> walk = new ArrayList<FoldSegment>();
     for (int i = 0, n = path.size() - 1; i < n; i++) {
       final OName name = path.get(i);
       //path element
@@ -124,11 +128,15 @@ public class OPath extends OExpressionWithChildren{
       }
       boolean found = false;
       for (OIndex index : indexes) {
-        if (index.getKeyTypes().length != 1) {
+        if(!index.getDefinition().getFields().get(0).equalsIgnoreCase(name.getName())){
           continue;
         }
+        
         found = true;
-        walk.add(index);
+        final FoldSegment segment = new FoldSegment();
+        segment.index = index;
+        segment.fieldName =name.getName();
+        walk.add(segment);
       }
       if (!found) {
         //no index usable
@@ -137,21 +145,50 @@ public class OPath extends OExpressionWithChildren{
       clazz = prop.getLinkedClass();
     }
     
-    return new AbstractMap.SimpleImmutableEntry<List<OIndex>,OClass>(walk, clazz);
+    return new AbstractMap.SimpleImmutableEntry<List<FoldSegment>,OClass>(walk, clazz);
   }
   
-  public static void foldIndexes(OExpressionAbstract exp, final List<OIndex> walk, final OSearchResult searchResult) {
+  public static void foldIndexes(OExpressionAbstract exp, final List<FoldSegment> walk, final OSearchResult searchResult) {
     //unfold the path
     for (int i = walk.size() - 1; i >= 0; i--) {
-      final OIndex wi = walk.get(i);
-      if (searchResult.getIncluded() != null) {
-        searchResult.setIncluded(wi.getValues(searchResult.getIncluded()));
-      } else {
-        searchResult.setExcluded(wi.getValues(searchResult.getExcluded()));
+      final FoldSegment wi = walk.get(i);
+      final List<String> keyFields = wi.index.getDefinition().getFields();
+      if(keyFields.size() == 1){
+        if (searchResult.getIncluded() != null) {
+          searchResult.setIncluded(wi.index.getValues(searchResult.getIncluded()));
+        } else {
+          searchResult.setExcluded(wi.index.getValues(searchResult.getExcluded()));
+        }
+        exp.updateStatistic(wi.index);
+      }else{
+        final Collection sublst;
+        if (searchResult.getIncluded() != null) {
+          sublst = searchResult.getIncluded();
+        } else {
+          sublst = searchResult.getExcluded();
+        }
+        
+        final Collection search = new ArrayList();
+        for(Object o : sublst){
+          final Object[] fk = new Object[1];
+          fk[0] = o;
+          search.add(new OCompositeKey(fk));
+        }
+        
+        if (searchResult.getIncluded() != null) {
+          searchResult.setIncluded(wi.index.getValues(search));
+        } else {
+          searchResult.setExcluded(wi.index.getValues(search));
+        }
+        exp.updateStatistic(wi.index);
       }
-      exp.updateStatistic(wi);
     }
   }
   
-  
+  public static final class FoldSegment{
+    
+    private OIndex index;
+    private String fieldName;
+    
+  }
 }

@@ -265,7 +265,6 @@ public final class SQLGrammarUtils {
           final OCommandRequest iRequest, final Class<T> c) throws OCommandSQLParsingException{
     
     final String sql = ((OCommandRequestText) iRequest).getText();
-    System.err.println("|||||||||||||||||||| "+ sql);
     final ParseTree tree = compileExpression(sql);
     //System.err.println(toString(tree));
     checkErrorNodes(tree);

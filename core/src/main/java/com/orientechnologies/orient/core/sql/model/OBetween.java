@@ -23,6 +23,7 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.sql.model.OPath.FoldSegment;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,7 @@ public class OBetween extends OExpressionWithChildren{
 
     final List<OName> path = stack.getKey();
     OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-    final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    final Map.Entry<List<FoldSegment>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
     if (indexUnfold == null) return;
     clazz = indexUnfold.getValue();
     final OName expfieldName = path.get(path.size()-1);

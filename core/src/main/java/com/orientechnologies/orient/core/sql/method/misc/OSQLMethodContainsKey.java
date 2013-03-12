@@ -79,7 +79,7 @@ public class OSQLMethodContainsKey extends OSQLMethod {
 
     final List<OName> path = stack.getKey();
     OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-    final Map.Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    final Map.Entry<List<OPath.FoldSegment>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
     if (indexUnfold == null) return;
     clazz = indexUnfold.getValue();
     final OName expfieldName = path.get(path.size()-1);

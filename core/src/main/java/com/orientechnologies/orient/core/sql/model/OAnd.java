@@ -118,6 +118,7 @@ public class OAnd extends OExpressionWithChildren{
         break combineIndex;
       }
       
+      indexsearch:
       for (OIndex index : indexes) {
         //found a usable index
         final List<String> fieldKeys = index.getDefinition().getFields();
@@ -136,8 +137,10 @@ public class OAnd extends OExpressionWithChildren{
           }else{
             fkmin[i] = range.min;
             fkmax[i] = range.max;
-            minInc = range.isMinInclusive;
-            maxInc = range.isMaxInclusive;
+            if(i<fkmin.length-1 && (range.isMinInclusive||range.isMaxInclusive)){
+              //extremity are allowed only the last field
+              continue indexsearch;
+            }
           }
         }
         
@@ -319,36 +322,36 @@ public class OAnd extends OExpressionWithChildren{
       }else if(candidate instanceof OInferior){
         if(flip){
           fr.max = new OAlwaysGreaterKey();
-          fr.isMaxInclusive = true;
+          fr.isMaxInclusive = false;
           fr.min = value;
           fr.isMinInclusive = false;
         }else{
           fr.max = value;
           fr.isMaxInclusive = false;
           fr.min = new OAlwaysLessKey();
-          fr.isMinInclusive = true;
+          fr.isMinInclusive = false;
         }
       }else if(candidate instanceof OInferiorEquals){
         if(flip){
           fr.max = new OAlwaysGreaterKey();
-          fr.isMaxInclusive = true;
+          fr.isMaxInclusive = false;
           fr.min = value;
           fr.isMinInclusive = true;
         }else{
           fr.max = value;
           fr.isMaxInclusive = true;
           fr.min = new OAlwaysLessKey();
-          fr.isMinInclusive = true;
+          fr.isMinInclusive = false;
         }
       }else if(candidate instanceof OSuperior){
         if(flip){
           fr.max = value;
           fr.isMaxInclusive = false;
           fr.min = new OAlwaysLessKey();
-          fr.isMinInclusive = true;
+          fr.isMinInclusive = false;
         }else{
           fr.max = new OAlwaysGreaterKey();
-          fr.isMaxInclusive = true;
+          fr.isMaxInclusive = false;
           fr.min = value;
           fr.isMinInclusive = false;
         }
@@ -357,10 +360,10 @@ public class OAnd extends OExpressionWithChildren{
           fr.max = value;
           fr.isMaxInclusive = true;
           fr.min = new OAlwaysLessKey();
-          fr.isMinInclusive = true;
+          fr.isMinInclusive = false;
         }else{
           fr.max = new OAlwaysGreaterKey();
-          fr.isMaxInclusive = true;
+          fr.isMaxInclusive = false;
           fr.min = value;
           fr.isMinInclusive = true;
         }

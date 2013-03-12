@@ -71,7 +71,7 @@ public class OSQLMethodContainsText extends OSQLMethod {
 
     final List<OName> path = stack.getKey();
     OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-    final Entry<List<OIndex>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
+    final Entry<List<OPath.FoldSegment>,OClass> indexUnfold = OPath.unfoldIndexes(path, clazz);
     if (indexUnfold == null) return;
     clazz = indexUnfold.getValue();
     final OName fieldName = path.get(path.size()-1);
