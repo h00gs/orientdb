@@ -15,10 +15,6 @@
  */
 package com.orientechnologies.orient.core.sql.functions;
 
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.sql.model.OSearchContext;
-import com.orientechnologies.orient.core.sql.model.OSearchResult;
-import com.orientechnologies.orient.core.sql.model.OSortBy;
 import java.math.BigDecimal;
 
 /**

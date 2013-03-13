@@ -152,6 +152,7 @@ public class SelectTest {
     final OClass dockClass = schema.createClass("dock");
     dockClass.createProperty("name", OType.STRING);
     dockClass.createProperty("capacity", OType.DOUBLE);
+    dockClass.createProperty("boat", OType.EMBEDDED,boatClass);
     final OClass seaClass = schema.createClass("sea");
     seaClass.createProperty("name", OType.STRING);
     seaClass.createProperty("navigator", OType.EMBEDDED,boatClass);
@@ -166,6 +167,7 @@ public class SelectTest {
     final ODocument dock1 = db.newInstance(dockClass.getName());
     dock1.field("name","brest");
     dock1.field("capacity",120);
+    dock1.field("boat",boat);
     final ODocument dock2 = db.newInstance(dockClass.getName());
     dock2.field("name","alger");
     dock2.field("capacity",90);
@@ -311,11 +313,17 @@ public class SelectTest {
   }
   
   @Test
+  public void selectCustom2(){    
+    final OSQLSynchQuery query = new OSQLSynchQuery("SELECT FROM sea WHERE docks[@class ='dock'][boat.freight.name] = 'thon'");
+    final List<ODocument> docs = db.query(query);
+    assertEquals(docs.size(), 1);
+  }
+  
+  @Test
   public void selectFlatten(){    
     final OSQLSynchQuery query = new OSQLSynchQuery("SELECT flatten(docks2) FROM sea");
     final List<ODocument> docs = db.query(query);
     assertEquals(docs.size(), 1);
-    assertEquals(docs.get(0).fieldNames().length, 2);
     assertTrue(docs.get(0).getClassName().equals("dock"));
   }
   

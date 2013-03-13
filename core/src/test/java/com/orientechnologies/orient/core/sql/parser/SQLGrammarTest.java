@@ -16,16 +16,10 @@
  */
 package com.orientechnologies.orient.core.sql.parser;
 
-import com.orientechnologies.orient.core.sql.model.OAnd;
-import com.orientechnologies.orient.core.sql.model.OEquals;
+import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.sql.model.OExpression;
 import com.orientechnologies.orient.core.sql.model.OLiteral;
-import com.orientechnologies.orient.core.sql.model.OName;
-import com.orientechnologies.orient.core.sql.model.ONotEquals;
-import com.orientechnologies.orient.core.sql.model.OOperatorDivide;
-import com.orientechnologies.orient.core.sql.model.OOperatorMultiply;
 import com.orientechnologies.orient.core.sql.model.OOperatorPlus;
-import com.orientechnologies.orient.core.sql.model.OOr;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -40,7 +34,14 @@ public class SQLGrammarTest {
   public void oridTest(){ 
     final String str = "13:1";
     final OExpression exp = SQLGrammarUtils.parseExpression(str);
-    System.out.println(exp);
+    assertEquals(exp, new OLiteral(new ORecordId("#13:1")));
+  }
+  
+  @Test
+  public void mathopTest(){
+    final String str = "3+1";
+    final OExpression exp = SQLGrammarUtils.parseExpression(str);
+    assertEquals(exp, new OOperatorPlus(new OLiteral(3), new OLiteral(1)));
   }
   
 }

@@ -333,7 +333,7 @@ public class SQLSelectProjectionsTest {
       Assert.assertEquals(result.size(), 1);
 
       for (ODocument d : result)
-        Assert.assertEquals(d.field("result"), 5);
+        Assert.assertEquals(d.field("result"), 5d);
 
     } finally {
       database.close();

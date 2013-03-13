@@ -43,7 +43,7 @@ public class OOperatorPlus extends OExpressionWithChildren {
   
   @Override
   protected String thisToString() {
-    return "(-)";
+    return "(+)";
   }
 
   @Override

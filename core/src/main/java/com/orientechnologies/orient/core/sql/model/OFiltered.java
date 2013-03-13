@@ -76,21 +76,33 @@ public final class OFiltered extends OExpressionWithChildren {
   @Override
   protected Object evaluateNow(OCommandContext context, Object candidate) {
     Object left = getSource().evaluate(context, candidate);
-
+    OExpression filter = getFilter();
+    
     if(left instanceof ODocument && getFilter() instanceof OLiteral){
         //it's not a filter but a document accessor
         final ODocument doc = (ODocument) left;
-        final String fieldName = String.valueOf(getFilter().evaluate(context, candidate));
+        final String fieldName = String.valueOf(filter.evaluate(context, candidate));
         return doc.field(fieldName);
-    }else if(left instanceof ODocument && getFilter() instanceof OName){
+    }else if(left instanceof ODocument && (filter instanceof OName || filter instanceof OPath) ){
         //it's not a filter but a document accessor
-        return getFilter().evaluate(context, candidate);
-    }else if(left instanceof ODocument && getFilter() instanceof OPath){
+        return filter.evaluate(context, candidate);
+    }else if(left instanceof Collection && (filter instanceof OName || filter instanceof OPath) ){
         //it's not a filter but a document accessor
-        return getFilter().evaluate(context, candidate);
-    }else if(left instanceof Map && getFilter() instanceof OLiteral){
+        final List result = new ArrayList<Object>();
+        for(Object o : ((Collection)left)){
+          final Object obj = filter.evaluate(context, o);
+          if(obj != null){
+            result.add(obj);
+          }
+        }
+        if(result.size() == 1){
+          return result.get(0);
+        }else{
+          return result;
+        }
+    }else if(left instanceof Map && filter instanceof OLiteral){
         //it's not a filter but a Map accessor
-        return ((Map)left).get(((OLiteral) getFilter()).evaluateNow(context,candidate));
+        return ((Map)left).get(((OLiteral) filter).evaluateNow(context,candidate));
     }else if(getChildren().size()==3){
         //it's not a filter but a subcollection clip
         if(!(left instanceof Collection)){
@@ -102,7 +114,7 @@ public final class OFiltered extends OExpressionWithChildren {
         final Number endIndex = (Number)children.get(2).evaluate(context, candidate);
         return col.subList(startIndex.intValue(), endIndex.intValue()+1);//+1 because edges are inclusive
         
-    }else if(left instanceof Collection && getFilter() instanceof OLiteral){
+    }else if(left instanceof Collection && filter instanceof OLiteral){
         //it's not a filter but a List accessor
         left = new ArrayList((Collection)left);
         final List col = (List) left;

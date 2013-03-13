@@ -43,6 +43,7 @@ import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionCount;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionDate;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionDecode;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionEncode;
+import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionEval;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionFormat;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionIf;
 import com.orientechnologies.orient.core.sql.functions.misc.OSQLFunctionIfNull;
@@ -77,6 +78,7 @@ public final class ODefaultSQLFunctionFactory implements OSQLFunctionFactory {
     FUNCTIONS.put(OSQLFunctionMap.NAME.toUpperCase(Locale.ENGLISH), OSQLFunctionMap.class);
     FUNCTIONS.put(OSQLFunctionEncode.NAME.toUpperCase(Locale.ENGLISH), OSQLFunctionEncode.class);
     FUNCTIONS.put(OSQLFunctionDecode.NAME.toUpperCase(Locale.ENGLISH), OSQLFunctionDecode.class);
+    FUNCTIONS.put(OSQLFunctionEval.NAME.toUpperCase(Locale.ENGLISH), OSQLFunctionEval.class);
 
     // MATH FUNCTIONS
     FUNCTIONS.put(OSQLFunctionMin.NAME.toUpperCase(Locale.ENGLISH), OSQLFunctionMin.class);
