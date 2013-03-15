@@ -257,7 +257,7 @@ expression
   | expression MOD<assoc=left>    expression
   | expression POWER<assoc=left>  expression
   | expression UNARY<assoc=right> expression
-  | expression WORD               expression // custom operators
+//| expression WORD               expression // custom operators
   | functionCall
   | expression DOT expression
   | expression LBRACKET ( (INT UNARY INT) | (filter (COMMA filter)?)  ) RBRACKET

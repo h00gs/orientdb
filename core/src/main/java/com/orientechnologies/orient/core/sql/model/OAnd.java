@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -83,12 +84,15 @@ public class OAnd extends OExpressionWithChildren{
     combineIndex:
     if (className != null) {
       //see if we have a multikey index for pattern : field1 <op> value1 AND field2 <op> value2 ...
-      final Map<String,FieldRange> ranges = new HashMap<String,FieldRange>();      
+      int nbFields = 0;
+      boolean isComplete = true;
+      final Map<String,FieldRange> ranges = new HashMap<String,FieldRange>();
       for(OExpression exp : children){
         final FieldRange range = toFieldRange(exp);
         if(range == null){
           //no optimization
-          break combineIndex;
+          isComplete = false;
+          continue;
         }
         
         if(ranges.containsKey(range.fieldName)){
@@ -106,52 +110,50 @@ public class OAnd extends OExpressionWithChildren{
             //merge succesfull
           }
         }else{
+          nbFields++;
           ranges.put(range.fieldName,range);
         }
       }
       
-      //search for an index
+      //try to find best indexes using as much fields as possible
       final OClass clazz = getDatabase().getMetadata().getSchema().getClass(className);
-      final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(ranges.keySet());
-      if (indexes == null || indexes.isEmpty()) {
-        //no index usable
-        break combineIndex;
+      int combinesize = nbFields;
+      rangeLoop:
+      while(combinesize>0){
+        combinesize = Math.min(combinesize, ranges.size());
+        final List<String[]> combinaisons = getTuples(new ArrayList<String>(ranges.keySet()),combinesize);
+        for(String[] combine : combinaisons){
+          final OSearchResult res = findResult(ranges, combine, clazz);
+          if(res == null) continue;
+          
+          //found a usable index
+          if(isComplete && nbFields == combine.length){
+            //index is for all fields, no need to continue further
+            searchResult.set(res);
+            return searchResult;
+          }
+          
+          if(searchResult.getState() == OSearchResult.STATE.EVALUATE){
+            searchResult.setState(OSearchResult.STATE.FILTER);
+            searchResult.setCandidates(res.getIncluded());
+          }else{
+            searchResult.getCandidates().retainAll(res.getIncluded());
+          }
+          
+          //remove from ranges fields we have used
+          for(String s : combine){
+            ranges.remove(s);
+          }
+          continue rangeLoop;
+        }
+        combinesize--;
       }
       
-      indexsearch:
-      for (OIndex index : indexes) {
-        //found a usable index
-        final List<String> fieldKeys = index.getDefinition().getFields();
-        final Object[] fkmin = new Object[fieldKeys.size()];
-        final Object[] fkmax = new Object[fieldKeys.size()];
-        boolean minInc = true;
-        boolean maxInc = true;
-        for(int i=0;i<fkmin.length;i++){
-          final String name = fieldKeys.get(i);
-          final FieldRange range = ranges.get(name);
-          if(range == null){
-            fkmin[i] = new OAlwaysLessKey();
-            fkmax[i] = new OAlwaysGreaterKey();
-            minInc = true;
-            maxInc = true;
-          }else{
-            fkmin[i] = range.min;
-            fkmax[i] = range.max;
-            if(i<fkmin.length-1 && (range.isMinInclusive||range.isMaxInclusive)){
-              //extremity are allowed only the last field
-              continue indexsearch;
-            }
-          }
-        }
-        
-        final OCompositeKey minkey = new OCompositeKey(fkmin);
-        final OCompositeKey maxkey = new OCompositeKey(fkmax);
-        final Collection<OIdentifiable> ids = index.getValuesBetween(minkey, minInc, maxkey, maxInc);
-        searchResult.setState(OSearchResult.STATE.FILTER);
-        searchResult.setIncluded(ids);
-        updateStatistic(index);
+      if(searchResult.getState() == OSearchResult.STATE.FILTER){
+        //we managed to optimize use combined indexes
         return searchResult;
-      }      
+      }
+      
     }
     
     //no composite key index could be used, use basic merge.    
@@ -273,6 +275,59 @@ public class OAnd extends OExpressionWithChildren{
     result.setExcluded(excluded);
   }
     
+  private OSearchResult findResult(final Map<String,FieldRange> ranges, String[] combine, final OClass clazz){
+    final Set<OIndex<?>> indexes = clazz.getClassInvolvedIndexes(combine);
+    indexsearch:
+    for (OIndex index : indexes) {
+      final List<String> fieldKeys = index.getDefinition().getFields();
+      if(fieldKeys.size() == 1){
+        final FieldRange range = ranges.get(fieldKeys.get(0));
+        final Collection<OIdentifiable> ids;
+        if(range.isPonctual()){
+          ids = index.getValues(Collections.singleton(range.min));
+        }else{
+          ids = index.getValuesBetween(range.min,range.isMinInclusive,range.max,range.isMaxInclusive);
+          
+        }
+        final OSearchResult res = new OSearchResult(this);
+        res.setIncluded(ids);
+        updateStatistic(index);
+        return res;
+      }else{
+        final Object[] fkmin = new Object[fieldKeys.size()];
+        final Object[] fkmax = new Object[fieldKeys.size()];
+        boolean minInc = true;
+        boolean maxInc = true;
+        for(int i=0;i<fkmin.length;i++){
+          final String name = fieldKeys.get(i);
+          final FieldRange range = ranges.get(name);
+          if(range == null){
+            fkmin[i] = new OAlwaysLessKey();
+            fkmax[i] = new OAlwaysGreaterKey();
+            minInc = true;
+            maxInc = true;
+          }else{
+            fkmin[i] = range.min;
+            fkmax[i] = range.max;
+            if((i<fkmin.length-1 && (range.isMinInclusive||range.isMaxInclusive)) && !range.isPonctual()){
+              //extremity are allowed only the last field
+              continue indexsearch;
+            }
+          }
+        }
+
+        final OCompositeKey minkey = new OCompositeKey(fkmin);
+        final OCompositeKey maxkey = new OCompositeKey(fkmax);
+        final Collection<OIdentifiable> ids = index.getValuesBetween(minkey, minInc, maxkey, maxInc);
+        final OSearchResult res = new OSearchResult(this);
+        res.setIncluded(ids);
+        updateStatistic(index);
+        return res;
+      }
+    }
+    return null;
+  }
+  
   @Override
   public Object accept(OExpressionVisitor visitor, Object data) {
     return visitor.visit(this, data);
@@ -315,6 +370,7 @@ public class OAnd extends OExpressionWithChildren{
       }
       
       final FieldRange fr = new FieldRange();
+      fr.exp = candidate;
       fr.fieldName = fieldName.getName();
       if(candidate instanceof OEquals){
         fr.min = fr.max = value;
@@ -385,8 +441,47 @@ public class OAnd extends OExpressionWithChildren{
     
     return null;
   }
+
+  /**
+   * Get all tuples of a given size.
+   * @param values
+   * @param combinesize
+   * @return 
+   */
+  public static List<String[]> getTuples(List<String> values, int combinesize) {
+    final List<String[]> tuples = new ArrayList<String[]>();
+    if(combinesize == 1){
+      for(String s : values){
+        tuples.add(new String[]{s});
+      }
+    }else{
+      final List<String> subvals = new ArrayList<String>();
+      for(int i=0;i<values.size();i++){
+        subvals.clear();
+        final String locked = values.get(i);
+        subvals.addAll(values);
+        subvals.remove(i);
+        final List<String[]> subtuples = getTuples(subvals, combinesize-1);
+        for(String[] subtuple : subtuples){
+          final String[] tuple = new String[combinesize];
+          System.arraycopy(subtuple, 0, tuple, 1, subtuple.length);
+          tuple[0] = locked;
+          tuples.add(tuple);
+        }
+      }
+    }    
+    return tuples;
+  }
+  
+  public static void main(String[] args) {
+    for(String[] tuple : getTuples(Arrays.asList("A","B","C"), 2)){
+      System.out.println(Arrays.toString(tuple));
+    }
+    
+  }
   
   private static class FieldRange{
+    OExpression exp;
     String fieldName;
     Object min;
     Object max;

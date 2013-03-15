@@ -68,6 +68,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
 import com.orientechnologies.orient.core.serialization.serializer.record.string.ORecordSerializerStringAbstract;
 import com.orientechnologies.orient.core.serialization.serializer.stream.OStreamSerializerAnyStreamable;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.storage.OCluster;
 import com.orientechnologies.orient.core.storage.ODataSegment;
 import com.orientechnologies.orient.core.storage.OPhysicalPosition;
@@ -999,7 +1000,7 @@ public class OStorageRemote extends OStorageAbstract implements OStorageProxy {
 
         final OCommandRequestText aquery = iCommand;
 
-        final boolean asynch = iCommand instanceof OCommandRequestAsynch;
+        final boolean asynch = (iCommand instanceof OCommandRequestAsynch && !(iCommand instanceof OSQLSynchQuery));
 
         OChannelBinaryClient network = null;
         try {
